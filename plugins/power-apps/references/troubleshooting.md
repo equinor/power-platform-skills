@@ -4,11 +4,12 @@ Common issues when building and deploying generative pages.
 
 ---
 
-## PAC CLI Not Found
+## PAC CLI Not Found or Outdated
 
 - Install: `dotnet tool install --global Microsoft.PowerApps.CLI.Tool`
+- Update: `dotnet tool update --global Microsoft.PowerApps.CLI.Tool`
 - Or download from the [Microsoft Power Platform CLI](https://learn.microsoft.com/en-us/power-platform/developer/cli/introduction) page
-- Verify: `pac --version`
+- Verify: `pac help` (version must be >= 2.3.1)
 
 ---
 

@@ -16,10 +16,35 @@ Test this plugin locally:
 claude --plugin-dir /path/to/plugins/power-apps
 ```
 
+## Recommended Permissions
+
+Add to `~/.claude/settings.json` to avoid repeated permission prompts:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(pac *)",
+      "Bash(node *)",
+      "Bash(dotnet *)",
+      "Bash(npx *)",
+      "Bash(powershell *)",
+      "Bash(dir:*)",
+      "Read",
+      "Write",
+      "Edit",
+      "mcp__playwright__*",
+      "mcp__*__browser_*"
+    ]
+  }
+}
+```
+
 ## Architecture
 
 ```
 .claude-plugin/plugin.json     ← Plugin metadata (name, version, keywords)
+.mcp.json                      ← MCP server config (Playwright for browser verification)
 AGENTS.md                      ← Plugin guidance for AI agents (this file)
 CLAUDE.md                      ← Symlink → AGENTS.md
 references/                    ← Shared reference docs
@@ -27,6 +52,8 @@ references/                    ← Shared reference docs
   pac-cli-reference.md         ← PAC CLI commands and parameters
   troubleshooting.md           ← Common issues and fixes
 samples/                       ← Example .tsx files (8 samples)
+scripts/
+  launch-playwright-mcp.js     ← Playwright MCP server launcher (detects system browser)
 skills/
   genpage/
     SKILL.md                   ← Skill definition with frontmatter (model, allowed-tools)

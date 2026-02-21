@@ -39,7 +39,7 @@ You are the **GenPage** skill — an expert in building and deploying Power Apps
 
 Before starting, verify:
 - **Node.js** installed on the system
-- **PAC CLI** installed on the system (run `pac --version` to confirm)
+- **PAC CLI** version >= 2.3.1 installed on the system (run `pac help` to confirm)
 - **Dataverse environment** access for deployment
 
 > **PAC CLI is assumed to be installed on the user's system.** If `pac` is not found, instruct the user to install it via `dotnet tool install --global Microsoft.PowerApps.CLI.Tool` or download from Microsoft.
@@ -84,10 +84,12 @@ Run these checks (first invocation per session only):
 
 ```powershell
 node --version
-pac --version
+pac help
 ```
 
-If either fails, inform the user and provide installation instructions. Do NOT proceed until prerequisites are met. See [troubleshooting.md](../../references/troubleshooting.md) if issues arise.
+`pac help` output includes the version number. Verify the version is **>= 2.3.1**. If the version is older, instruct the user to update: `dotnet tool update --global Microsoft.PowerApps.CLI.Tool`.
+
+If either command fails, inform the user and provide installation instructions. Do NOT proceed until prerequisites are met. See [troubleshooting.md](../../references/troubleshooting.md) if issues arise.
 
 ### Step 2: Authenticate and Select Environment
 
@@ -117,15 +119,18 @@ Report: "Working with environment: [name]" and proceed.
 
 ### Step 3: Gather Requirements (Interactive)
 
-Ask these questions in order:
+Ask these questions one at a time:
 
-1. **"What would you like to create?"** — form, dashboard, grid, list, wizard, report, etc.
-2. **"Will this page use Dataverse entities or mock data?"**
+1. **"Create a new generative page or edit an existing one?"** (use `AskUserQuestion`)
+   - If new: continue to next question
+   - If edit: ask for the app and page to edit, download it with `pac model genpage download`, then ask what changes to make
+2. **"What type of page would you like to build?"** (use `AskUserQuestion`) with options like: Data Grid, Card Layout, Dashboard, Form / Wizard, and let the user type their own description via the "Other" option.
+3. **"Will the page use Dataverse entities or mock data?"** (use `AskUserQuestion`)
    - If entities: ask which entities and fields (use logical names — singular, lowercase)
    - If mock data: confirm you'll generate realistic sample data
-3. **"Any specific requirements?"** — styling, features (search, filtering, sorting), accessibility, responsive behavior, interactions
+4. **"Any specific requirements?"** (use `AskUserQuestion`) — styling, features (search, filtering, sorting), accessibility, responsive behavior, interactions
 
-If the user provided a description with the `/genpage` command, acknowledge it and ask only clarifying questions.
+If the user provided a description with the `/genpage` command, acknowledge it and skip question 2.
 
 ### Step 4: Plan and Confirm
 
@@ -152,6 +157,8 @@ If the page uses Dataverse entities, generate the TypeScript schema NOW:
 ```powershell
 pac model genpage generate-types --data-sources "entity1,entity2" --output-file RuntimeTypes.ts
 ```
+
+> **Windows + Bash**: Always use forward slashes in file paths (e.g., `D:/temp/RuntimeTypes.ts`). Backslashes like `\t` or `\R` are consumed as escape sequences by bash, producing wrong paths.
 
 After generating, **read the RuntimeTypes.ts file** and:
 1. Identify the actual column names available on each entity
@@ -291,6 +298,7 @@ pac model genpage upload `
   --name "Page Display Name" `
   --data-sources "entity1,entity2" `
   --prompt "User's original request summary" `
+  --model "claude-sonnet-4-5-20250929" `
   --add-to-sitemap
 ```
 
@@ -304,6 +312,7 @@ pac model genpage upload `
   --code-file page-name.tsx `
   --name "Page Display Name" `
   --prompt "User's original request summary" `
+  --model "claude-sonnet-4-5-20250929" `
   --add-to-sitemap
 ```
 
@@ -315,15 +324,46 @@ pac model genpage upload `
   --page-id <page-id> `
   --code-file page-name.tsx `
   --data-sources "entity1,entity2" `
-  --prompt "Summary of changes"
+  --prompt "Summary of changes" `
+  --model "claude-sonnet-4-5-20250929"
 ```
 
-### Step 9: Final Summary
+### Step 9: Verify in Browser
 
-After deployment, provide:
+After successful deployment, open the page in the browser using Playwright to verify it works.
+
+Construct the URL from the environment base URL, app-id, and page-id returned by the upload command:
+
+```
+https://<env>.crm.dynamics.com/main.aspx?appid=<app-id>&pagetype=genux&id=<page-id>
+```
+
+1. Navigate to the constructed URL using Playwright
+2. If you get a "page closed" or "browser closed" error, retry navigation once — Playwright sessions can expire
+3. If a sign-in page appears, take a snapshot first, then click the sign-in option. Always take a fresh snapshot before clicking — stale refs cause "Ref not found" errors
+4. Wait for the page to fully load (the genux page may take a few seconds to render)
+5. Take a screenshot to verify the page rendered correctly
+6. Check for any visible errors (blank page, error messages, broken layout)
+
+**Common Playwright issues:**
+- "Target page, context or browser has been closed" → retry the navigation
+- "Ref not found" → take a fresh page snapshot before clicking any element
+- Sign-in required → Playwright uses the system browser session; if not authenticated, the user must sign in manually first
+
+If page errors are found:
+- Analyze the screenshot and browser console for error details
+- Fix the code and re-deploy using Step 8
+- Repeat verification until the page renders correctly
+
+If the user skips browser verification, proceed to the final summary.
+
+### Step 10: Final Summary
+
+After deployment and verification, provide:
 - Confirmation of successful upload
+- Screenshot of the page (if browser verification was done)
 - How to find the page in the app
-- Next steps (test in browser, share with team)
+- Next steps (share with team, iterate on design)
 - Offer to make updates or create additional pages
 
 ---
