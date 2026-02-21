@@ -77,7 +77,7 @@ pac model genpage upload `
 pac model genpage download `
   --app-id <app-id> `
   --page-id <page-id> `
-  -o ./output-dir
+  --output-directory ./output-dir
 ```
 
 ---
