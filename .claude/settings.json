@@ -6,6 +6,7 @@
       "Bash(pac auth *)",
       "Bash(node *)",
       "Bash(dotnet *)",
+      "Bash(cd:*)",
       "Bash(powershell *)",
       "Bash(npx *)",
       "Bash(dir:*)",
