@@ -5,7 +5,7 @@ description: Creates, updates, and deploys Power Apps generative pages for model
 author: Microsoft Corporation
 argument-hint: "[optional: page description or 'deploy' or 'update']"
 user-invocable: true
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, AskUserQuestion, EnterPlanMode
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, AskUserQuestion, EnterPlanMode, mcp__plugin_power-apps_playwright__browser_navigate, mcp__plugin_power-apps_playwright__browser_snapshot, mcp__plugin_power-apps_playwright__browser_click, mcp__plugin_power-apps_playwright__browser_take_screenshot, mcp__plugin_power-apps_playwright__browser_wait_for
 ---
 
 # Power Apps Generative Pages Builder
@@ -330,7 +330,9 @@ pac model genpage upload `
 
 ### Step 9: Verify in Browser
 
-After successful deployment, open the page in the browser using Playwright to verify it works.
+After successful deployment, open the page in the browser using Playwright to verify it works and interactive elements function correctly.
+
+#### 9.1 Navigate and Authenticate
 
 Construct the URL from the environment base URL, app-id, and page-id returned by the upload command:
 
@@ -338,22 +340,69 @@ Construct the URL from the environment base URL, app-id, and page-id returned by
 https://<env>.crm.dynamics.com/main.aspx?appid=<app-id>&pagetype=genux&id=<page-id>
 ```
 
-1. Navigate to the constructed URL using Playwright
+1. Use `browser_navigate` to open the constructed URL
 2. If you get a "page closed" or "browser closed" error, retry navigation once — Playwright sessions can expire
-3. If a sign-in page appears, take a snapshot first, then click the sign-in option. Always take a fresh snapshot before clicking — stale refs cause "Ref not found" errors
-4. Wait for the page to fully load (the genux page may take a few seconds to render)
-5. Take a screenshot to verify the page rendered correctly
-6. Check for any visible errors (blank page, error messages, broken layout)
+3. Use `browser_snapshot` to capture the page state. Always snapshot before any clicks — stale refs cause "Ref not found" errors
+4. If a sign-in page appears, use `browser_click` on the sign-in option, then `browser_wait_for` for the page to load
+5. Use `browser_wait_for` to wait for the genux page content to render (may take a few seconds)
+
+#### 9.2 Structural Verification
+
+Use `browser_snapshot` to take an accessibility snapshot and verify the expected DOM elements are present based on the page type built:
+
+| Page Type | Expected Elements |
+|-----------|-------------------|
+| Data Grid | Table/grid element with column headers and data rows |
+| Form / Wizard | Form fields (inputs, dropdowns) and Next/Back buttons |
+| CRUD | Data grid + action buttons (Add, Edit, Delete) |
+| Dashboard | Multiple sections/panels with headings |
+| Card Layout | Card containers with content |
+| File Upload | File input or drop zone element |
+| Navigation Sidebar | Nav element with menu items |
+
+If expected elements are missing, note the issue for the fix step (9.5).
+
+#### 9.3 Interactive Testing
+
+Test functional interactions based on the page type. **Always take a fresh `browser_snapshot` before each click** to get current element refs. Move on after 2 failed attempts per interaction.
+
+**All page types:**
+- Verify at least one button or control responds to a click
+
+**Page-type-specific tests:**
+
+| Page Type | Test Action | Expected Result |
+|-----------|-------------|-----------------|
+| Data Grid | Click a column header | Sort order changes (arrow indicator appears or flips) |
+| Form / Wizard | Click Next button | Step advances to next section |
+| Form / Wizard | Click Back button | Returns to previous section |
+| CRUD | Click Add/New button | Form or dialog appears |
+| Dashboard | Click a tab or section toggle | Content area updates |
+| Card Layout | Click an action button on a card | Card responds (expand, navigate, etc.) |
+| Navigation Sidebar | Click a menu item | Content area updates to show selected section |
+
+**What NOT to test** (skip these):
+- Dataverse data mutations (create/update/delete records) — modifies real data
+- File upload dialogs — Playwright cannot interact with native OS file dialogs
+- Complex form validation — fragile, requires realistic test data
+- Pagination — requires actual Dataverse data to be present
+
+#### 9.4 Visual Confirmation
+
+Use `browser_take_screenshot` to capture a final screenshot for the deployment summary. This screenshot should show the page in its final verified state.
+
+#### 9.5 Fix and Re-deploy
+
+If structural or interactive issues are found:
+1. Analyze the snapshot and screenshot for error details
+2. Fix the code
+3. Re-deploy using Step 8
+4. Repeat verification (Steps 9.1–9.4) until the page works correctly
 
 **Common Playwright issues:**
 - "Target page, context or browser has been closed" → retry the navigation
-- "Ref not found" → take a fresh page snapshot before clicking any element
+- "Ref not found" → take a fresh `browser_snapshot` before clicking any element
 - Sign-in required → Playwright uses the system browser session; if not authenticated, the user must sign in manually first
-
-If page errors are found:
-- Analyze the screenshot and browser console for error details
-- Fix the code and re-deploy using Step 8
-- Repeat verification until the page renders correctly
 
 If the user skips browser verification, proceed to the final summary.
 
