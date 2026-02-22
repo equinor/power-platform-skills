@@ -16,30 +16,6 @@ Test this plugin locally:
 claude --plugin-dir /path/to/plugins/power-apps
 ```
 
-## Recommended Permissions
-
-Add to `~/.claude/settings.json` to avoid repeated permission prompts:
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(pac *)",
-      "Bash(node *)",
-      "Bash(dotnet *)",
-      "Bash(npx *)",
-      "Bash(powershell *)",
-      "Bash(dir:*)",
-      "Read",
-      "Write",
-      "Edit",
-      "mcp__plugin_power-apps_playwright__*",
-      "mcp__*__browser_*"
-    ]
-  }
-}
-```
-
 ## Architecture
 
 ```
