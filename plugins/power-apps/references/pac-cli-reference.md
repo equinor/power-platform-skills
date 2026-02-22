@@ -50,7 +50,7 @@ pac model genpage upload `
   --name "Page Display Name" `
   --data-sources "entity1,entity2" `
   --prompt "Description of the page" `
-  --model "claude-sonnet-4-5-20250929" `
+  --model "<current-model-id>" `
   --add-to-sitemap
 ```
 
@@ -65,7 +65,7 @@ pac model genpage upload `
   --code-file page.tsx `
   --data-sources "entity1,entity2" `
   --prompt "Summary of changes" `
-  --model "claude-sonnet-4-5-20250929"
+  --model "<current-model-id>"
 # --name is optional when updating; omit to keep existing name
 ```
 
@@ -92,5 +92,5 @@ pac model genpage download `
 | `--page-id` | Updates only | Get from `pac model genpage list` |
 | `--data-sources` | Entity pages | Comma-separated logical names matching code + schema |
 | `--prompt` | Always (upload) | Original user request or summary. Essential for context. |
-| `--model` | Always (upload) | AI model used to generate the page (e.g., `claude-sonnet-4-5-20250929`). |
+| `--model` | Always (upload) | AI model that generated the page. Use the current model identifier. |
 | `--add-to-sitemap` | New pages only | Adds page to app navigation. Do NOT use on updates. |

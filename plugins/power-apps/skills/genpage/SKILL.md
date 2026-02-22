@@ -5,7 +5,8 @@ description: Creates, updates, and deploys Power Apps generative pages for model
 author: Microsoft Corporation
 argument-hint: "[optional: page description or 'deploy' or 'update']"
 user-invocable: true
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, AskUserQuestion, EnterPlanMode, mcp__plugin_power-apps_playwright__browser_navigate, mcp__plugin_power-apps_playwright__browser_snapshot, mcp__plugin_power-apps_playwright__browser_click, mcp__plugin_power-apps_playwright__browser_take_screenshot, mcp__plugin_power-apps_playwright__browser_wait_for
+model: opus
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, EnterPlanMode, mcp__plugin_power-apps_playwright__browser_navigate, mcp__plugin_power-apps_playwright__browser_snapshot, mcp__plugin_power-apps_playwright__browser_click, mcp__plugin_power-apps_playwright__browser_take_screenshot, mcp__plugin_power-apps_playwright__browser_wait_for
 ---
 
 # Power Apps Generative Pages Builder
@@ -16,7 +17,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, AskUserQuestion, E
 
 ## References
 
-- **Code generation rules**: [genux-rules-reference.md](../../references/genux-rules-reference.md)
+- **Code generation rules**: [genpage-rules-reference.md](../../references/genpage-rules-reference.md)
 - **PAC CLI commands**: [pac-cli-reference.md](../../references/pac-cli-reference.md)
 - **Troubleshooting**: [troubleshooting.md](../../references/troubleshooting.md)
 - **Sample pages**: [samples/](../../samples/)
@@ -176,7 +177,7 @@ If schema generation fails, see [troubleshooting.md](../../references/troublesho
 
 Before generating code, read the comprehensive rules reference:
 
-**[genux-rules-reference.md](../../references/genux-rules-reference.md)** — Full code generation rules, DataAPI types, layout patterns, common errors.
+**[genpage-rules-reference.md](../../references/genpage-rules-reference.md)** — Full code generation rules, DataAPI types, layout patterns, common errors.
 
 Also read a relevant sample for reference:
 
@@ -193,7 +194,7 @@ Also read a relevant sample for reference:
 
 ### Step 7: Generate Code
 
-Generate complete TypeScript following ALL rules in [genux-rules-reference.md](../../references/genux-rules-reference.md). **For Dataverse pages, use ONLY the column names verified from RuntimeTypes.ts in Step 5.** Output in this format:
+Generate complete TypeScript following ALL rules in [genpage-rules-reference.md](../../references/genpage-rules-reference.md). **For Dataverse pages, use ONLY the column names verified from RuntimeTypes.ts in Step 5.** Output in this format:
 
 **Agent Thoughts:** Step-by-step reasoning and approach
 **Summary:** Non-technical bulleted list of what was built
@@ -271,7 +272,7 @@ const choices = await dataApi.getChoices("account-statecode");
 - Always wrap async `dataApi` calls in try-catch
 - DataGrid: use `createTableColumn`, enable sorting by default
 
-See [genux-rules-reference.md](../../references/genux-rules-reference.md) for full DataAPI type definitions and examples.
+See [genpage-rules-reference.md](../../references/genpage-rules-reference.md) for full DataAPI type definitions and examples.
 
 ### Step 8: Save and Deploy
 
@@ -298,9 +299,11 @@ pac model genpage upload `
   --name "Page Display Name" `
   --data-sources "entity1,entity2" `
   --prompt "User's original request summary" `
-  --model "claude-sonnet-4-5-20250929" `
+  --model "<current-model-id>" `
   --add-to-sitemap
 ```
+
+> **`--model` parameter:** Use your current model identifier (the model running this session). This records which AI model generated the page.
 
 **For mock data pages** (skip schema generation):
 
@@ -312,7 +315,7 @@ pac model genpage upload `
   --code-file page-name.tsx `
   --name "Page Display Name" `
   --prompt "User's original request summary" `
-  --model "claude-sonnet-4-5-20250929" `
+  --model "<current-model-id>" `
   --add-to-sitemap
 ```
 
@@ -325,7 +328,7 @@ pac model genpage upload `
   --code-file page-name.tsx `
   --data-sources "entity1,entity2" `
   --prompt "Summary of changes" `
-  --model "claude-sonnet-4-5-20250929"
+  --model "<current-model-id>"
 ```
 
 ### Step 9: Verify in Browser
@@ -431,3 +434,14 @@ Before finalizing code, verify ALL:
 8. Responsive design; accessible (ARIA, keyboard nav, WCAG AA)
 9. No undefined identifiers or hardcoded values
 10. Output format compliance (Agent Thoughts, Summary, Final Code)
+
+---
+
+### Key Decision Points (Wait for User)
+
+1. **Step 3**: Create new or edit existing page
+2. **Step 3**: Page type selection
+3. **Step 3**: Dataverse entities or mock data
+4. **Step 4**: Approve implementation plan
+5. **Step 8**: Publish to Power Apps (yes/no)
+6. **Step 8**: Which app to publish to (app-id selection)

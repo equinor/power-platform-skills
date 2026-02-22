@@ -33,7 +33,7 @@ Add to `~/.claude/settings.json` to avoid repeated permission prompts:
       "Read",
       "Write",
       "Edit",
-      "mcp__playwright__*",
+      "mcp__plugin_power-apps_playwright__*",
       "mcp__*__browser_*"
     ]
   }
@@ -48,7 +48,7 @@ Add to `~/.claude/settings.json` to avoid repeated permission prompts:
 AGENTS.md                      ← Plugin guidance for AI agents (this file)
 CLAUDE.md                      ← Symlink → AGENTS.md
 references/                    ← Shared reference docs
-  genux-rules-reference.md     ← Full code-gen rules, DataAPI types, layout patterns, common errors
+  genpage-rules-reference.md   ← Full code-gen rules, DataAPI types, layout patterns, common errors
   pac-cli-reference.md         ← PAC CLI commands and parameters
   troubleshooting.md           ← Common issues and fixes
 samples/                       ← Example .tsx files (8 samples)

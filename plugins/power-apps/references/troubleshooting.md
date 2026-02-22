@@ -58,3 +58,13 @@ Common issues when building and deploying generative pages.
 - Keep `RuntimeTypes.ts` in the same directory as the `.tsx` file
 - Regenerate schema if Dataverse metadata has changed
 - If column names don't match, re-run `generate-types` — never guess column names
+
+---
+
+## Playwright Browser Verification Issues
+
+- "Target page, context or browser has been closed" → retry the navigation; Playwright sessions can expire
+- "Ref not found" → take a fresh `browser_snapshot` before clicking any element; stale refs are invalid
+- Sign-in page appears → Playwright uses the system browser session; user must sign in manually first
+- Page renders blank → wait longer with `browser_wait_for`; genux pages can take several seconds to render
+- Browser not found → `launch-playwright-mcp.js` detects Edge/Chrome automatically; ensure one is installed

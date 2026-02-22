@@ -1,6 +1,6 @@
-# Genux Code Generation Rules Reference
+# Generative Pages Code Generation Rules Reference
 
-Comprehensive rules for generating genux page code. Read this file during code generation (Step 6).
+Comprehensive rules for generating generative page code. Read this file during code generation (Step 6).
 
 ---
 
