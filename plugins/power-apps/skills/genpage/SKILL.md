@@ -5,7 +5,7 @@ description: Creates, updates, and deploys Power Apps generative pages for model
 author: Microsoft Corporation
 argument-hint: "[optional: page description or 'deploy' or 'update']"
 user-invocable: true
-model: opus
+model: sonnet
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, EnterPlanMode, mcp__plugin_power-apps_playwright__browser_navigate, mcp__plugin_power-apps_playwright__browser_snapshot, mcp__plugin_power-apps_playwright__browser_click, mcp__plugin_power-apps_playwright__browser_take_screenshot, mcp__plugin_power-apps_playwright__browser_wait_for
 ---
 
@@ -126,9 +126,9 @@ Ask these questions one at a time:
    - If new: continue to next question
    - If edit: ask for the app and page to edit, download it with `pac model genpage download`, then ask what changes to make
 2. **"Describe the page you'd like to build"** (use `AskUserQuestion`) — present two example descriptions as options and let the user type their own via the "Other" option:
-   - **Option 1 (Recommended):** "Build a page showing Account records as a gallery of cards using modern look & feel. All cards should have fixed size and tall enough to fit 4 lines of titles. Include name, entityimage on the top and, website, email, phone number. Make the component fill 100% of the space. Make the gallery scrollable. Use data from the Account table. Make each card clickable to open the Account record in a new window. The target URL should be current location path with following query string parameters: pagetype=entityrecord&etn=[entityname]&id=[recordid] where entityname is account and id is accountid."
+   - **Option 1:** "Build a page showing Account records as a gallery of cards using modern look & feel. All cards should have fixed size and tall enough to fit 4 lines of titles. Include name, entityimage on the top and, website, email, phone number. Make the component fill 100% of the space. Make the gallery scrollable. Use data from the Account table. Make each card clickable to open the Account record in a new window. The target URL should be current location path with following query string parameters: pagetype=entityrecord&etn=[entityname]&id=[recordid] where entityname is account and id is accountid."
    - **Option 2:** "Design a vertically scrollable checklist interface for Task records using a clean, flat layout. Each task should be a row with a left-aligned checkbox, subject in bold and right-aligned due date and priority. Use neutral tones for background and soft color tags for priority (e.g., red for High, gray for Low). Completed tasks should show a strikethrough and reduced opacity. Allow inline editing of due date with a date picker. On hover, rows should highlight with another background. Clicking a task opens the Task record in a new window using: pagetype=entityrecord&etn=[entityname]&id=[recordid] where entityname is task and id is related record id."
-   - **Other:** User types their own description
+   - **Other (Recommended):** User types their own description
 3. **"Will the page use Dataverse entities or mock data?"** (use `AskUserQuestion`)
    - If entities: ask which entities and fields (use logical names — singular, lowercase)
    - If mock data: confirm you'll generate realistic sample data
