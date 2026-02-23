@@ -1,0 +1,11 @@
+id,should_trigger,prompt,expected_skill,notes
+test-01,true,"Create a generative page using /genpage",genpage,Explicit skill invocation with slash command
+test-02,true,"Build a data grid page for my model-driven app",genpage,Implicit invocation - data grid for model-driven app
+test-03,true,"I need a genux page to display account records with sorting and filtering",genpage,Implicit invocation - uses genux terminology with Dataverse entity
+test-04,true,"Create a multi-step wizard form for onboarding in my Power App",genpage,Implicit invocation - wizard form for Power App
+test-05,true,"/genpage sortable contact dashboard with charts",genpage,Explicit invocation with description argument
+test-06,true,"Add a new page to my model-driven app that shows opportunity records as cards",genpage,Implicit invocation - card layout with Dataverse entity
+test-07,true,"Generate a CRUD page for managing custom entities in Power Apps",genpage,Implicit invocation - CRUD operations
+test-08,false,"How do generative pages work in Power Apps?",genpage,Negative control - informational question only
+test-09,false,"Fix the layout bug on my existing genux page",genpage,Negative control - bug fix not page creation
+test-10,false,"What Fluent UI components are available for Power Apps?",genpage,Negative control - informational about components

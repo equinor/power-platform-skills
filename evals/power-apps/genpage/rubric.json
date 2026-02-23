@@ -1,0 +1,31 @@
+{
+  "name": "genpage",
+  "description": "Evaluates the genpage skill execution",
+  "checks": [
+    {
+      "id": "asked_new_or_edit",
+      "description": "Asked whether to create a new page or edit an existing one",
+      "weight": 20
+    },
+    {
+      "id": "asked_page_description",
+      "description": "Asked the user to describe the page they want to build or presented a default description option",
+      "weight": 20
+    },
+    {
+      "id": "asked_data_source",
+      "description": "Asked whether the page will use Dataverse entities or mock data",
+      "weight": 20
+    },
+    {
+      "id": "checked_prerequisites",
+      "description": "Checked or mentioned checking prerequisites (Node.js, PAC CLI version, authentication)",
+      "weight": 15
+    },
+    {
+      "id": "response_quality",
+      "description": "Response is helpful, clear, and appropriate for the request",
+      "weight": 15
+    }
+  ]
+}
