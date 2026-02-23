@@ -125,7 +125,10 @@ Ask these questions one at a time:
 1. **"Create a new generative page or edit an existing one?"** (use `AskUserQuestion`)
    - If new: continue to next question
    - If edit: ask for the app and page to edit, download it with `pac model genpage download`, then ask what changes to make
-2. **"What type of page would you like to build?"** (use `AskUserQuestion`) with options like: Data Grid, Card Layout, Dashboard, Form / Wizard, and let the user type their own description via the "Other" option.
+2. **"Describe the page you'd like to build"** (use `AskUserQuestion`) — present two example descriptions as options and let the user type their own via the "Other" option:
+   - **Option 1 (Recommended):** "Build a page showing Account records as a gallery of cards using modern look & feel. All cards should have fixed size and tall enough to fit 4 lines of titles. Include name, entityimage on the top and, website, email, phone number. Make the component fill 100% of the space. Make the gallery scrollable. Use data from the Account table. Make each card clickable to open the Account record in a new window. The target URL should be current location path with following query string parameters: pagetype=entityrecord&etn=[entityname]&id=[recordid] where entityname is account and id is accountid."
+   - **Option 2:** "Design a vertically scrollable checklist interface for Task records using a clean, flat layout. Each task should be a row with a left-aligned checkbox, subject in bold and right-aligned due date and priority. Use neutral tones for background and soft color tags for priority (e.g., red for High, gray for Low). Completed tasks should show a strikethrough and reduced opacity. Allow inline editing of due date with a date picker. On hover, rows should highlight with another background. Clicking a task opens the Task record in a new window using: pagetype=entityrecord&etn=[entityname]&id=[recordid] where entityname is task and id is related record id."
+   - **Other:** User types their own description
 3. **"Will the page use Dataverse entities or mock data?"** (use `AskUserQuestion`)
    - If entities: ask which entities and fields (use logical names — singular, lowercase)
    - If mock data: confirm you'll generate realistic sample data
@@ -333,7 +336,14 @@ pac model genpage upload `
 
 ### Step 9: Verify in Browser
 
-After successful deployment, open the page in the browser using Playwright to verify it works and interactive elements function correctly.
+After successful deployment, ask the user (use `AskUserQuestion`):
+> "Would you like to verify the page in the browser using Playwright? This will open the page and test interactive elements."
+
+Options: **Yes, verify in browser** / **Skip verification**
+
+If the user chooses to skip, go directly to Step 10.
+
+If the user chooses to verify, open the page in the browser using Playwright to verify it works and interactive elements function correctly.
 
 #### 9.1 Navigate and Authenticate
 
@@ -440,8 +450,9 @@ Before finalizing code, verify ALL:
 ### Key Decision Points (Wait for User)
 
 1. **Step 3**: Create new or edit existing page
-2. **Step 3**: Page type selection
+2. **Step 3**: Page description (default or custom)
 3. **Step 3**: Dataverse entities or mock data
 4. **Step 4**: Approve implementation plan
 5. **Step 8**: Publish to Power Apps (yes/no)
 6. **Step 8**: Which app to publish to (app-id selection)
+7. **Step 9**: Verify in browser with Playwright (yes/skip)
