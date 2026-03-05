@@ -140,6 +140,158 @@ export default GeneratedComponent;
 
 ---
 
+## Localization
+
+### When to Apply
+
+Only apply localization when `pac model list-languages` (run in Step 2) returns **multiple languages** or **any non-English language**. English-only environments skip this entire section.
+
+### Language Detection
+
+Detect the user's UI language at component mount using the Xrm global context:
+
+```typescript
+const language = React.useMemo(() => {
+  const uiLanguageId = (typeof Xrm !== "undefined" &&
+    Xrm.Utility?.getGlobalContext()?.userSettings?.languageId) || 1033;
+  const langMap: Record<number, { code: string; name: string; isRtl: boolean }> = {
+    // Populate entries from pac model list-languages output, mapped to LCID info.
+    // Example: 1033: { code: "en-US", name: "English", isRtl: false },
+  };
+  return langMap[uiLanguageId] || { code: "en-US", name: "English", isRtl: false };
+}, []);
+```
+
+### Translation Dictionary
+
+Create a translations dictionary with entries for every language detected in Step 2. All user-visible text must come from this dictionary — **NEVER hardcode display text in JSX**.
+
+```typescript
+const translations: Record<string, Record<string, string>> = {
+  "en-US": {
+    title: "Dashboard",
+    save: "Save",
+    cancel: "Cancel",
+    // ... all user-visible strings
+  },
+  "ar-SA": {
+    title: "لوحة القيادة",
+    save: "حفظ",
+    cancel: "إلغاء",
+  },
+  // ... one entry per detected language
+};
+
+const t = (key: string): string =>
+  translations[language.code]?.[key] || translations["en-US"]?.[key] || key;
+```
+
+Usage: `<Text>{t("title")}</Text>` — never `<Text>Dashboard</Text>`.
+
+### RTL Layout Support
+
+Detect RTL from the language LCID. Arabic (1025, 2049, 3073, 4097, 5121) and Hebrew (1037) are RTL.
+
+- Wrap the root element with the `dir` attribute: `<div dir={language.isRtl ? "rtl" : "ltr"}>`.
+- Use **logical CSS properties** instead of physical ones:
+  - `marginInlineStart` / `marginInlineEnd` (not `marginLeft` / `marginRight`)
+  - `paddingInlineStart` / `paddingInlineEnd` (not `paddingLeft` / `paddingRight`)
+  - `insetInlineStart` / `insetInlineEnd` (not `left` / `right`)
+  - `borderInlineStart` / `borderInlineEnd` (not `borderLeft` / `borderRight`)
+  - `textAlign: "start"` / `textAlign: "end"` (not `"left"` / `"right"`)
+- For flexbox, use `flexDirection: language.isRtl ? "row-reverse" : "row"` only when logical properties are insufficient.
+
+### User Settings for Formatting
+
+**MANDATORY:** Fetch user formatting preferences from the `usersettings` system table via `dataApi`. This is required even for mock data pages — `usersettings` is always available.
+
+Retrieve these columns: `uilanguageid`, `localeid`, `decimalsymbol`, `numberseparator`, `currencysymbol`, `dateformatstring`, `dateseparator`.
+
+```typescript
+const [userSettings, setUserSettings] = React.useState<{
+  decimalsymbol: string;
+  numberseparator: string;
+  currencysymbol: string;
+  dateformatstring: string;
+  dateseparator: string;
+} | null>(null);
+
+React.useEffect(() => {
+  const loadSettings = async () => {
+    try {
+      const result = await dataApi.queryTable("usersettings" as any, {
+        select: ["uilanguageid", "localeid", "decimalsymbol", "numberseparator",
+                 "currencysymbol", "dateformatstring", "dateseparator"] as any,
+        pageSize: 1,
+      });
+      if (result.rows.length > 0) {
+        setUserSettings(result.rows[0] as any);
+      }
+    } catch (e) {
+      console.error("Failed to load user settings:", e);
+    }
+  };
+  loadSettings();
+}, [dataApi]);
+```
+
+Provide formatting helpers that use these settings. **NEVER hardcode date formats or currency symbols.**
+
+```typescript
+const formatDate = (date: Date | string | null): string => {
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (!userSettings) return d.toLocaleDateString();
+  const fmt = userSettings.dateformatstring || "MM/dd/yyyy";
+  const sep = userSettings.dateseparator || "/";
+  return fmt
+    .replace("yyyy", String(d.getFullYear()))
+    .replace("MM", String(d.getMonth() + 1).padStart(2, "0"))
+    .replace("dd", String(d.getDate()).padStart(2, "0"))
+    .replace(/[/-]/g, sep);
+};
+
+const formatNumber = (num: number): string => {
+  if (!userSettings) return num.toLocaleString();
+  const dec = userSettings.decimalsymbol || ".";
+  const sep = userSettings.numberseparator || ",";
+  const [intPart, decPart] = num.toString().split(".");
+  const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+  return decPart ? `${formatted}${dec}${decPart}` : formatted;
+};
+
+const formatCurrency = (amount: number): string => {
+  const sym = userSettings?.currencysymbol || "$";
+  return `${sym}${formatNumber(amount)}`;
+};
+```
+
+### LCID Reference Table
+
+Common LCID mappings. Use `pac model list-languages` output to map any LCIDs not listed here.
+
+| LCID | Code | Language | RTL |
+|------|------|----------|-----|
+| 1025 | ar-SA | Arabic (Saudi Arabia) | Yes |
+| 1031 | de-DE | German | No |
+| 1033 | en-US | English (US) | No |
+| 1034 | es-ES | Spanish (Spain) | No |
+| 1036 | fr-FR | French | No |
+| 1037 | he-IL | Hebrew | Yes |
+| 1040 | it-IT | Italian | No |
+| 1041 | ja-JP | Japanese | No |
+| 1042 | ko-KR | Korean | No |
+| 1043 | nl-NL | Dutch | No |
+| 1046 | pt-BR | Portuguese (Brazil) | No |
+| 1049 | ru-RU | Russian | No |
+| 1053 | sv-SE | Swedish | No |
+| 2052 | zh-CN | Chinese (Simplified) | No |
+| 1028 | zh-TW | Chinese (Traditional) | No |
+
+For RTL languages (Arabic and Hebrew), always include RTL layout support as described above.
+
+---
+
 ## Special Patterns
 
 ### Charts and Visualization
