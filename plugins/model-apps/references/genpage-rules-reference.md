@@ -166,6 +166,8 @@ const language = React.useMemo(() => {
 
 Create a translations dictionary with entries for every language detected in Step 2. All user-visible text must come from this dictionary — **NEVER hardcode display text in JSX**.
 
+**IMPORTANT:** Do NOT put date formats, currency symbols, or number formats in the translations dictionary. These MUST come from the user's Dataverse `usersettings` via `dataApi` (see User Settings for Formatting section below).
+
 ```typescript
 const translations: Record<string, Record<string, string>> = {
   "en-US": {
@@ -208,34 +210,33 @@ Detect RTL from the language LCID. Arabic (1025, 2049, 3073, 4097, 5121) and Heb
 Retrieve these columns: `uilanguageid`, `localeid`, `decimalsymbol`, `numberseparator`, `currencysymbol`, `dateformatstring`, `dateseparator`.
 
 ```typescript
-const [userSettings, setUserSettings] = React.useState<{
-  decimalsymbol: string;
-  numberseparator: string;
-  currencysymbol: string;
-  dateformatstring: string;
-  dateseparator: string;
-} | null>(null);
+const [userSettings, setUserSettings] = React.useState<any>(null);
 
 React.useEffect(() => {
-  const loadSettings = async () => {
-    try {
-      const result = await dataApi.queryTable("usersettings" as any, {
-        select: ["uilanguageid", "localeid", "decimalsymbol", "numberseparator",
-                 "currencysymbol", "dateformatstring", "dateseparator"] as any,
-        pageSize: 1,
-      });
-      if (result.rows.length > 0) {
-        setUserSettings(result.rows[0] as any);
-      }
-    } catch (e) {
-      console.error("Failed to load user settings:", e);
-    }
+  const fetchUserSettings = async () => {
+    const currentUserId = (typeof Xrm !== "undefined" &&
+      Xrm.Utility?.getGlobalContext()?.userSettings?.userId)
+      ?.replace("{", "").replace("}", "");
+    if (!currentUserId) return;
+    const settings = await dataApi.retrieveRow("usersettings" as any, {
+      id: currentUserId,
+      select: ["uilanguageid", "localeid", "decimalsymbol", "numberseparator",
+               "currencysymbol", "dateformatstring", "dateseparator"] as any,
+    });
+    setUserSettings(settings);
   };
-  loadSettings();
+  fetchUserSettings();
 }, [dataApi]);
 ```
 
 Provide formatting helpers that use these settings. **NEVER hardcode date formats or currency symbols.**
+
+**CRITICAL rules for formatting:**
+- Do NOT use `Intl.NumberFormat` with a hardcoded currency code as the primary formatter — always use the helpers below that read from `usersettings`.
+- Do NOT display raw number or currency values — always wrap them with the appropriate formatting helper.
+- WRONG: `<span>${amount}</span>` or `{currencyValue}` — hardcodes `$` or displays raw number without locale formatting.
+- WRONG: `new Intl.NumberFormat(language, { style: 'currency', currency: 'USD' })` — hardcodes currency code; the user's currency comes from `usersettings.currencysymbol`, not from a hardcoded ISO code.
+- CORRECT: `{t('amount')}: {formatCurrency(amount)}` — use `t()` for labels and `formatCurrency()` for monetary values.
 
 ```typescript
 const formatDate = (date: Date | string | null): string => {
