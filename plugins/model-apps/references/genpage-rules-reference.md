@@ -267,30 +267,6 @@ const formatCurrency = (amount: number): string => {
 };
 ```
 
-### LCID Reference Table
-
-Common LCID mappings. Use `pac model list-languages` output to map any LCIDs not listed here.
-
-| LCID | Code | Language | RTL |
-|------|------|----------|-----|
-| 1025 | ar-SA | Arabic (Saudi Arabia) | Yes |
-| 1031 | de-DE | German | No |
-| 1033 | en-US | English (US) | No |
-| 1034 | es-ES | Spanish (Spain) | No |
-| 1036 | fr-FR | French | No |
-| 1037 | he-IL | Hebrew | Yes |
-| 1040 | it-IT | Italian | No |
-| 1041 | ja-JP | Japanese | No |
-| 1042 | ko-KR | Korean | No |
-| 1043 | nl-NL | Dutch | No |
-| 1046 | pt-BR | Portuguese (Brazil) | No |
-| 1049 | ru-RU | Russian | No |
-| 1053 | sv-SE | Swedish | No |
-| 2052 | zh-CN | Chinese (Simplified) | No |
-| 1028 | zh-TW | Chinese (Traditional) | No |
-
-For RTL languages (Arabic and Hebrew), always include RTL layout support as described above.
-
 ---
 
 ## Special Patterns
