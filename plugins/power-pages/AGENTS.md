@@ -4,7 +4,7 @@ This file provides guidance to AI Agents when working with the **power-pages** p
 
 ## What This Plugin Is
 
-A plugin for creating, deploying, and managing Power Pages code sites. Supports static SPA frameworks (React, Vue, Angular, Astro) with Dataverse integration, Web API access, and browser-based previews via Playwright.
+A plugin for creating, deploying, and managing Power Pages code sites. Supports static SPA frameworks (React, Vue, Angular, Astro) with Dataverse integration, Web API access, browser-based previews via Playwright, and full ALM (Application Lifecycle Management) with Dataverse solutions and CI/CD pipelines.
 
 ## Local Development
 
@@ -28,11 +28,17 @@ agents/
 scripts/
   generate-uuid.js             ← Shared UUID v4 generator (used by multiple skills)
   check-activation-status.js   ← Checks if site is already activated (used by deploy-site, activate-site)
+  poll-async-operation.js      ← Polls Dataverse asyncoperations until terminal state (used by export-solution, import-solution)
+  encode-solution-file.js      ← Base64-encodes a solution zip for OData request bodies (used by import-solution)
+  parse-deployment-errors.js   ← Parses PAC CLI stderr + OData errors into structured findings (used by diagnose-deployment)
 references/                    ← Shared reference docs used by multiple skills
   odata-common.md              ← Auth headers, token refresh, error handling, retry patterns
   dataverse-prerequisites.md   ← PAC CLI check, Azure CLI token, API access verification
   framework-conventions.md     ← Framework detection, paths, route discovery
   datamodel-manifest-schema.md ← .datamodel-manifest.json format spec
+  solution-api-patterns.md     ← OData body templates for publisher/solution CRUD, export/import async actions, manifest format
+  deployment-error-catalog.md  ← Known deployment failure patterns with root cause, severity, and fix procedures
+  cicd-pipeline-patterns.md    ← PAC CLI SP auth syntax, ADO YAML stage structure, GitHub Actions env job structure
 skills/
   create-site/
     SKILL.md                   ← Skill definition with frontmatter (model, allowed-tools, hooks)
@@ -67,6 +73,20 @@ skills/
     references/authentication-reference.md ← Login/logout flow, auth service, framework patterns
     references/authorization-reference.md  ← Role-based access control, guards, directives
     scripts/validate-auth.js   ← Node script validating auth service and authorization code
+  setup-solution/
+    SKILL.md                   ← Solution creation skill definition
+    scripts/validate-solution.js ← Validates .solution-manifest.json and queries Dataverse to confirm solution exists
+  export-solution/
+    SKILL.md                   ← Solution export skill definition
+    scripts/validate-export.js ← Validates solution zip exists, non-empty, contains Solution.xml
+  import-solution/
+    SKILL.md                   ← Solution import skill definition
+    scripts/validate-import.js ← Validates .last-import.json marker and checks for component failures
+  diagnose-deployment/
+    SKILL.md                   ← Deployment diagnostics skill definition (prompt hook only)
+  generate-pipeline/
+    SKILL.md                   ← CI/CD pipeline generation skill definition
+    scripts/validate-pipeline.js ← Validates pipeline YAML exists, has required keys, no unreplaced tokens
 ```
 
 ## Plugin Components
@@ -92,6 +112,11 @@ User-invocable via `/power-pages:<skill-name>`:
 - `create-webroles`: 6-step workflow — verify `.powerpages-site/web-roles/` exists (redirect to deploy-site if missing), discover existing roles, determine new roles needed, create web role YAML files with UUIDs from shared `scripts/generate-uuid.js`, verify web roles (validate files, UUIDs, uniqueness constraints), review & prompt deployment via deploy-site skill.
 - `integrate-webapi`: 7-step workflow — verify site exists, use Explore agent to analyze code and identify tables needing Web API integration, review plan with user, invoke `webapi-integration` agent per table to create API client/types/services/hooks, verify integrations (validate all files exist, project builds), invoke `webapi-permissions` agent to configure table permissions and site settings, review & deploy via `deploy-site` skill.
 - `setup-auth`: 8-step workflow — verify prerequisites (site deployed + web roles), gather auth requirements and plan, create auth service with Entra ID login/logout (anti-forgery token + form POST), create authorization utilities (role checking), create auth UI (AuthButton component), apply role-based access control to components, verify auth setup (validate files, build, auth UI renders), create `ProfileRedirectEnabled` site setting and deploy.
+- `setup-solution`: 7-step workflow — verify prerequisites, gather publisher/solution configuration (publisher prefix is irreversible — requires explicit confirmation), check existing publishers/solutions to avoid duplicates, create publisher + solution via OData API, add Power Pages website and web role components via `AddSolutionComponent`, verify components and write `.solution-manifest.json`, present summary. Reuses `references/solution-api-patterns.md`.
+- `export-solution`: 7-step workflow — verify prerequisites, identify solution (from `.solution-manifest.json` or user input), confirm managed vs unmanaged export (irreversible choice), trigger `ExportSolutionAsync`, poll via `scripts/poll-async-operation.js`, download and decode solution zip via `DownloadSolutionExportData`, verify zip contains `Solution.xml`. Reuses `scripts/poll-async-operation.js` and `references/solution-api-patterns.md`.
+- `import-solution`: 7-step workflow — verify prerequisites and confirm target environment, locate and validate solution zip, configure import (staged vs direct, overwrite options), optionally stage via `StageSolution` to check missing dependencies, import via `ImportSolutionAsync` and poll, verify solution exists in target and write `.last-import.json` marker, present component results. Reuses `scripts/poll-async-operation.js`, `scripts/encode-solution-file.js`, and `references/solution-api-patterns.md`.
+- `diagnose-deployment`: 7-step workflow — verify prerequisites and locate project, collect artifacts (config, manifests, build output), surface upload errors by re-running `pac pages upload-code-site` in capture mode and parsing via `scripts/parse-deployment-errors.js`, query recent Dataverse async operation failures, pattern-match against `references/deployment-error-catalog.md`, offer auto-fixes for fixable errors with explicit per-fix user confirmation, present findings table (severity/type/status). Never auto-applies any fix without user permission.
+- `generate-pipeline`: 7-step workflow — detect project context (existing pipelines, solution manifest), choose platform (GitHub Actions or Azure DevOps), gather environment URLs and parameters, generate pipeline YAML from `references/cicd-pipeline-patterns.md` templates, generate `docs/ci-cd-setup.md` setup guide with app registration and approval gate steps, verify YAML structure and commit. Pure file generation — no API calls needed.
 
 Skills are defined in `SKILL.md` files with YAML frontmatter (name, description, allowed-tools, model, hooks).
 
@@ -108,6 +133,11 @@ Defined in each skill's SKILL.md frontmatter:
   - `create-webroles`: command hook runs `validate-webroles.js` + prompt hook checks web role creation completeness
   - `integrate-webapi`: command hook runs `validate-webapi-integration.js` + prompt hook checks integration completeness
   - `setup-auth`: command hook runs `validate-auth.js` + prompt hook checks auth setup completeness
+  - `setup-solution`: command hook runs `validate-solution.js` + prompt hook checks solution creation completeness
+  - `export-solution`: command hook runs `validate-export.js` + prompt hook checks export completeness
+  - `import-solution`: command hook runs `validate-import.js` + prompt hook checks import completeness
+  - `diagnose-deployment`: prompt hook checks diagnostics completeness (no command hook — no artifacts created)
+  - `generate-pipeline`: command hook runs `validate-pipeline.js` + prompt hook checks pipeline generation completeness
 - Hooks are defined in SKILL.md frontmatter (not a global hooks.json) so they only fire for the relevant skill session
 
 ### Shared Scripts
@@ -117,16 +147,22 @@ Shared utility scripts live at `scripts/` and are referenced by multiple skills 
 - `generate-uuid.js`: Generates a random UUID v4. Self-contained, no dependencies. Used by `create-webroles` and the main agent when creating table permission / site setting files from the `webapi-permissions` agent plan.
 - `update-skill-tracking.js`: Updates skill usage tracking site settings. Takes `--projectRoot`, `--skillName`, and `--authoringTool` args. The agent passes its own name as `--authoringTool` (e.g., `ClaudeCode`, `GitHubCopilot`). Creates/increments a per-skill counter (`Site-AI-<SkillName>.sitesetting.yml`) and records the authoring tool (`Site-AI-AuthoringTool.sitesetting.yml`). Exits silently if `.powerpages-site/site-settings/` does not exist. Used by all 9 skills.
 - `check-activation-status.js`: Checks whether a Power Pages site is already activated (provisioned) in the environment. Takes `--projectRoot` arg. Reads `siteName` from `powerpages.config.json`, looks up `websiteRecordId` via `pac pages list`, queries the Power Platform GET websites API, and matches by both `websiteRecordId` and `name`. Outputs JSON: `{ activated: true/false, siteName, websiteRecordId, websiteUrl }` or `{ error }`. Used by `deploy-site` and `activate-site`.
+- `poll-async-operation.js`: Polls a Dataverse `asyncoperations` record until it reaches a terminal state (Succeeded/Failed/Canceled) or times out. Args: `--asyncJobId`, `--envUrl`, `--token` (optional, refreshed via Azure CLI if omitted), `--intervalMs` (default 5000), `--maxAttempts` (default 60). Outputs JSON status. Used by `export-solution` and `import-solution`.
+- `encode-solution-file.js`: Base64-encodes a solution zip file for use in Dataverse OData request bodies (`ImportSolutionAsync`, `StageSolution`). Args: `--zipPath`. Outputs `{ encoded, fileSizeBytes, fileName }`. Used by `import-solution`.
+- `parse-deployment-errors.js`: Parses PAC CLI stderr output or OData error JSON into structured findings array. Each finding has `{ patternId, type, severity, message, rawMatch, autoFixAvailable, suggestedFix }`. Reads from `--input`, `--file`, or stdin. Used by `diagnose-deployment`.
 
 ### Shared References
 
 Shared reference documents live at `references/` and are referenced by multiple skills via relative paths (e.g., `../../references/odata-common.md`). This avoids duplicating common patterns across skill-specific reference docs and SKILL.md files.
 
 - `odata-common.md`: Auth headers, PowerShell token helper, token refresh cadence, HTTP status codes, Dataverse error codes, retry pattern. Used by `setup-datamodel` and `add-sample-data`.
-- `dataverse-prerequisites.md`: PAC CLI auth check (`pac env who`), Azure CLI token acquisition, API access verification (`WhoAmI`). Used by `setup-datamodel` and `add-sample-data`.
+- `dataverse-prerequisites.md`: PAC CLI auth check (`pac env who`), Azure CLI token acquisition, API access verification (`WhoAmI`). Used by `setup-datamodel`, `add-sample-data`, `setup-solution`, `export-solution`, and `import-solution`.
 - `framework-conventions.md`: Supported frameworks, framework → build tool / router / build output / public dir / index HTML mapping, framework detection via `package.json`, route discovery patterns. Used by `create-site` and `add-seo`.
 - `datamodel-manifest-schema.md`: Schema spec for `.datamodel-manifest.json` (fields, types, usage). Written by `setup-datamodel`, read by `add-sample-data`, validated by `validate-datamodel.js`.
-- `skill-tracking-reference.md`: Skill usage tracking instructions — script invocation syntax, skill name mapping table, and YAML format. Referenced by all 9 skills to record usage via `update-skill-tracking.js`.
+- `skill-tracking-reference.md`: Skill usage tracking instructions — script invocation syntax, skill name mapping table, and YAML format. Referenced by all skills to record usage via `update-skill-tracking.js`.
+- `solution-api-patterns.md`: OData body templates for publisher POST, solution POST, `AddSolutionComponent`, `ExportSolutionAsync`, `DownloadSolutionExportData`, `ImportSolutionAsync`, `StageSolution`. Also documents `.solution-manifest.json` format. Used by `setup-solution`, `export-solution`, and `import-solution`.
+- `deployment-error-catalog.md`: Catalog of 10 known deployment failure patterns (stale manifest, blocked JS, missing websiteRecordId, auth expiry, empty build output, solution missing dependencies, solution timeout, PAC CLI not installed, environment mismatch, duplicate component). Each entry includes root cause, severity, auto-fix availability, and fix procedure. Used by `diagnose-deployment`.
+- `cicd-pipeline-patterns.md`: Full PAC CLI service principal auth syntax, complete ADO `azure-pipelines.yml` template (build + deploy-dev + deploy-staging + deploy-prod stages with approval gate comments), complete GitHub Actions `deploy.yml` template (environment-scoped jobs with protection rules), commented solution export/import blocks for both platforms, secrets/variables setup tables, and manual steps that cannot be automated. Used by `generate-pipeline`.
 
 Skill-specific reference docs (e.g., `skills/setup-datamodel/references/odata-api-patterns.md`) contain only patterns unique to that skill and point to the shared docs via `${CLAUDE_PLUGIN_ROOT}/references/` paths for common content.
 
@@ -163,6 +199,22 @@ Checks that Web API integration code was created for a Power Pages code site: ve
 ### `setup-auth/scripts/validate-auth.js`
 
 Checks that authentication and authorization code was created: verifies auth service (`src/services/authService.ts` or equivalent) exists with login/logout/getCurrentUser functions and anti-forgery token handling, Power Pages type declarations (`src/types/powerPages.d.ts`) exist, authorization utilities (`src/utils/authorization.ts`) exist, and an auth UI component (AuthButton or equivalent) exists. Gracefully exits 0 when no auth files are detected (not an auth session).
+
+### `setup-solution/scripts/validate-solution.js`
+
+Checks that `.solution-manifest.json` was written with required fields (`solution.uniqueName`, `solution.solutionId`, `publisher.publisherId`, at least one component of type 61). Queries Dataverse OData to confirm the solution actually exists in the environment. Gracefully exits 0 on auth errors or when no manifest is found.
+
+### `export-solution/scripts/validate-export.js`
+
+Checks that a solution zip file was written (`*_managed.zip` or `*_unmanaged.zip` pattern). Verifies file size > 1000 bytes and that `Solution.xml` is present inside the zip (via `unzip -l`). Gracefully exits 0 when no solution zip is found.
+
+### `import-solution/scripts/validate-import.js`
+
+Checks `.last-import.json` marker for required fields (`solutionName`, `targetEnvironment`, `importedAt`). Blocks if all components failed to import (0 success + N failures). Gracefully exits 0 when no import marker is found.
+
+### `generate-pipeline/scripts/validate-pipeline.js`
+
+Checks that a pipeline YAML file was generated (`azure-pipelines.yml` or `.github/workflows/deploy.yml`). Verifies required YAML keys (`trigger`/`on`, `stages`/`jobs`, `pac pages upload-code-site` step). Flags unreplaced `{TOKEN}` placeholders. Confirms `docs/ci-cd-setup.md` was created. Gracefully exits 0 when no pipeline files are found.
 
 ## Skill Development Guide
 
@@ -310,6 +362,21 @@ Only static SPA frameworks are supported (React, Vue, Angular, Astro). Server-re
 - **UUID generation** must use the shared `scripts/generate-uuid.js`. Do not copy it into skill-specific `scripts/` directories.
 - **Reference docs** shared across skills live in `references/` at the plugin root. Do not duplicate OData patterns, prerequisite steps, or framework conventions in skill-specific files — reference the shared docs via `${CLAUDE_PLUGIN_ROOT}/references/`.
 - When adding a new validation script, extend `validation-helpers.js` if the new helper would be useful to other scripts. Keep skill-specific logic in the individual script, shared logic in the library.
+
+## Planned Skills (Not Yet Implemented)
+
+The following skills are planned but require POC validation before implementation:
+
+### Sprint 2 — Needs POC First
+
+- `setup-environments`: Blocked by BAP API auth scope (`https://service.powerapps.com/`) differing from Dataverse token scope — needs POC in personal tenant. Managed env flag + admin assignment also need validation.
+- `setup-git-versioning`: Blocked pending determination of whether `pac pages` has a git-config subcommand, or if git integration is portal-only. If no CLI surface exists, this reduces to a guidance doc.
+- `configure-secrets`: Blocked pending mapping of full API path for Key Vault-backed environment variables (`environmentvariablevalues` with `keyVaultReference` JSON) and validation of `az keyvault set-policy` assignment in same session.
+
+### Sprint 3 — Future / Complex
+
+- `setup-approvals`: Blocked by undocumented `UpdateApprovalStatus` schema (Power Platform Pipelines) and ADO environment checks requiring PAT-authenticated ADO REST API (different auth domain from all current skills).
+- Power Pipelines integration: No external API for pipeline creation currently exposed. Would reduce to documentation skill. Revisit when MCS exposes quick deploy API.
 
 ## Maintaining This File
 
