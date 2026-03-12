@@ -87,13 +87,13 @@ Also ask:
 Refer to `${CLAUDE_PLUGIN_ROOT}/references/solution-api-patterns.md` Section 4a.
 
 1. `POST {envUrl}/api/data/v9.2/ExportSolutionAsync` with solution name and managed flag
-2. Parse response to extract `AsyncJobId` and `ExportJobId`
-3. Report: "Export job started: `{AsyncJobId}`. Polling for completion..."
+2. Parse response to extract `AsyncOperationId` and `ExportJobId`
+3. Report: "Export job started: `{AsyncOperationId}`. Polling for completion..."
 
 Run `scripts/poll-async-operation.js`:
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/poll-async-operation.js" \
-  --asyncJobId "{AsyncJobId}" \
+  --asyncJobId "{AsyncOperationId}" \
   --envUrl "{envUrl}" \
   --token "{token}" \
   --intervalMs 5000 \
@@ -123,8 +123,8 @@ Refer to `${CLAUDE_PLUGIN_ROOT}/references/solution-api-patterns.md` Section 4b.
 1. Confirm zip file exists on disk: check `fs.existsSync(zipPath)`
 2. Confirm file size > 1000 bytes
 3. Verify `Solution.xml` is inside the zip:
-   - Run `unzip -l "{zipPath}" | grep Solution.xml` or read zip TOC via Node.js (use `Bash` with unzip)
-   - If Solution.xml not found: report error — the zip may be corrupt or the download was truncated
+   - Run `unzip -l "{zipPath}" | grep -i solution.xml` or read zip TOC via Node.js (use `Bash` with unzip)
+   - If solution.xml not found: report error — the zip may be corrupt or the download was truncated
 
 ### Phase 7 — Present Summary
 

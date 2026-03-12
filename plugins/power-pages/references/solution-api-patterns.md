@@ -219,12 +219,12 @@ Export is a two-step process: trigger async export, then download the result.
 ```json
 {
   "@odata.context": "...",
-  "AsyncJobId": "00000000-0000-0000-0000-000000000000",
+  "AsyncOperationId": "00000000-0000-0000-0000-000000000000",
   "ExportJobId": "00000000-0000-0000-0000-000000000000"
 }
 ```
 
-Capture `AsyncJobId` and pass to `scripts/poll-async-operation.js`.
+Capture `AsyncOperationId` and pass to `scripts/poll-async-operation.js` as `--asyncJobId`.
 
 ### Step 4b: Download Export Result
 
@@ -357,7 +357,7 @@ GET {envUrl}/api/data/v9.2/asyncoperations({asyncJobId})?$select=statecode,statu
 | 0 | 30 | Pausing |
 | 0 | 40 | Canceling |
 | 1 | 10 | Waiting for Resources |
-| 2 | 30 | Succeeded |
+| 3 | 30 | Succeeded |
 | 3 | 31 | Failed |
 | 3 | 32 | Canceled |
 

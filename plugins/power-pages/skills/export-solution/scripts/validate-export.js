@@ -46,12 +46,12 @@ runValidation(async (cwd) => {
 
     // Verify Solution.xml is inside the zip
     try {
-      const output = execSync(`unzip -l "${zipPath}" 2>/dev/null | grep Solution.xml`, {
+      const output = execSync(`unzip -l "${zipPath}" 2>/dev/null | grep -i solution.xml`, {
         encoding: 'utf8',
         timeout: 10000,
       });
-      if (!output || !output.includes('Solution.xml')) {
-        return block(`Solution zip '${path.basename(zipPath)}' does not contain Solution.xml. The export appears corrupt.`);
+      if (!output || !output.toLowerCase().includes('solution.xml')) {
+        return block(`Solution zip '${path.basename(zipPath)}' does not contain solution.xml. The export appears corrupt.`);
       }
     } catch {
       // unzip not available or grep returned no match
