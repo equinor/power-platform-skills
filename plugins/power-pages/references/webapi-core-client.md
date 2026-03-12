@@ -304,6 +304,32 @@ export interface PaginatedResult<T> {
   nextLink?: string;
 }
 
+/**
+ * Response shape for expanded collection-valued navigation properties.
+ * Each expanded collection includes an @odata.nextLink for paging through
+ * additional related records when the query uses nested $expand.
+ */
+export interface ExpandedCollection<T> {
+  items: T[];
+  nextLink?: string;
+}
+
+/**
+ * Parse an expanded collection-valued navigation property from a raw OData entity.
+ * Extracts both the array of related records and the @odata.nextLink for paging.
+ *
+ * @param entity - The parent entity object from the OData response
+ * @param property - The navigation property name (e.g., 'cr4fc_order_lines')
+ * @returns The related records array and optional nextLink for further paging
+ */
+export const parseExpandedCollection = <T>(
+  entity: Record<string, unknown>,
+  property: string
+): ExpandedCollection<T> => ({
+  items: (entity[property] as T[] | undefined) ?? [],
+  nextLink: entity[`${property}@odata.nextLink`] as string | undefined,
+});
+
 // ── Formatted Value Helper ────────────────────────────────────────────────────
 
 /**
@@ -364,6 +390,90 @@ export const bindLookup = (
   } else if (id) {
     body[`${navigationProperty}@odata.bind`] = `/${entitySetName}(${id})`;
   }
+};
+
+// ── Expand Builder ────────────────────────────────────────────────────────────
+
+/**
+ * Options for expanding a navigation property.
+ * Single-valued (lookup) navigation properties support: $select, $expand (nested).
+ * Collection-valued (one-to-many) navigation properties support: $select, $filter, $orderby, $top.
+ * Note: $orderby and $top are NOT supported when the query contains any nested $expand.
+ */
+export interface ExpandOption {
+  /** Navigation property name (case-sensitive, typically PascalCase) */
+  property: string;
+  /** Columns to select from the related entity */
+  select?: string[];
+  /** Filter expression for collection-valued navigation properties */
+  filter?: string;
+  /** Order expression for collection-valued navigation properties (not supported with nested $expand) */
+  orderBy?: string;
+  /** Max records for collection-valued navigation properties (not supported with nested $expand) */
+  top?: number;
+  /** Nested expand options for single-valued navigation properties */
+  expand?: ExpandOption[];
+}
+
+/**
+ * Build an OData $expand clause from structured options.
+ * Handles nested expand for single-valued navigation properties and
+ * query options ($select, $filter, $orderby, $top) for collection-valued navigation properties.
+ *
+ * @example Single-valued with nested expand (lookup → lookup → lookup):
+ * buildExpandClause([{
+ *   property: 'cr4fc_Contact',
+ *   select: ['fullname'],
+ *   expand: [{
+ *     property: 'parentcustomerid_account',
+ *     select: ['name'],
+ *     expand: [{ property: 'createdby', select: ['fullname'] }]
+ *   }]
+ * }])
+ * // → "cr4fc_Contact($select=fullname;$expand=parentcustomerid_account($select=name;$expand=createdby($select=fullname)))"
+ *
+ * @example Collection-valued with filter and ordering:
+ * buildExpandClause([{
+ *   property: 'cr4fc_order_lines',
+ *   select: ['cr4fc_quantity', 'cr4fc_unitprice'],
+ *   filter: 'cr4fc_quantity gt 0',
+ *   orderBy: 'cr4fc_unitprice desc',
+ *   top: 10,
+ * }])
+ * // → "cr4fc_order_lines($select=cr4fc_quantity,cr4fc_unitprice;$filter=cr4fc_quantity gt 0;$orderby=cr4fc_unitprice desc;$top=10)"
+ *
+ * @example Multiple expands (single + collection):
+ * buildExpandClause([
+ *   { property: 'cr4fc_Category', select: ['cr4fc_categoryid', 'cr4fc_name'] },
+ *   { property: 'cr4fc_product_reviews', select: ['cr4fc_rating', 'cr4fc_comment'], top: 5 },
+ * ])
+ * // → "cr4fc_Category($select=cr4fc_categoryid,cr4fc_name),cr4fc_product_reviews($select=cr4fc_rating,cr4fc_comment;$top=5)"
+ */
+export const buildExpandClause = (options: ExpandOption[]): string =>
+  options.map(formatExpandOption).join(',');
+
+const formatExpandOption = (opt: ExpandOption): string => {
+  const parts: string[] = [];
+
+  if (opt.select?.length) {
+    parts.push(`$select=${opt.select.join(',')}`);
+  }
+  if (opt.filter) {
+    parts.push(`$filter=${opt.filter}`);
+  }
+  if (opt.orderBy) {
+    parts.push(`$orderby=${opt.orderBy}`);
+  }
+  if (opt.top !== undefined) {
+    parts.push(`$top=${opt.top}`);
+  }
+  if (opt.expand?.length) {
+    parts.push(`$expand=${buildExpandClause(opt.expand)}`);
+  }
+
+  return parts.length > 0
+    ? `${opt.property}(${parts.join(';')})`
+    : opt.property;
 };
 
 // ── File Column Helpers ───────────────────────────────────────────────────────

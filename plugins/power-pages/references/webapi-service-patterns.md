@@ -502,6 +502,264 @@ Only create these methods if the target table actually has File or Image columns
 
 ---
 
+## Related Entities ($expand)
+
+Use `$expand` to join related tables in a single API call instead of making separate requests. Power Pages Web API supports expanding both single-valued (lookup/many-to-one) and collection-valued (one-to-many) navigation properties.
+
+### Rules and Limitations
+
+| Rule | Detail |
+|------|--------|
+| Max expand count | Up to **15** `$expand` options per query |
+| Single-valued expand | Supports `$select` and nested `$expand` (multi-level lookup traversal) |
+| Collection-valued expand | Supports `$select`, `$filter`, `$orderby`, `$top` |
+| Nested `$expand` paging impact | When **any** nested `$expand` exists in the query, `Prefer: odata.maxpagesize` applies to **all** expanded collections (not just the root entity set). `$orderby` and `$top` are **NOT** supported on collection-valued expansions in this case. |
+| N:N relationships | **Cannot** be nested-expanded. Use FetchXml for nested N:N joins. |
+| `$skip` | **Not supported** — use `@odata.nextLink` cursors |
+| Cached responses | Expanded collection-valued properties may return cached data. Use `If-None-Match: null` header to bypass browser caching. |
+
+### Expand Types
+
+**Single-valued (lookup / many-to-one):**
+```typescript
+// Expand a lookup to get related record details
+'$expand': 'cr4fc_Category($select=cr4fc_categoryid,cr4fc_name)'
+```
+
+**Collection-valued (one-to-many):**
+```typescript
+// Expand a one-to-many relationship with filter and ordering
+'$expand': 'cr4fc_order_lines($select=cr4fc_quantity,cr4fc_unitprice;$filter=cr4fc_quantity gt 0;$orderby=cr4fc_unitprice desc;$top=10)'
+```
+
+**Multiple expands (mix of single + collection):**
+```typescript
+'$expand': 'cr4fc_Category($select=cr4fc_categoryid,cr4fc_name),cr4fc_order_lines($select=cr4fc_quantity;$top=5)'
+```
+
+### Nested Expand of Single-Valued Navigation Properties
+
+Chain single-valued (lookup) navigation properties to traverse multiple levels in one request. Use semicolons to separate options within each level's parentheses:
+
+```typescript
+// Traverse: Order → Contact (lookup) → Account (lookup) → CreatedBy (lookup)
+const EXPAND_WITH_NESTED = buildExpandClause([{
+  property: 'cr4fc_CustomerContact',
+  select: ['fullname', 'emailaddress1'],
+  expand: [{
+    property: 'parentcustomerid_account',
+    select: ['name', 'telephone1'],
+    expand: [{
+      property: 'createdby',
+      select: ['fullname'],
+    }],
+  }],
+}]);
+
+// Produces: "cr4fc_CustomerContact($select=fullname,emailaddress1;$expand=parentcustomerid_account($select=name,telephone1;$expand=createdby($select=fullname)))"
+```
+
+The response returns nested objects:
+
+```json
+{
+  "cr4fc_orderid": "...",
+  "cr4fc_ordernumber": "ORD-001",
+  "cr4fc_CustomerContact": {
+    "fullname": "Jane Smith",
+    "emailaddress1": "jane@example.com",
+    "contactid": "...",
+    "parentcustomerid_account": {
+      "name": "Contoso Ltd",
+      "telephone1": "555-0100",
+      "accountid": "...",
+      "createdby": {
+        "fullname": "System Administrator",
+        "systemuserid": "..."
+      }
+    }
+  }
+}
+```
+
+### Collection-Valued Navigation Property Expand
+
+Expand one-to-many relationships to retrieve child records inline. Always include `$top` or `$filter` to limit the response size — without limits, up to 5,000 related records can be returned per collection.
+
+```typescript
+import { buildExpandClause, type ExpandOption } from '../shared/powerPagesApi';
+
+// Expand order lines (one-to-many) with filter and limit
+const ORDER_EXPAND: ExpandOption[] = [
+  {
+    property: 'cr4fc_Category',
+    select: ['cr4fc_categoryid', 'cr4fc_name'],
+  },
+  {
+    property: 'cr4fc_order_lines',
+    select: ['cr4fc_orderlineid', 'cr4fc_productname', 'cr4fc_quantity', 'cr4fc_unitprice'],
+    filter: 'statecode eq 0',
+    orderBy: 'cr4fc_quantity desc',
+    top: 50,
+  },
+];
+
+const ORDER_EXPAND_CLAUSE = buildExpandClause(ORDER_EXPAND);
+```
+
+### Entity Types for Related Entities
+
+When a table has expanded relationships, define nested interfaces in the OData entity type:
+
+```typescript
+// Related entity interfaces
+export interface OrderLineEntity {
+  cr4fc_orderlineid: string;
+  cr4fc_productname?: string;
+  cr4fc_quantity?: number;
+  cr4fc_unitprice?: number;
+  [key: string]: unknown;
+}
+
+export interface CategoryEntity {
+  cr4fc_categoryid: string;
+  cr4fc_name?: string;
+  [key: string]: unknown;
+}
+
+// Parent entity with expanded navigation properties
+export interface OrderEntity {
+  cr4fc_orderid: string;
+  cr4fc_ordernumber?: string;
+  cr4fc_totalamount?: number;
+  _cr4fc_category_value?: string;
+  // Single-valued navigation property (lookup — returns object or null)
+  cr4fc_Category?: CategoryEntity | null;
+  // Collection-valued navigation property (one-to-many — returns array)
+  cr4fc_order_lines?: OrderLineEntity[];
+  createdon?: string;
+  modifiedon?: string;
+  [key: string]: unknown;
+}
+```
+
+**Key difference:** Single-valued expansions return an **object or null**. Collection-valued expansions return an **array** (empty if no related records).
+
+### Domain Types for Related Entities
+
+```typescript
+export interface OrderLine {
+  id: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  totalAmount: number;
+  categoryId?: string;
+  categoryName: string;
+  // Expanded related records mapped to domain types
+  orderLines: OrderLine[];
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### Mapper for Expanded Entities
+
+```typescript
+const mapOrderLineEntity = (entity: OrderLineEntity): OrderLine => ({
+  id: entity.cr4fc_orderlineid,
+  productName: entity.cr4fc_productname ?? '',
+  quantity: entity.cr4fc_quantity ?? 0,
+  unitPrice: entity.cr4fc_unitprice ?? 0,
+  lineTotal: (entity.cr4fc_quantity ?? 0) * (entity.cr4fc_unitprice ?? 0),
+});
+
+export const mapOrderEntity = (entity: OrderEntity): Order => ({
+  id: entity.cr4fc_orderid,
+  orderNumber: entity.cr4fc_ordernumber ?? '',
+  totalAmount: entity.cr4fc_totalamount ?? 0,
+  categoryId: entity._cr4fc_category_value,
+  categoryName: entity.cr4fc_Category?.cr4fc_name ?? getFormattedValue(entity, '_cr4fc_category_value') ?? 'Uncategorized',
+  orderLines: (entity.cr4fc_order_lines ?? []).map(mapOrderLineEntity),
+  createdAt: entity.createdon ?? new Date().toISOString(),
+  updatedAt: entity.modifiedon ?? entity.createdon ?? new Date().toISOString(),
+});
+```
+
+### Paging Expanded Collections
+
+When the query contains **any** nested `$expand`, the `Prefer: odata.maxpagesize` header applies to expanded collections too. Each expanded collection returns its own `@odata.nextLink` for fetching additional related records.
+
+Use `parseExpandedCollection` from the core API client to extract both the items and nextLink:
+
+```typescript
+import { parseExpandedCollection, powerPagesFetch } from '../shared/powerPagesApi';
+
+// After fetching an order with expanded order lines:
+const entity = await powerPagesFetch<OrderEntity>(url);
+if (entity) {
+  const { items: orderLines, nextLink } = parseExpandedCollection<OrderLineEntity>(
+    entity as Record<string, unknown>,
+    'cr4fc_order_lines'
+  );
+
+  // Map the first page of order lines
+  const mapped = orderLines.map(mapOrderLineEntity);
+
+  // Fetch additional pages if needed
+  if (nextLink) {
+    const additionalLines = await fetchAllPages<OrderLineEntity>(nextLink);
+    mapped.push(...additionalLines.map(mapOrderLineEntity));
+  }
+}
+```
+
+**Without** nested `$expand`, up to 5,000 related records are returned inline (no paging on the expanded collection). The `@odata.nextLink` on the collection is a URL to the filtered collection itself, not a paged cursor.
+
+### Get Related Records Separately
+
+For large collections or when you need full paging control, fetch related records as a separate query instead of `$expand`:
+
+```typescript
+// Instead of expanding, query the related entity set directly with a filter
+export const listOrderLines = async (orderId: string, params?: ListParams): Promise<PaginatedResult<OrderLine>> => {
+  const pageSize = params?.pageSize ?? 20;
+
+  const url = params?.nextLink ?? buildODataUrl('cr4fc_orderlines', {
+    '$select': 'cr4fc_orderlineid,cr4fc_productname,cr4fc_quantity,cr4fc_unitprice',
+    '$filter': `_cr4fc_order_value eq ${orderId}`,
+    '$orderby': params?.orderBy ?? 'cr4fc_quantity desc',
+    '$count': 'true',
+    '$top': String(pageSize),
+  });
+
+  const response = await powerPagesFetch<ODataCollectionResponse<OrderLineEntity>>(url);
+
+  return {
+    items: (response?.value ?? []).map(mapOrderLineEntity),
+    totalCount: response?.['@odata.count'] ?? response?.value?.length ?? 0,
+    nextLink: response?.['@odata.nextLink'],
+  };
+};
+```
+
+Use this approach when:
+- The related collection can be large (hundreds+ records)
+- You need `$orderby`, `$top`, or full pagination control alongside nested `$expand`
+- The relationship is N:N (many-to-many), which cannot be nested-expanded
+
+### Site Settings for Related Entity Columns
+
+When expanding related entities, the `Webapi/<table>/fields` site setting on the **parent** table must include the lookup column's logical name (e.g., `cr4fc_categoryid`). The **related** table must also have its own `Webapi/<related_table>/enabled` and `Webapi/<related_table>/fields` settings configured with the columns being selected in the `$expand`.
+
+---
+
 ## Framework Hooks (Step 6)
 
 Create framework-specific hooks, composables, or services based on the detected framework (from Step 1.1). These provide the reactive data-fetching layer that components will consume.
