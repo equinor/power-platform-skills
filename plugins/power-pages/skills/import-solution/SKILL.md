@@ -161,7 +161,7 @@ Tell the user:
 
 #### 5b.3 Ask for Permission
 
-Use `AskUserQuestion`:
+Invoke `AskUserQuestion` immediately — do NOT present this as a chat message. The user must answer live before the skill proceeds.
 
 | Question | Header | Options |
 |---|---|---|
