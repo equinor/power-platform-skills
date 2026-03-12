@@ -51,6 +51,8 @@ Tasks to create:
 6. "Verify import"
 7. "Present summary"
 
+> **Note**: If the import fails with an `AttachmentBlocked` error, a Phase 5b remediation flow runs inline — no additional task is needed (it continues within the "Import solution" task).
+
 Steps:
 1. Run `pac env who` — extract `environmentUrl` (verify this is the **target** environment)
 2. Run `az account get-access-token --resource "{environmentUrl}" --query accessToken -o tsv` — capture token
@@ -128,8 +130,63 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/poll-async-operation.js" \
 
 Handle poll result:
 - `Succeeded`: proceed to Phase 6
-- `Failed`: show error message, query import job for component-level errors, stop
+- `Failed` with `AttachmentBlocked` / error code `-2147188706`: proceed to **Phase 5b** below
+- `Failed` (other): show error message, query import job for component-level errors, stop
 - `Timeout`: inform user, advise checking admin center
+
+### Phase 5b — Resolve Attachment Restrictions (conditional)
+
+Only run this phase if Phase 5 poll failed with `AttachmentBlocked` (`-2147188706` or message contains `AttachmentBlocked` or `not a valid type`).
+
+#### 5b.1 Identify Blocked Extensions in the Solution Zip
+
+List all files in the zip and extract unique extensions:
+```bash
+unzip -l "{zipPath}" | awk '{print $4}' | grep '\.' | sed 's/.*\.//' | sort -u
+```
+
+Get the current blocked attachments list from the environment:
+```bash
+pac env list-settings
+```
+
+Find the `blockedattachments` row in the output — it contains a semicolon-separated list (e.g., `ade;adp;js;zip;...`).
+
+Compute the **intersection**: which extensions from the solution zip appear in the blocked list. These are the types that need to be unblocked.
+
+#### 5b.2 Explain the Issue
+
+Tell the user:
+> "The solution import failed because the target environment blocks certain file types that are included in this solution. The following file extensions in the solution are currently blocked: **`{comma-separated list}`**. This is an environment-level security setting. To import this solution, these restrictions need to be temporarily relaxed."
+
+#### 5b.3 Ask for Permission
+
+Use `AskUserQuestion`:
+
+| Question | Header | Options |
+|---|---|---|
+| The solution contains file types (`{list}`) that are blocked by this environment's attachment security settings. Would you like to remove the block for these specific types so the solution can be imported? | Unblock Attachment Types | Yes, unblock `{list}` for this import (Recommended), No, do not change environment settings |
+
+**If "No"**: Stop and tell the user: "The import cannot proceed while these file types are blocked. To unblock manually: Power Platform Admin Center → Environments → {env} → Settings → Product → Features → Blocked Attachments."
+
+**If "Yes"**: Proceed to 5b.4.
+
+#### 5b.4 Update Blocked Attachments
+
+1. Parse the `blockedattachments` value (semicolon-separated)
+2. Remove **only** the extensions identified in 5b.1 — preserve all others
+3. Update the setting:
+   ```bash
+   pac env update-settings --name blockedattachments --value "{updated-list-with-types-removed}"
+   ```
+4. Confirm the update succeeded.
+
+#### 5b.5 Retry Import
+
+Re-encode the zip and retry `ImportSolutionAsync` (repeat Phase 5 steps 1–4 and poll again).
+
+- If `Succeeded`: proceed to Phase 6
+- If failed again with a different error: show the new error message and stop — do not retry further
 
 ### Phase 6 — Verify Import
 
@@ -179,12 +236,15 @@ If Power Pages components were imported (componentType 61 found in solution):
 2. **Phase 2**: Select zip file if multiple found
 3. **Phase 3**: Staged vs direct import; overwrite customizations
 4. **Phase 4**: Proceed despite missing dependencies
+5. **Phase 5b**: Consent to unblock attachment types — never modify environment settings without explicit approval
 
 ## Error Handling
 
 - Component-level import failures: report in summary, do not block overall completion
-- If import async operation fails: show `friendlyMessage` from async operation record
+- If import async operation fails with `AttachmentBlocked` (-2147188706): run Phase 5b remediation flow (identify blocked types, get consent, unblock, retry)
+- If import async operation fails with other error: show `friendlyMessage` from async operation record, stop
 - Never attempt rollback — report what succeeded and what failed
+- Never modify environment settings (`blockedattachments`) without explicit user approval
 
 ## Progress Tracking Table
 
@@ -194,6 +254,6 @@ If Power Pages components were imported (componentType 61 found in solution):
 | Locate solution file | Locating solution file | Find and validate solution zip, confirm Solution.xml present |
 | Configure import | Configuring import | Ask: staged vs direct, overwrite customizations, publish workflows |
 | Stage solution (dependency check) | Staging solution | Run StageSolution to check for missing dependencies before committing |
-| Import solution | Importing solution | POST ImportSolutionAsync, poll until complete |
+| Import solution | Importing solution | POST ImportSolutionAsync, poll until complete; if AttachmentBlocked: identify blocked types, get user consent, unblock via pac env update-settings, retry |
 | Verify import | Verifying import | Confirm solution version in target, parse component results, write .last-import.json |
 | Present summary | Presenting summary | Show component counts (success/warning/failure), suggest activate-site if applicable |
