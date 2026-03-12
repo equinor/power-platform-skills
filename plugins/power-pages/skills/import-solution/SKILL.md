@@ -65,8 +65,8 @@ If any check fails, stop (reference `${CLAUDE_PLUGIN_ROOT}/references/dataverse-
 
 1. If a zip path was provided as an argument, use it directly
 2. Otherwise, search for solution zips: `glob('**/*.zip', { ignore: ['**/node_modules/**'] })`
-3. For each found zip, verify it contains `Solution.xml`:
-   - Use `Bash`: `unzip -l "{zipPath}" 2>/dev/null | grep -q Solution.xml`
+3. For each found zip, verify it contains `solution.xml`:
+   - Use `Bash`: `unzip -l "{zipPath}" 2>/dev/null | grep -qi solution.xml`
 4. If multiple valid zips found: ask user to choose via `AskUserQuestion`
 5. If no valid zip found: stop and explain — run `export-solution` first or provide the zip path
 
@@ -108,12 +108,12 @@ Refer to `${CLAUDE_PLUGIN_ROOT}/references/solution-api-patterns.md` Section 5a.
 
 Refer to `${CLAUDE_PLUGIN_ROOT}/references/solution-api-patterns.md` Section 5b.
 
-1. Prepare request body:
-   - If staged (Phase 4 ran): use `{ StageSolutionUploadId: "{id}", OverwriteUnmanagedCustomizations: true, PublishWorkflows: true }`
-   - If direct: encode zip file and use `{ CustomizationFile: "{base64}", OverwriteUnmanagedCustomizations: {choice}, PublishWorkflows: {choice} }`
+1. Prepare request body (always use `CustomizationFile` — `ImportSolutionAsync` does not accept `StageSolutionUploadId`):
+   - Encode the zip: `node "${CLAUDE_PLUGIN_ROOT}/scripts/encode-solution-file.js" --zipPath "{zipPath}"`
+   - Use `{ CustomizationFile: "{base64}", OverwriteUnmanagedCustomizations: {choice}, PublishWorkflows: {choice} }`
 
 2. `POST {envUrl}/api/data/v9.2/ImportSolutionAsync`
-3. Extract `AsyncOperationId` and `ImportJobId`
+3. Extract `AsyncOperationId` and `ImportJobKey` (note: field is `ImportJobKey`, not `ImportJobId`)
 4. Report: "Import job started: `{AsyncOperationId}`. Polling for completion..."
 
 Run `scripts/poll-async-operation.js`:
@@ -138,9 +138,9 @@ Handle poll result:
    GET {envUrl}/api/data/v9.2/solutions?$filter=uniquename eq '{solutionName}'&$select=solutionid,uniquename,version,ismanaged
    ```
 
-2. Query import job for component results:
+2. Query import job for component results (use `ImportJobKey` from the import response):
    ```
-   GET {envUrl}/api/data/v9.2/importjobs({importJobId})?$select=solutionname,completedon,progress,data
+   GET {envUrl}/api/data/v9.2/importjobs({ImportJobKey})?$select=solutionname,completedon,progress,data
    ```
    - Parse the `data` XML field for per-component results (look for `result="failure"` entries)
    - Count: imported successfully / warnings / failures
@@ -153,7 +153,7 @@ Handle poll result:
      "version": "<version>",
      "targetEnvironment": "<envUrl>",
      "asyncOperationId": "<id>",
-     "importJobId": "<id>",
+     "importJobId": "<ImportJobKey value>",
      "componentResults": { "success": N, "warning": N, "failure": N }
    }
    ```

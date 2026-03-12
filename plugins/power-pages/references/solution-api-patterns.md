@@ -304,10 +304,12 @@ If `MissingDependencies` is non-empty, present each missing dependency to the us
 }
 ```
 
-**Request body (after staging)**:
+> **Important**: `ImportSolutionAsync` does **not** accept `StageSolutionUploadId`. After a successful `StageSolution` (dependency check), you must still use `CustomizationFile` (re-encoded zip) when calling `ImportSolutionAsync`. The staging step is purely for pre-flight dependency validation — it does not alter the import call.
+
+**Request body (always use CustomizationFile)**:
 ```json
 {
-  "StageSolutionUploadId": "{stageSolutionUploadId}",
+  "CustomizationFile": "<base64-encoded zip content>",
   "OverwriteUnmanagedCustomizations": true,
   "PublishWorkflows": true,
   "ConvertToManaged": false,
@@ -325,15 +327,17 @@ If `MissingDependencies` is non-empty, present each missing dependency to the us
 {
   "@odata.context": "...",
   "AsyncOperationId": "00000000-0000-0000-0000-000000000000",
-  "ImportJobId": "00000000-0000-0000-0000-000000000000"
+  "ImportJobKey": "00000000-0000-0000-0000-000000000000"
 }
 ```
 
 Pass `AsyncOperationId` (as `asyncJobId`) to `scripts/poll-async-operation.js`.
 
+> **Note**: The response field is `ImportJobKey` (not `ImportJobId`). Use this value to query the import job for component-level results after polling completes.
+
 **Check import result after completion**:
 ```
-GET {envUrl}/api/data/v9.2/importjobs({importJobId})?$select=solutionname,completedon,progress,data
+GET {envUrl}/api/data/v9.2/importjobs({ImportJobKey})?$select=solutionname,completedon,progress,data
 ```
 
 The `data` field is XML containing `<importexportxml>` with per-component import results. Parse for `result="success"` vs `result="failure"`.
