@@ -73,13 +73,15 @@ If any check fails, stop and explain (reference `${CLAUDE_PLUGIN_ROOT}/reference
 
 ### Phase 3 — Configure Export
 
-Ask user (via `AskUserQuestion`):
+Invoke `AskUserQuestion` immediately — do NOT describe this choice as chat text. The user must answer live before export proceeds.
 
-> **Key Decision Point**: **Managed vs Unmanaged export**
-> - **Managed** (recommended for production): Cannot be directly edited in target environment. Supports clean upgrade/delete cycles. Use for staging and production deployments.
-> - **Unmanaged** (for development): Can be edited in target environment. Use when deploying to another dev environment where you need to make changes.
+| Question | Header | Options |
+|---|---|---|
+| How would you like to export this solution? **Managed** solutions cannot be edited in the target environment and support clean upgrade/delete cycles — recommended for staging and production. **Unmanaged** solutions can be edited in the target environment — use for dev-to-dev deployments. | Export Type | Managed — for staging/production (Recommended), Unmanaged — for development environments |
 
-Also ask:
+Use the answer to set `"Managed": true` or `"Managed": false` in the `ExportSolutionAsync` request body.
+
+Also ask (separate `AskUserQuestion`):
 - Output directory (default: current project root)
 
 ### Phase 4 — Trigger Async Export
