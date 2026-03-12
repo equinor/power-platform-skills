@@ -87,6 +87,9 @@ skills/
   generate-pipeline/
     SKILL.md                   ← CI/CD pipeline generation skill definition
     scripts/validate-pipeline.js ← Validates pipeline YAML exists, has required keys, no unreplaced tokens
+  hotfix-solution/
+    SKILL.md                   ← Hotfix solution skill definition
+    scripts/validate-hotfix.js ← Validates .last-hotfix.json marker for required fields and component count
 ```
 
 ## Plugin Components
@@ -117,6 +120,7 @@ User-invocable via `/power-pages:<skill-name>`:
 - `import-solution`: 7-step workflow — verify prerequisites and confirm target environment, locate and validate solution zip, configure import (staged vs direct, overwrite options), optionally stage via `StageSolution` to check missing dependencies, import via `ImportSolutionAsync` and poll, verify solution exists in target and write `.last-import.json` marker, present component results. Reuses `scripts/poll-async-operation.js`, `scripts/encode-solution-file.js`, and `references/solution-api-patterns.md`.
 - `diagnose-deployment`: 7-step workflow — verify prerequisites and locate project, collect artifacts (config, manifests, build output), surface upload errors by re-running `pac pages upload-code-site` in capture mode and parsing via `scripts/parse-deployment-errors.js`, query recent Dataverse async operation failures, pattern-match against `references/deployment-error-catalog.md`, offer auto-fixes for fixable errors with explicit per-fix user confirmation, present findings table (severity/type/status). Never auto-applies any fix without user permission.
 - `generate-pipeline`: 7-step workflow — detect project context (existing pipelines, solution manifest), choose platform (GitHub Actions or Azure DevOps), gather environment URLs and parameters, generate pipeline YAML from `references/cicd-pipeline-patterns.md` templates, generate `docs/ci-cd-setup.md` setup guide with app registration and approval gate steps, verify YAML structure and commit. Pure file generation — no API calls needed.
+- `hotfix-solution`: 7-phase workflow — verify prerequisites (PAC CLI auth, Azure CLI token, `.solution-manifest.json`), discover modified components (ask time window, query `powerpagecomponents` by `modifiedon`, resolve type labels), review and confirm components (with security warning for Site Settings type 9), create timestamped hotfix solution (name: `{base}Hotfix{YYYYMMDDHHmm}`, dynamic componenttype discovery, add all components via `AddSolutionComponent`), export solution (ask managed/unmanaged, `ExportSolutionAsync`, poll, download zip), import to target environment (ask target env, `StageSolution` dependency check, `ImportSolutionAsync`, poll, full `AttachmentBlocked` remediation flow), verify and write `.last-hotfix.json`. Reuses `scripts/poll-async-operation.js`, `scripts/encode-solution-file.js`, and `references/solution-api-patterns.md`.
 
 Skills are defined in `SKILL.md` files with YAML frontmatter (name, description, allowed-tools, model, hooks).
 
@@ -138,6 +142,7 @@ Defined in each skill's SKILL.md frontmatter:
   - `import-solution`: command hook runs `validate-import.js` + prompt hook checks import completeness
   - `diagnose-deployment`: prompt hook checks diagnostics completeness (no command hook — no artifacts created)
   - `generate-pipeline`: command hook runs `validate-pipeline.js` + prompt hook checks pipeline generation completeness
+  - `hotfix-solution`: command hook runs `validate-hotfix.js` + prompt hook checks all 5 success conditions (components discovered, solution created, zip exported, import succeeded, summary displayed)
 - Hooks are defined in SKILL.md frontmatter (not a global hooks.json) so they only fire for the relevant skill session
 
 ### Shared Scripts
@@ -147,8 +152,8 @@ Shared utility scripts live at `scripts/` and are referenced by multiple skills 
 - `generate-uuid.js`: Generates a random UUID v4. Self-contained, no dependencies. Used by `create-webroles` and the main agent when creating table permission / site setting files from the `webapi-permissions` agent plan.
 - `update-skill-tracking.js`: Updates skill usage tracking site settings. Takes `--projectRoot`, `--skillName`, and `--authoringTool` args. The agent passes its own name as `--authoringTool` (e.g., `ClaudeCode`, `GitHubCopilot`). Creates/increments a per-skill counter (`Site-AI-<SkillName>.sitesetting.yml`) and records the authoring tool (`Site-AI-AuthoringTool.sitesetting.yml`). Exits silently if `.powerpages-site/site-settings/` does not exist. Used by all 9 skills.
 - `check-activation-status.js`: Checks whether a Power Pages site is already activated (provisioned) in the environment. Takes `--projectRoot` arg. Reads `siteName` from `powerpages.config.json`, looks up `websiteRecordId` via `pac pages list`, queries the Power Platform GET websites API, and matches by both `websiteRecordId` and `name`. Outputs JSON: `{ activated: true/false, siteName, websiteRecordId, websiteUrl }` or `{ error }`. Used by `deploy-site` and `activate-site`.
-- `poll-async-operation.js`: Polls a Dataverse `asyncoperations` record until it reaches a terminal state (Succeeded/Failed/Canceled) or times out. Args: `--asyncJobId`, `--envUrl`, `--token` (optional, refreshed via Azure CLI if omitted), `--intervalMs` (default 5000), `--maxAttempts` (default 60). Outputs JSON status. Used by `export-solution` and `import-solution`.
-- `encode-solution-file.js`: Base64-encodes a solution zip file for use in Dataverse OData request bodies (`ImportSolutionAsync`, `StageSolution`). Args: `--zipPath`. Outputs `{ encoded, fileSizeBytes, fileName }`. Used by `import-solution`.
+- `poll-async-operation.js`: Polls a Dataverse `asyncoperations` record until it reaches a terminal state (Succeeded/Failed/Canceled) or times out. Args: `--asyncJobId`, `--envUrl`, `--token` (optional, refreshed via Azure CLI if omitted), `--intervalMs` (default 5000), `--maxAttempts` (default 60). Outputs JSON status. Used by `export-solution`, `import-solution`, and `hotfix-solution`.
+- `encode-solution-file.js`: Base64-encodes a solution zip file for use in Dataverse OData request bodies (`ImportSolutionAsync`, `StageSolution`). Args: `--zipPath`. Outputs `{ encoded, fileSizeBytes, fileName }`. Used by `import-solution` and `hotfix-solution`.
 - `parse-deployment-errors.js`: Parses PAC CLI stderr output or OData error JSON into structured findings array. Each finding has `{ patternId, type, severity, message, rawMatch, autoFixAvailable, suggestedFix }`. Reads from `--input`, `--file`, or stdin. Used by `diagnose-deployment`.
 
 ### Shared References
@@ -160,7 +165,7 @@ Shared reference documents live at `references/` and are referenced by multiple 
 - `framework-conventions.md`: Supported frameworks, framework → build tool / router / build output / public dir / index HTML mapping, framework detection via `package.json`, route discovery patterns. Used by `create-site` and `add-seo`.
 - `datamodel-manifest-schema.md`: Schema spec for `.datamodel-manifest.json` (fields, types, usage). Written by `setup-datamodel`, read by `add-sample-data`, validated by `validate-datamodel.js`.
 - `skill-tracking-reference.md`: Skill usage tracking instructions — script invocation syntax, skill name mapping table, and YAML format. Referenced by all skills to record usage via `update-skill-tracking.js`.
-- `solution-api-patterns.md`: OData body templates for publisher POST, solution POST, `AddSolutionComponent`, `ExportSolutionAsync`, `DownloadSolutionExportData`, `ImportSolutionAsync`, `StageSolution`. Also documents `.solution-manifest.json` format. Used by `setup-solution`, `export-solution`, and `import-solution`.
+- `solution-api-patterns.md`: OData body templates for publisher POST, solution POST, `AddSolutionComponent`, `ExportSolutionAsync`, `DownloadSolutionExportData`, `ImportSolutionAsync`, `StageSolution`. Also documents `.solution-manifest.json` format. Used by `setup-solution`, `export-solution`, `import-solution`, and `hotfix-solution`.
 - `deployment-error-catalog.md`: Catalog of 10 known deployment failure patterns (stale manifest, blocked JS, missing websiteRecordId, auth expiry, empty build output, solution missing dependencies, solution timeout, PAC CLI not installed, environment mismatch, duplicate component). Each entry includes root cause, severity, auto-fix availability, and fix procedure. Used by `diagnose-deployment`.
 - `cicd-pipeline-patterns.md`: Full PAC CLI service principal auth syntax, complete ADO `azure-pipelines.yml` template (build + deploy-dev + deploy-staging + deploy-prod stages with approval gate comments), complete GitHub Actions `deploy.yml` template (environment-scoped jobs with protection rules), commented solution export/import blocks for both platforms, secrets/variables setup tables, and manual steps that cannot be automated. Used by `generate-pipeline`.
 
@@ -215,6 +220,10 @@ Checks `.last-import.json` marker for required fields (`solutionName`, `targetEn
 ### `generate-pipeline/scripts/validate-pipeline.js`
 
 Checks that a pipeline YAML file was generated (`azure-pipelines.yml` or `.github/workflows/deploy.yml`). Verifies required YAML keys (`trigger`/`on`, `stages`/`jobs`, `pac pages upload-code-site` step). Flags unreplaced `{TOKEN}` placeholders. Confirms `docs/ci-cd-setup.md` was created. Gracefully exits 0 when no pipeline files are found.
+
+### `hotfix-solution/scripts/validate-hotfix.js`
+
+Checks `.last-hotfix.json` marker for required fields (`solutionName`, `targetEnvironment`, `exportedAt`, `importedAt`). Blocks if `componentCount` is 0 or missing, or if `components` array is empty. Gracefully exits 0 when no hotfix marker is found (not a hotfix-solution session).
 
 ## Skill Development Guide
 
