@@ -256,3 +256,38 @@ The component {componentId} of type {componentType} is already part of the solut
 | **Error** | Blocks deployment, must be resolved | Present auto-fix if available, else document manual steps |
 | **Warning** | Deployment may succeed but with issues | Present to user, offer guidance |
 | **Info** | Informational, not blocking | Display in summary table only |
+
+---
+
+## Pattern 11: Solution Import Blocked by Attachment Restrictions
+
+**Error pattern** (in async operation `message` / `friendlyMessage`):
+```
+AttachmentBlocked
+The attachment is either not a valid type or is too large. It cannot be uploaded or downloaded.
+ErrorCode: -2147188706 / 80043e09
+Plugin: Microsoft.Crm.ObjectModel.FileStoreService
+Method: InitializeFileBlocksUpload
+```
+
+**Root cause**: The target environment's `blockedattachments` setting includes file types present inside the solution zip (e.g., `.zip`, `.js`, `.css`, `.png`). When `ImportSolutionAsync` processes web file components, it tries to store them as file attachments — and the environment-level blocklist rejects them. This commonly affects environments where security policy blocks broad sets of file types.
+
+**Severity**: Error
+
+**Auto-fix available**: Yes (with explicit user permission)
+
+**Fix procedure**:
+1. Retrieve the current blocked attachments list:
+   ```bash
+   pac env list-settings --name blockedattachments
+   ```
+2. Identify which file types in the solution are on the blocklist (common culprits: `.zip`, `.js`, `.css`)
+3. **Ask explicit user permission**: "The environment blocks certain file types required by this solution. Remove the blocking for `{types}` from the `blockedattachments` setting? This modifies an environment-level security setting and affects all users."
+4. If approved — remove the specific types from the comma-separated list and apply:
+   ```bash
+   pac env update-settings --name blockedattachments --value "{updated-list-without-blocked-types}"
+   ```
+5. Retry `ImportSolutionAsync`
+6. After successful import, optionally restore the blocked types if the customer wants them re-blocked (they'll need to manage the web files differently going forward)
+
+**Note**: If the user declines, document as a manual step: Power Platform Admin Center → Environments → {env} → Settings → Product → Features → Blocked Attachments.
