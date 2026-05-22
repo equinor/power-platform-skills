@@ -1,0 +1,159 @@
+{
+  "pluginName": "model-apps",
+  "reviewDate": "2026-05-22",
+  "reviewer": "GitHub Copilot",
+  "publicationStatus": "defer",
+  "ownership": {
+    "owner": "not assigned",
+    "supportChannel": "not assigned",
+    "upstreamSource": "microsoft/power-platform-skills/plugins/model-apps",
+    "upstreamVersion": "2.1.0"
+  },
+  "scope": {
+    "summary": "Builds and deploys Power Apps model-driven app generative pages, creates Dataverse entities when needed, creates model-driven apps, generates React and Fluent UI code, deploys via PAC CLI, and verifies in browser.",
+    "createsOrModifiesAssets": true,
+    "deploysAssets": true,
+    "deletesAssets": false,
+    "productionInteractionDefault": true
+  },
+  "skillAndScriptSafety": {
+    "skillsReviewed": false,
+    "agentsReviewed": false,
+    "hooksReviewed": false,
+    "scriptsReviewed": false,
+    "bundledScripts": [
+      {
+        "path": "plugins/model-apps/scripts/",
+        "purpose": "Node.js helpers for Dataverse authentication, table creation, column creation, relationship creation, record creation, solution creation, and Playwright MCP launch.",
+        "reviewed": false,
+        "externalCommands": [
+          "az",
+          "pac",
+          "node"
+        ],
+        "networkAccess": true,
+        "secretAccess": true
+      }
+    ],
+    "secretsEmbedded": false,
+    "externalNetworkCalls": [
+      "Dataverse Web API",
+      "Power Apps model-driven app runtime",
+      "Playwright browser targets"
+    ]
+  },
+  "mcp": {
+    "required": true,
+    "servers": [
+      {
+        "name": "playwright",
+        "transport": "stdio",
+        "version": "not pinned in .mcp.json",
+        "purpose": "Browser verification after deployment."
+      }
+    ],
+    "versionsPinned": false,
+    "approvedAccessRequired": true,
+    "productionInteractionBlocked": false
+  },
+  "powerPlatformGovernance": {
+    "supportedZones": [
+      "not-assessed"
+    ],
+    "intendedUsers": [
+      "professional-it-developer",
+      "not-assessed"
+    ],
+    "dataClassificationCeiling": "not-assessed",
+    "confidentialDataSupported": false,
+    "connectors": [
+      {
+        "name": "Dataverse",
+        "category": "service-specific",
+        "zone": "not-assessed",
+        "dlpGroup": "not-assessed",
+        "riskNotes": "Used for entities, records, schema generation, model-driven app pages, and deployment targets."
+      }
+    ],
+    "dlpImpact": "High. Workflow can create Dataverse schema and deploy generated pages to model-driven apps.",
+    "architectureContractRequired": true,
+    "ciRequired": true
+  },
+  "technologyRadar": {
+    "technologies": [
+      {
+        "name": "React",
+        "radarState": "Adopt",
+        "usedFor": "Generated generative page UI.",
+        "source": "equinor/techradar"
+      },
+      {
+        "name": "Fluent UI",
+        "radarState": "unknown",
+        "usedFor": "Generated component library.",
+        "source": "not checked"
+      },
+      {
+        "name": "Model Context Protocol",
+        "radarState": "Adopt",
+        "usedFor": "Playwright MCP browser verification.",
+        "source": "equinor/techradar"
+      },
+      {
+        "name": "Playwright",
+        "radarState": "unknown",
+        "usedFor": "Browser verification.",
+        "source": "not checked"
+      }
+    ],
+    "hasHoldTechnology": false,
+    "hasAssessTechnology": false,
+    "hasUnknownTechnology": true
+  },
+  "designSystem": {
+    "generatesFrontend": true,
+    "edsRequired": true,
+    "edsPackages": [],
+    "exceptions": [
+      "Current generated UI uses Fluent UI V9 rather than EDS. Need to document whether platform constraints require Fluent UI or whether EDS can be used."
+    ]
+  },
+  "publication": {
+    "targetRepository": "equinor/powerplatform recommended, not confirmed",
+    "copilotManifest": false,
+    "claudeManifest": true,
+    "versionsSynchronized": false,
+    "variaCatalogRequired": true,
+    "techDocsRequired": true,
+    "architectureContractLinkRequired": true,
+    "installTested": false,
+    "rollbackDocumented": false
+  },
+  "blockers": [
+    "Internal owner and support channel are not assigned.",
+    "Skills, agents, scripts, and MCP configuration are not reviewed against Equinor guidance.",
+    "Production-system interaction is possible by default through Dataverse schema creation, app creation, deployment, and browser verification workflows.",
+    "Power Platform zone mapping and data classification ceiling are not documented.",
+    "EDS position is unresolved because generated UI currently uses Fluent UI V9.",
+    "Technology Radar status is unknown for Fluent UI and Playwright.",
+    "GitHub Copilot marketplace manifest is missing."
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "reference": "plugins/model-apps/README.md",
+      "summary": "Documents Dataverse entity creation, app creation, React and Fluent UI code generation, deployment, and browser verification."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/model-apps/.mcp.json",
+      "summary": "Registers Playwright stdio MCP."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/model-apps/scripts/",
+      "summary": "Contains Node.js scripts that require security and behavior review before publication."
+    }
+  ],
+  "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists."
+}

@@ -1,0 +1,136 @@
+{
+  "pluginName": "canvas-apps",
+  "reviewDate": "2026-05-22",
+  "reviewer": "GitHub Copilot",
+  "publicationStatus": "defer",
+  "ownership": {
+    "owner": "not assigned",
+    "supportChannel": "not assigned",
+    "upstreamSource": "microsoft/power-platform-skills/plugins/canvas-apps",
+    "upstreamVersion": "2.1.0"
+  },
+  "scope": {
+    "summary": "Creates and edits Power Apps Canvas Apps through the Canvas Authoring MCP server, including app YAML validation, control discovery, API and connector discovery, data source schema discovery, and live coauthoring sync.",
+    "createsOrModifiesAssets": true,
+    "deploysAssets": false,
+    "deletesAssets": false,
+    "productionInteractionDefault": true
+  },
+  "skillAndScriptSafety": {
+    "skillsReviewed": false,
+    "agentsReviewed": false,
+    "hooksReviewed": false,
+    "scriptsReviewed": false,
+    "bundledScripts": [],
+    "secretsEmbedded": false,
+    "externalNetworkCalls": [
+      "NuGet package source",
+      "Power Apps authoring service",
+      "Connector and data source metadata services"
+    ]
+  },
+  "mcp": {
+    "required": true,
+    "servers": [
+      {
+        "name": "canvas-authoring",
+        "transport": "stdio",
+        "version": "prerelease, not pinned in .mcp.json",
+        "purpose": "Power Apps Canvas Authoring MCP server for app creation and coauthoring."
+      }
+    ],
+    "versionsPinned": false,
+    "approvedAccessRequired": true,
+    "productionInteractionBlocked": false
+  },
+  "powerPlatformGovernance": {
+    "supportedZones": [
+      "not-assessed"
+    ],
+    "intendedUsers": [
+      "certified-citizen-developer",
+      "certified-citizen-agent-creator",
+      "not-assessed"
+    ],
+    "dataClassificationCeiling": "not-assessed",
+    "confidentialDataSupported": false,
+    "connectors": [
+      {
+        "name": "Canvas App connectors",
+        "category": "not-assessed",
+        "zone": "not-assessed",
+        "dlpGroup": "not-assessed",
+        "riskNotes": "MCP server can list APIs and data sources and generate app integrations. Connector-specific DLP review is required."
+      }
+    ],
+    "dlpImpact": "High. Canvas apps can use many connectors and the MCP server can discover connector and data source metadata.",
+    "architectureContractRequired": true,
+    "ciRequired": true
+  },
+  "technologyRadar": {
+    "technologies": [
+      {
+        "name": "Model Context Protocol",
+        "radarState": "Adopt",
+        "usedFor": "Canvas Authoring MCP server integration.",
+        "source": "equinor/techradar"
+      },
+      {
+        "name": ".NET",
+        "radarState": "unknown",
+        "usedFor": "Required runtime for dnx and Canvas Authoring MCP server.",
+        "source": "not checked"
+      },
+      {
+        "name": "Power Apps Studio",
+        "radarState": "Adopt",
+        "usedFor": "Canvas app authoring context.",
+        "source": "equinor/techradar"
+      }
+    ],
+    "hasHoldTechnology": false,
+    "hasAssessTechnology": false,
+    "hasUnknownTechnology": true
+  },
+  "designSystem": {
+    "generatesFrontend": true,
+    "edsRequired": false,
+    "edsPackages": [],
+    "exceptions": [
+      "Canvas Apps use platform-native controls rather than React components. EDS should still influence accessibility and design guidance where applicable."
+    ]
+  },
+  "publication": {
+    "targetRepository": "equinor/powerplatform recommended, not confirmed",
+    "copilotManifest": false,
+    "claudeManifest": true,
+    "versionsSynchronized": false,
+    "variaCatalogRequired": true,
+    "techDocsRequired": true,
+    "architectureContractLinkRequired": true,
+    "installTested": false,
+    "rollbackDocumented": false
+  },
+  "blockers": [
+    "Internal owner and support channel are not assigned.",
+    "Skills, agents, and MCP configuration are not reviewed against Equinor guidance.",
+    "MCP server is installed through dnx with prerelease package use and no explicit version pinning.",
+    "Production-system interaction is possible by default through live coauthoring and authoring service access.",
+    "Power Platform zone, certification, connector, and DLP mapping are not documented.",
+    "Technology Radar status is unknown for .NET in this context.",
+    "GitHub Copilot marketplace manifest is missing."
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "reference": "plugins/canvas-apps/README.md",
+      "summary": "Documents Canvas Authoring MCP tools, coauthoring, connector discovery, and security notes."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/canvas-apps/.mcp.json",
+      "summary": "Registers Canvas Authoring MCP through dnx, prerelease package, and NuGet source."
+    }
+  ],
+  "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists."
+}

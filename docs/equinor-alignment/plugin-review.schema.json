@@ -1,0 +1,533 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/equinor/powerplatform/plugin-review.schema.json",
+  "title": "Equinor Power Platform Plugin Review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pluginName",
+    "reviewDate",
+    "reviewer",
+    "publicationStatus",
+    "ownership",
+    "scope",
+    "skillAndScriptSafety",
+    "mcp",
+    "powerPlatformGovernance",
+    "technologyRadar",
+    "designSystem",
+    "publication",
+    "blockers",
+    "evidence"
+  ],
+  "properties": {
+    "pluginName": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,63}$"
+    },
+    "reviewDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "reviewer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "publicationStatus": {
+      "type": "string",
+      "enum": [
+        "not-reviewed",
+        "defer",
+        "controlled-pilot",
+        "ready-for-internal-pilot",
+        "published"
+      ]
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "supportChannel",
+        "upstreamSource",
+        "upstreamVersion"
+      ],
+      "properties": {
+        "owner": {
+          "type": "string"
+        },
+        "supportChannel": {
+          "type": "string"
+        },
+        "upstreamSource": {
+          "type": "string"
+        },
+        "upstreamVersion": {
+          "type": "string"
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "createsOrModifiesAssets",
+        "deploysAssets",
+        "deletesAssets",
+        "productionInteractionDefault"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "createsOrModifiesAssets": {
+          "type": "boolean"
+        },
+        "deploysAssets": {
+          "type": "boolean"
+        },
+        "deletesAssets": {
+          "type": "boolean"
+        },
+        "productionInteractionDefault": {
+          "type": "boolean"
+        }
+      }
+    },
+    "skillAndScriptSafety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "skillsReviewed",
+        "agentsReviewed",
+        "hooksReviewed",
+        "scriptsReviewed",
+        "bundledScripts",
+        "secretsEmbedded",
+        "externalNetworkCalls"
+      ],
+      "properties": {
+        "skillsReviewed": {
+          "type": "boolean"
+        },
+        "agentsReviewed": {
+          "type": "boolean"
+        },
+        "hooksReviewed": {
+          "type": "boolean"
+        },
+        "scriptsReviewed": {
+          "type": "boolean"
+        },
+        "bundledScripts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/scriptReview"
+          }
+        },
+        "secretsEmbedded": {
+          "type": "boolean"
+        },
+        "externalNetworkCalls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "mcp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "servers",
+        "versionsPinned",
+        "approvedAccessRequired",
+        "productionInteractionBlocked"
+      ],
+      "properties": {
+        "required": {
+          "type": "boolean"
+        },
+        "servers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/mcpServer"
+          }
+        },
+        "versionsPinned": {
+          "type": "boolean"
+        },
+        "approvedAccessRequired": {
+          "type": "boolean"
+        },
+        "productionInteractionBlocked": {
+          "type": "boolean"
+        }
+      }
+    },
+    "powerPlatformGovernance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supportedZones",
+        "intendedUsers",
+        "dataClassificationCeiling",
+        "confidentialDataSupported",
+        "connectors",
+        "dlpImpact",
+        "architectureContractRequired",
+        "ciRequired"
+      ],
+      "properties": {
+        "supportedZones": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "green",
+              "yellow",
+              "red",
+                "not-assessed",
+              "not-applicable"
+            ]
+          }
+        },
+        "intendedUsers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "personal-maker",
+              "certified-citizen-developer",
+              "certified-citizen-agent-creator",
+              "professional-it-developer",
+              "platform-team",
+              "not-assessed",
+              "other"
+            ]
+          }
+        },
+        "dataClassificationCeiling": {
+          "type": "string",
+          "enum": [
+            "open",
+            "equinor-internal",
+            "equinor-restricted",
+            "equinor-confidential",
+            "not-assessed"
+          ]
+        },
+        "confidentialDataSupported": {
+          "type": "boolean"
+        },
+        "connectors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/connectorReview"
+          }
+        },
+        "dlpImpact": {
+          "type": "string"
+        },
+        "architectureContractRequired": {
+          "type": "boolean"
+        },
+        "ciRequired": {
+          "type": "boolean"
+        }
+      }
+    },
+    "technologyRadar": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "technologies",
+        "hasHoldTechnology",
+        "hasAssessTechnology",
+        "hasUnknownTechnology"
+      ],
+      "properties": {
+        "technologies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/technologyReview"
+          }
+        },
+        "hasHoldTechnology": {
+          "type": "boolean"
+        },
+        "hasAssessTechnology": {
+          "type": "boolean"
+        },
+        "hasUnknownTechnology": {
+          "type": "boolean"
+        }
+      }
+    },
+    "designSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generatesFrontend",
+        "edsRequired",
+        "edsPackages",
+        "exceptions"
+      ],
+      "properties": {
+        "generatesFrontend": {
+          "type": "boolean"
+        },
+        "edsRequired": {
+          "type": "boolean"
+        },
+        "edsPackages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "targetRepository",
+        "copilotManifest",
+        "claudeManifest",
+        "versionsSynchronized",
+        "variaCatalogRequired",
+        "techDocsRequired",
+        "architectureContractLinkRequired",
+        "installTested",
+        "rollbackDocumented"
+      ],
+      "properties": {
+        "targetRepository": {
+          "type": "string"
+        },
+        "copilotManifest": {
+          "type": "boolean"
+        },
+        "claudeManifest": {
+          "type": "boolean"
+        },
+        "versionsSynchronized": {
+          "type": "boolean"
+        },
+        "variaCatalogRequired": {
+          "type": "boolean"
+        },
+        "techDocsRequired": {
+          "type": "boolean"
+        },
+        "architectureContractLinkRequired": {
+          "type": "boolean"
+        },
+        "installTested": {
+          "type": "boolean"
+        },
+        "rollbackDocumented": {
+          "type": "boolean"
+        }
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidenceItem"
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "$defs": {
+    "scriptReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "purpose",
+        "reviewed",
+        "externalCommands",
+        "networkAccess",
+        "secretAccess"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "purpose": {
+          "type": "string"
+        },
+        "reviewed": {
+          "type": "boolean"
+        },
+        "externalCommands": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "networkAccess": {
+          "type": "boolean"
+        },
+        "secretAccess": {
+          "type": "boolean"
+        }
+      }
+    },
+    "mcpServer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "transport",
+        "version",
+        "purpose"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "transport": {
+          "type": "string",
+          "enum": [
+            "stdio",
+            "http",
+            "sse",
+            "not-assessed"
+          ]
+        },
+        "version": {
+          "type": "string"
+        },
+        "purpose": {
+          "type": "string"
+        }
+      }
+    },
+    "connectorReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "category",
+        "zone",
+        "dlpGroup",
+        "riskNotes"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "service-specific",
+            "technology-or-protocol",
+            "custom",
+            "not-assessed"
+          ]
+        },
+        "zone": {
+          "type": "string",
+          "enum": [
+            "green",
+            "yellow",
+            "red",
+            "not-applicable",
+            "not-assessed"
+          ]
+        },
+        "dlpGroup": {
+          "type": "string",
+          "enum": [
+            "business",
+            "non-business",
+            "blocked",
+            "not-assessed"
+          ]
+        },
+        "riskNotes": {
+          "type": "string"
+        }
+      }
+    },
+    "technologyReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "radarState",
+        "usedFor",
+        "source"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "radarState": {
+          "type": "string",
+          "enum": [
+            "Hold",
+            "Assess",
+            "Trial",
+            "Adopt",
+            "unknown",
+            "not-applicable"
+          ]
+        },
+        "usedFor": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    },
+    "evidenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "reference",
+        "summary"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "file",
+            "command",
+            "manual-review",
+            "external-source"
+          ]
+        },
+        "reference": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

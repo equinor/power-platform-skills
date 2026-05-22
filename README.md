@@ -190,6 +190,7 @@ power-platform-skills/
 
 ## Documentation
 
+- [Equinor Alignment Baseline](docs/equinor-alignment/README.md)
 - [Power Pages Code Sites](https://learn.microsoft.com/en-us/power-pages/configure/create-code-sites)
 - [Power Pages REST API](https://learn.microsoft.com/en-us/rest/api/power-platform/powerpages/websites)
 - [Generative Pages with External Tools](https://learn.microsoft.com/en-us/power-apps/maker/model-driven-apps/generative-page-external-tools)

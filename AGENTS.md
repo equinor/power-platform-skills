@@ -51,6 +51,12 @@ Each plugin follows this structure:
 
 Skills are defined in `SKILL.md` files with YAML frontmatter (name, description, allowed-tools, model, hooks). The `allowed-tools` field must use a **comma-separated list** (e.g., `allowed-tools: Read, Write, Edit, Bash, Glob, Grep`) — not JSON array syntax (`["Read", "Write"]`) or YAML list syntax. Each skill may include validation scripts in a `scripts/` subdirectory, run as Stop hooks when the skill session ends.
 
+## Equinor Alignment Work
+
+When aligning this fork for internal Equinor use, start with [docs/equinor-alignment/README.md](docs/equinor-alignment/README.md). The baseline and review checklist define the governance, Tech Radar, MCP, EDS, Power Platform zone, and publication requirements that must be checked before plugin metadata, skills, scripts, or manifests are promoted internally.
+
+Do not mark a plugin as ready for internal publication until it has a completed review record that conforms to `docs/equinor-alignment/plugin-review.schema.json` and any required Power Platform owner review has been captured.
+
 ## Cross-Plugin Shared Skills
 
 Skills that apply to all plugins live in `shared/skills/<skill-name>/`. The workflow logic is written once in a shared `.md` file, and each plugin has a thin `skills/<skill-name>/SKILL.md` that contains only the YAML frontmatter and a reference to the shared workflow file.

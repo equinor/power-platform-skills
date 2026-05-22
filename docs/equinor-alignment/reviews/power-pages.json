@@ -1,0 +1,196 @@
+{
+  "pluginName": "power-pages",
+  "reviewDate": "2026-05-22",
+  "reviewer": "GitHub Copilot",
+  "publicationStatus": "defer",
+  "ownership": {
+    "owner": "not assigned",
+    "supportChannel": "not assigned",
+    "upstreamSource": "microsoft/power-platform-skills/plugins/power-pages",
+    "upstreamVersion": "1.3.0"
+  },
+  "scope": {
+    "summary": "Creates, tests, activates, and deploys Power Pages code sites; can create Dataverse data models, sample data, web roles, site settings, table permissions, Web API integrations, server logic, and cloud flow integrations.",
+    "createsOrModifiesAssets": true,
+    "deploysAssets": true,
+    "deletesAssets": false,
+    "productionInteractionDefault": true
+  },
+  "skillAndScriptSafety": {
+    "skillsReviewed": false,
+    "agentsReviewed": false,
+    "hooksReviewed": false,
+    "scriptsReviewed": false,
+    "bundledScripts": [
+      {
+        "path": "plugins/power-pages/scripts/",
+        "purpose": "Node.js helpers for Dataverse requests, Power Pages metadata, validation, rendering plans, key vault actions, cache clearing, Playwright MCP launch, and skill tracking.",
+        "reviewed": false,
+        "externalCommands": [
+          "az",
+          "pac",
+          "node"
+        ],
+        "networkAccess": true,
+        "secretAccess": true
+      },
+      {
+        "path": "plugins/power-pages/hooks/",
+        "purpose": "PostToolUse skill validation hooks.",
+        "reviewed": false,
+        "externalCommands": [
+          "node"
+        ],
+        "networkAccess": false,
+        "secretAccess": false
+      }
+    ],
+    "secretsEmbedded": false,
+    "externalNetworkCalls": [
+      "Dataverse Web API",
+      "Power Pages runtime",
+      "Azure Key Vault",
+      "Microsoft Learn MCP",
+      "Playwright browser targets"
+    ]
+  },
+  "mcp": {
+    "required": true,
+    "servers": [
+      {
+        "name": "playwright",
+        "transport": "stdio",
+        "version": "not pinned in .mcp.json",
+        "purpose": "Browser-based site testing and verification."
+      },
+      {
+        "name": "microsoft-learn",
+        "transport": "http",
+        "version": "remote service",
+        "purpose": "Fetch Microsoft Learn documentation for server logic and platform workflows."
+      }
+    ],
+    "versionsPinned": false,
+    "approvedAccessRequired": true,
+    "productionInteractionBlocked": false
+  },
+  "powerPlatformGovernance": {
+    "supportedZones": [
+      "not-assessed"
+    ],
+    "intendedUsers": [
+      "professional-it-developer",
+      "not-assessed"
+    ],
+    "dataClassificationCeiling": "not-assessed",
+    "confidentialDataSupported": false,
+    "connectors": [
+      {
+        "name": "Dataverse",
+        "category": "service-specific",
+        "zone": "not-assessed",
+        "dlpGroup": "not-assessed",
+        "riskNotes": "Used for tables, metadata, Web API integration, permissions, site settings, and sample data."
+      },
+      {
+        "name": "Power Automate cloud flows",
+        "category": "service-specific",
+        "zone": "not-assessed",
+        "dlpGroup": "not-assessed",
+        "riskNotes": "Cloud flow integration skill can register and invoke flows from Power Pages."
+      }
+    ],
+    "dlpImpact": "High. Workflows can create Dataverse assets, configure web roles, invoke cloud flows, and expose Power Pages endpoints. Requires zone-specific DLP and external exposure review.",
+    "architectureContractRequired": true,
+    "ciRequired": true
+  },
+  "technologyRadar": {
+    "technologies": [
+      {
+        "name": "React",
+        "radarState": "Adopt",
+        "usedFor": "Generated code site framework option.",
+        "source": "equinor/techradar"
+      },
+      {
+        "name": "Angular",
+        "radarState": "unknown",
+        "usedFor": "Generated code site framework option.",
+        "source": "not checked"
+      },
+      {
+        "name": "Vue",
+        "radarState": "unknown",
+        "usedFor": "Generated code site framework option.",
+        "source": "not checked"
+      },
+      {
+        "name": "Astro",
+        "radarState": "unknown",
+        "usedFor": "Generated code site framework option.",
+        "source": "not checked"
+      },
+      {
+        "name": "Model Context Protocol",
+        "radarState": "Adopt",
+        "usedFor": "Playwright and Microsoft Learn MCP integration.",
+        "source": "equinor/techradar"
+      },
+      {
+        "name": "Playwright",
+        "radarState": "unknown",
+        "usedFor": "Browser testing through MCP.",
+        "source": "not checked"
+      }
+    ],
+    "hasHoldTechnology": false,
+    "hasAssessTechnology": false,
+    "hasUnknownTechnology": true
+  },
+  "designSystem": {
+    "generatesFrontend": true,
+    "edsRequired": true,
+    "edsPackages": [],
+    "exceptions": [
+      "Current workflow supports React, Angular, Vue, and Astro with custom generated styling. EDS usage has not been added or reviewed."
+    ]
+  },
+  "publication": {
+    "targetRepository": "equinor/powerplatform recommended, not confirmed",
+    "copilotManifest": false,
+    "claudeManifest": true,
+    "versionsSynchronized": false,
+    "variaCatalogRequired": true,
+    "techDocsRequired": true,
+    "architectureContractLinkRequired": true,
+    "installTested": false,
+    "rollbackDocumented": false
+  },
+  "blockers": [
+    "Internal owner and support channel are not assigned.",
+    "Skills, agents, hooks, scripts, and MCP configuration are not reviewed against Equinor guidance.",
+    "Production-system interaction is possible by default through deploy, activate, Dataverse, Web API, permissions, and cloud flow workflows.",
+    "Power Platform zone mapping and data classification ceiling are not documented.",
+    "EDS guidance is not integrated into generated frontend workflows.",
+    "Technology Radar status is unknown for several framework and testing dependencies.",
+    "GitHub Copilot marketplace manifest is missing."
+  ],
+  "evidence": [
+    {
+      "type": "file",
+      "reference": "plugins/power-pages/README.md",
+      "summary": "Documents site creation, deployment, activation, Dataverse data modeling, Web API integration, server logic, cloud flow, and testing workflows."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/power-pages/.mcp.json",
+      "summary": "Registers Playwright stdio MCP and Microsoft Learn HTTP MCP."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/power-pages/scripts/",
+      "summary": "Contains many Node.js scripts that require security and behavior review before publication."
+    }
+  ],
+  "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists."
+}
