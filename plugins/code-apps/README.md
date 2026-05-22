@@ -17,7 +17,7 @@ Open Claude Code or GitHub Copilot in any folder and run the following commands:
 
 1. Add the marketplace:
    ```
-   /plugin marketplace add microsoft/power-platform-skills
+   /plugin marketplace add hjaf/power-platform-skills
    ```
 
 2. Install the plugin:

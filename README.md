@@ -15,13 +15,13 @@ Run the installer to set up all plugins with auto-update enabled:
 **Windows (PowerShell)**:
 
 ```powershell
-iwr https://raw.githubusercontent.com/microsoft/power-platform-skills/main/scripts/install.js -OutFile install.js; node install.js; del install.js
+iwr https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scripts/install.js -OutFile install.js; node install.js; del install.js
 ```
 
 **Mac OS/Linux/Windows (cmd)**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/microsoft/power-platform-skills/main/scripts/install.js | node
+curl -fsSL https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scripts/install.js | node
 ```
 
 The installer automatically:
@@ -38,7 +38,7 @@ If you prefer to install manually, run these commands inside a Claude Code or Gi
 1. Add the marketplace
 
     ```bash
-    /plugin marketplace add microsoft/power-platform-skills
+    /plugin marketplace add hjaf/power-platform-skills
     ```
 
 2. Install the desired plugin

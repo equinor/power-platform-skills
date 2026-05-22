@@ -7,7 +7,9 @@
  *
  * Usage:
  *   node scripts/install.js                                              (from local clone)
- *   curl -fsSL https://raw.githubusercontent.com/microsoft/power-platform-skills/main/scripts/install.js | node
+ *   curl -fsSL https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scripts/install.js | node
+ *
+ * TODO: Update URL to equinor/power-platform-skills when the repo is transferred.
  */
 
 const { execSync } = require("child_process");
@@ -17,7 +19,8 @@ const os = require("os");
 const https = require("https");
 
 // ── Config ────────────────────────────────────────────────────
-const REPO = "microsoft/power-platform-skills";
+// TODO: Update to "equinor/power-platform-skills" when the repo is transferred to the Equinor org.
+const REPO = "hjaf/power-platform-skills";
 const MARKETPLACE_NAME = "power-platform-skills";
 const GITHUB_RAW = `https://raw.githubusercontent.com/${REPO}/main`;
 const HOME = os.homedir();

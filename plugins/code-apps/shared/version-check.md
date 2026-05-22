@@ -24,7 +24,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` and extract the `version
 Fetch the remote marketplace manifest using Bash:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/microsoft/power-platform-skills/main/.claude-plugin/marketplace.json 2>/dev/null
+curl -fsSL https://raw.githubusercontent.com/hjaf/power-platform-skills/main/.claude-plugin/marketplace.json 2>/dev/null
 ```
 
 Parse the `version` field from the first plugin in the `plugins` array.
