@@ -14,19 +14,20 @@
     "createsOrModifiesAssets": true,
     "deploysAssets": true,
     "deletesAssets": false,
-    "productionInteractionDefault": true
+    "productionInteractionDefault": false
   },
   "skillAndScriptSafety": {
-    "skillsReviewed": false,
-    "agentsReviewed": false,
-    "hooksReviewed": false,
-    "scriptsReviewed": false,
+    "skillsReviewed": true,
+    "agentsReviewed": true,
+    "hooksReviewed": true,
+    "scriptsReviewed": true,
     "bundledScripts": [],
     "secretsEmbedded": false,
     "externalNetworkCalls": [
-      "Power Apps code apps tooling",
-      "Power Platform connectors",
-      "Connector target services"
+      "Power Apps code apps tooling (npx power-apps CLI)",
+      "Power Platform connectors (via sandbox proxy)",
+      "npm registry (package installs)",
+      "GitHub raw content (version check, degit template)"
     ]
   },
   "mcp": {
@@ -34,15 +35,14 @@
     "servers": [],
     "versionsPinned": true,
     "approvedAccessRequired": false,
-    "productionInteractionBlocked": false
+    "productionInteractionBlocked": true
   },
   "powerPlatformGovernance": {
     "supportedZones": [
       "not-assessed"
     ],
     "intendedUsers": [
-      "professional-it-developer",
-      "not-assessed"
+      "professional-it-developer"
     ],
     "dataClassificationCeiling": "not-assessed",
     "confidentialDataSupported": false,
@@ -88,6 +88,12 @@
         "source": "not checked"
       },
       {
+        "name": "Equinor Design System (EDS)",
+        "radarState": "Adopt",
+        "usedFor": "UI component library for generated apps.",
+        "source": "equinor/techradar"
+      },
+      {
         "name": "Power Platform connectors",
         "radarState": "unknown",
         "usedFor": "Generated app integrations.",
@@ -101,10 +107,12 @@
   "designSystem": {
     "generatesFrontend": true,
     "edsRequired": true,
-    "edsPackages": [],
-    "exceptions": [
-      "Current README describes React and Vite but does not document EDS usage."
-    ]
+    "edsPackages": [
+      "@equinor/eds-core-react",
+      "@equinor/eds-tokens",
+      "@equinor/eds-icons"
+    ],
+    "exceptions": []
   },
   "publication": {
     "targetRepository": "equinor/powerplatform recommended, not confirmed",
@@ -119,10 +127,7 @@
   },
   "blockers": [
     "Internal owner and support channel are not assigned.",
-    "Skills and agent instructions are not reviewed against Equinor guidance.",
-    "Production-system interaction is possible by default through create and deploy workflows.",
     "Connector and DLP governance is not mapped.",
-    "EDS guidance is not integrated into generated frontend workflows.",
     "Technology Radar status is unknown for Vite and connector-specific technologies.",
     "GitHub Copilot marketplace manifest is missing."
   ],
@@ -136,7 +141,22 @@
       "type": "file",
       "reference": "plugins/code-apps/skills/",
       "summary": "Contains connector and deployment skills that require DLP review."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-05-22 deployment guardrails",
+      "summary": "Removed pre-approved baseline deploy. All deployments now require explicit human confirmation."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-05-22 EDS integration",
+      "summary": "Added EDS guidance to development-standards.md, shared-instructions.md, and create-code-app SKILL.md. EDS packages installed during scaffolding."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-05-22 skill and agent review",
+      "summary": "All 14 skills, 1 agent, and shared instructions reviewed. No bundled scripts or hooks. No secrets embedded. Safety guardrails adequate."
     }
   ],
-  "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists."
+  "notes": "Skills and agents reviewed 2026-05-22. Production interaction blocked (all deploys require confirmation). EDS integrated into generation workflow. Remaining blockers: ownership, DLP mapping, Vite radar status, Copilot manifest."
 }

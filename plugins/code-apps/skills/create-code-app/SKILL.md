@@ -95,6 +95,12 @@ npm install
 
 Verify: `package.json` exists, `node_modules/` created.
 
+**Install EDS packages** (Equinor Design System):
+
+```bash
+npm install @equinor/eds-core-react @equinor/eds-tokens @equinor/eds-icons
+```
+
 ### Step 5: Initialize
 
 ```bash
@@ -117,9 +123,9 @@ See [preferred-environment.md](${CLAUDE_PLUGIN_ROOT}/shared/preferred-environmen
 
 ### Step 6: Build & Deploy (baseline)
 
-> **Pre-approved**: This baseline deploy is part of the scaffold flow and does not require a separate confirmation prompt.
-
 Build and deploy the bare template to verify the pipeline works before adding data sources.
+
+**Confirm before deploying:** Ask the user: _"Ready to deploy the baseline app to [environment name]? This will create the live app."_ Wait for explicit confirmation before running `npx power-apps push`.
 
 ```bash
 npm run build
@@ -168,9 +174,9 @@ Each `/add-*` skill runs `npm run build` to catch errors. Do NOT deploy yet.
 **This is the core step.** Build the actual app features described in the plan from Step 3.
 
 1. **Review generated services**: Use `Grep` to find methods in generated service files (they can be very large -- see [connector-reference.md](${CLAUDE_PLUGIN_ROOT}/shared/connector-reference.md#inspecting-large-generated-files)). Do NOT read entire generated files.
-2. **Build components**: Create React components for each screen/feature in the plan
+2. **Build components**: Create React components for each screen/feature in the plan using EDS components (`@equinor/eds-core-react`) where available
 3. **Connect data**: Wire components to generated services (use `*Service.getAll()`, `*Service.create()`, etc.)
-4. **Apply theme**: Use the user's theme preference (default: dark theme per development standards)
+4. **Apply theme**: Use EDS tokens for theming (see development standards). Respect user overrides if specified.
 5. **Iterate with user**: Show progress, ask for feedback, adjust as needed
 
 **Key rules:**

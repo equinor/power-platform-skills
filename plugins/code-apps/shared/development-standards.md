@@ -2,9 +2,24 @@
 
 Standards that apply to all Power Apps code app skills.
 
+## Equinor Design System (EDS)
+
+For Equinor internal use, generated React UI **must** prefer the Equinor Design System:
+
+- **Packages**: Use `@equinor/eds-core-react` for components, `@equinor/eds-tokens` for design tokens (spacing, typography, color), and `@equinor/eds-icons` for iconography.
+- **Install**: `npm install @equinor/eds-core-react @equinor/eds-tokens @equinor/eds-icons`
+- **Theme**: Use EDS tokens for theming instead of hardcoded colors. EDS supports both light and dark modes via its token system.
+- **Components**: Prefer EDS components (`Button`, `TextField`, `Table`, `Dialog`, `TopBar`, `SideSheet`, etc.) over custom or third-party UI components.
+- **Typography**: Use EDS typography tokens and the `Typography` component rather than raw HTML headings or custom font styles.
+- **Spacing and layout**: Use EDS spacing tokens (`spacings.comfortable`, `spacings.compact`) for consistent layout.
+- **Accessibility**: EDS components are built with WCAG 2.1 AA compliance. Do not override accessibility attributes.
+- **Reference**: [EDS Storybook](https://storybook.eds.equinor.com/) for component API and usage examples.
+
+When the user explicitly requests Fluent UI, Material UI, or another design system, respect their choice but inform them that EDS is the Equinor standard for internal apps.
+
 ## Theme
 
-- Default to dark theme (`backgroundColor: '#1e1e1e'`, `color: '#fff'`)
+- Default to EDS token-based theming (light mode unless user specifies dark)
 - User can override theme preference
 
 ## Node.js
