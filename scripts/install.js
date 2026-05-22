@@ -549,7 +549,9 @@ async function main() {
   console.log("");
 }
 
-main().catch((err) => {
-  fail(`Installation failed: ${err.message}`);
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    fail(`Installation failed: ${err.message}`);
+    process.exit(1);
+  });
