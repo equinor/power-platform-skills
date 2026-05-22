@@ -1,0 +1,21 @@
+{
+  "name": "equinor-alignment",
+  "version": "0.1.0",
+  "description": "Review Power Platform plugins against Equinor governance, Tech Radar, MCP, EDS, and internal publication requirements.",
+  "author": {
+    "name": "Equinor"
+  },
+  "homepage": "https://github.com/hjaf/power-platform-skills/tree/main/docs/equinor-alignment",
+  "repository": "https://github.com/hjaf/power-platform-skills",
+  "license": "MIT",
+  "keywords": [
+    "equinor",
+    "alignment",
+    "power-platform",
+    "governance",
+    "technology-radar",
+    "eds",
+    "plugin-review",
+    "upstream-sync"
+  ]
+}

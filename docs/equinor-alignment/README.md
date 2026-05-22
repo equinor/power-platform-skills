@@ -8,6 +8,12 @@ Start here:
 - [Plugin review checklist](plugin-review-checklist.md): human review questions and outcome rules for plugin readiness.
 - [Plugin review schema](plugin-review.schema.json): JSON schema for machine-readable plugin review records.
 
+The Wave 0 reviewer workflow lives in `plugins/equinor-alignment/` and includes:
+
+- `equinor-plugin-reviewer`, an agent for plugin review and upstream sync facilitation.
+- `review-plugin`, a skill for applying this checklist to a target plugin.
+- `sync-upstream`, a skill for inspecting and selectively synchronizing updates from `microsoft/power-platform-skills`.
+
 Initial review records are stored in [reviews/](reviews/). They are intentionally marked `defer` until detailed plugin owner, script, MCP, DLP, Tech Radar, EDS, and publication evidence exists.
 
 Validate review records with:
@@ -26,4 +32,4 @@ The first implementation slice establishes the review baseline only. No plugin i
 2. Add shared Equinor references for governance, Tech Radar, EDS, MCP, and publication readiness.
 3. Update plugin metadata and manifests for the internal marketplace pattern.
 4. Add validation scripts for manifest parity, naming, review records, and Tech Radar checks.
-5. Package the repeatable alignment workflow as a Wave 0 agent plugin or project skill.
+5. Test the Wave 0 alignment plugin locally, then use it to review `code-apps-preview` first.
