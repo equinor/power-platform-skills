@@ -16,16 +16,22 @@ This repository is a **plugin marketplace** containing agent plugins for Power P
 For team use, install skills and agents into your project's `.github/` directory so all contributors benefit:
 
 ```bash
-node scripts/install.js --scope project
+# Install a specific plugin (recommended)
+node scripts/install.js --scope project --plugin code-apps-preview
+
+# Install multiple plugins
+node scripts/install.js --scope project --plugin power-pages,code-apps-preview
 ```
 
-This copies agent definitions into `.github/agents/` and instructions into `.github/instructions/`, following the [GitHub Copilot customization convention](https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot). Commit these files to share with your team.
+This copies agent definitions into `.github/agents/`, instructions into `.github/instructions/`, and skills into `.github/skills/`, following the [GitHub Copilot customization convention](https://docs.github.com/en/copilot/customizing-copilot). Commit these files to share with your team.
 
 Or run without cloning:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scripts/install.js | node - --scope project
+curl -fsSL https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scripts/install.js | node - --scope project --plugin code-apps-preview
 ```
+
+Available plugins: `power-pages`, `model-apps`, `mcp-apps`, `canvas-apps`, `code-apps-preview`, `equinor-alignment`
 
 ### Claude Code — User-Scoped
 
@@ -79,14 +85,14 @@ Inside a Claude Code session:
 
 | Scope | Platform | Location |
 |-------|----------|----------|
-| `project` | GitHub Copilot (VS Code) | `.github/agents/`, `.github/instructions/` |
+| `project` | GitHub Copilot (VS Code) | `.github/agents/`, `.github/instructions/`, `.github/skills/` |
 | `user` (default) | Claude Code | `~/.claude/plugins/` |
 
 The marketplace registry (Claude Code) is stored at `~/.claude/plugins/known_marketplaces.json`.
 
 ### Uninstall
 
-**GitHub Copilot (project-scoped):** Delete the installed files from `.github/agents/` and `.github/instructions/`.
+**GitHub Copilot (project-scoped):** Delete the installed files from `.github/agents/`, `.github/instructions/`, and `.github/skills/`.
 
 **Claude Code (user-scoped):**
 

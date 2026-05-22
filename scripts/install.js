@@ -29,7 +29,9 @@ const HOME = os.homedir();
 // ── CLI arguments ─────────────────────────────────────────────
 // --scope user    Install for the current user via Claude Code CLI (~/.claude/plugins/)
 // --scope project Install into the current project's .github/ directory
-//                 (GitHub Copilot convention: agents/, instructions/)
+//                 (GitHub Copilot convention: agents/, instructions/, skills/)
+// --plugin <name> Install only the specified plugin(s). Can be repeated or comma-separated.
+//                 If omitted, installs all plugins from the marketplace.
 const args = process.argv.slice(2);
 const scopeIdx = args.indexOf("--scope");
 const SCOPE = scopeIdx !== -1 && args[scopeIdx + 1] ? args[scopeIdx + 1] : "user";
@@ -39,16 +41,35 @@ if (!["user", "project"].includes(SCOPE)) {
   process.exit(1);
 }
 
+// Collect --plugin flags (supports multiple: --plugin code-apps --plugin power-pages)
+// Also supports comma-separated: --plugin code-apps,power-pages
+const SELECTED_PLUGINS = [];
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === "--plugin" && args[i + 1]) {
+    const val = args[i + 1];
+    SELECTED_PLUGINS.push(...val.split(",").map((s) => s.trim()).filter(Boolean));
+    i++; // skip the value
+  }
+}
+
 if (args.includes("--help") || args.includes("-h")) {
-  console.log(`Usage: node scripts/install.js [--scope user|project]
+  console.log(`Usage: node scripts/install.js [--scope user|project] [--plugin <name>]
 
 Options:
   --scope user      Install plugins for the current user via Claude Code CLI (default)
                     Location: ~/.claude/plugins/
-  --scope project   Install agents and instructions into the current project
-                    Location: .github/agents/, .github/instructions/
-                    Convention: https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot
+  --scope project   Install agents, instructions, and skills into the current project
+                    Location: .github/agents/, .github/instructions/, .github/skills/
+                    Convention: https://docs.github.com/en/copilot/customizing-copilot
+  --plugin <name>   Install only the specified plugin(s). Can be used multiple times
+                    or comma-separated: --plugin code-apps,power-pages
+                    If omitted, installs ALL plugins (not recommended for --scope project).
   --help, -h        Show this help message
+
+Examples:
+  node scripts/install.js --scope project --plugin code-apps
+  node scripts/install.js --scope project --plugin power-pages,model-apps
+  curl -fsSL https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scripts/install.js | node - --scope project --plugin code-apps
 
 Docs:
   Claude Code plugins: https://code.claude.com/docs/en/plugins
@@ -223,67 +244,92 @@ function installClaude(plugins) {
 }
 
 // ── GitHub Copilot project install (.github/ convention) ──────
-async function installProjectScoped(repoRoot, plugins) {
+async function installProjectScoped(repoRoot, plugins, pluginSourceMap) {
   header("GitHub Copilot (project-scoped)");
 
   info("Installing into .github/ (GitHub Copilot convention)");
-  info("Docs: https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot");
+  info("Structure: .github/agents/, .github/instructions/, .github/skills/");
 
   const targetGithub = path.join(process.cwd(), ".github");
   const targetAgents = path.join(targetGithub, "agents");
   const targetInstructions = path.join(targetGithub, "instructions");
+  const targetSkills = path.join(targetGithub, "skills");
 
   // Ensure directories exist
   fs.mkdirSync(targetAgents, { recursive: true });
   fs.mkdirSync(targetInstructions, { recursive: true });
+  fs.mkdirSync(targetSkills, { recursive: true });
 
   let agentCount = 0;
   let instructionCount = 0;
+  let skillCount = 0;
+
+  // Helper: recursively copy a directory
+  function copyDirRecursive(src, dest) {
+    fs.mkdirSync(dest, { recursive: true });
+    const entries = fs.readdirSync(src, { withFileTypes: true });
+    for (const entry of entries) {
+      const srcPath = path.join(src, entry.name);
+      const destPath = path.join(dest, entry.name);
+      if (entry.isDirectory()) {
+        copyDirRecursive(srcPath, destPath);
+      } else {
+        fs.copyFileSync(srcPath, destPath);
+      }
+    }
+  }
 
   if (repoRoot) {
     // ── Local mode: copy from disk ──
     const pluginsDir = path.join(repoRoot, "plugins");
 
-    if (fs.existsSync(pluginsDir)) {
-      const pluginDirs = fs.readdirSync(pluginsDir, { withFileTypes: true })
-        .filter((d) => d.isDirectory());
+    for (const pluginName of plugins) {
+      // Resolve directory name from manifest source path
+      const dirName = pluginSourceMap[pluginName] || pluginName;
+      const pluginPath = path.join(pluginsDir, dirName);
+      if (!fs.existsSync(pluginPath)) {
+        warn(`Plugin directory not found: ${dirName} (plugin: ${pluginName})`);
+        continue;
+      }
 
-      for (const pluginDir of pluginDirs) {
-        const pluginPath = path.join(pluginsDir, pluginDir.name);
-        const agentsPath = path.join(pluginPath, "agents");
-
-        // Copy agent .md files as .agent.md
-        if (fs.existsSync(agentsPath)) {
-          const agentFiles = fs.readdirSync(agentsPath).filter((f) => f.endsWith(".md"));
-          for (const file of agentFiles) {
-            const targetName = file.endsWith(".agent.md") ? file : file.replace(/\.md$/, ".agent.md");
-            const dest = path.join(targetAgents, targetName);
-            fs.copyFileSync(path.join(agentsPath, file), dest);
-            agentCount++;
-          }
-        }
-
-        // Create a plugin instruction file from AGENTS.md if present
-        const agentsMd = path.join(pluginPath, "AGENTS.md");
-        if (fs.existsSync(agentsMd)) {
-          const instructionFile = path.join(targetInstructions, `${pluginDir.name}.instructions.md`);
-          const content = fs.readFileSync(agentsMd, "utf8");
-          const withFrontmatter = `---\napplyTo: "**"\n---\n\n${content}`;
-          fs.writeFileSync(instructionFile, withFrontmatter);
-          instructionCount++;
+      // 1. Copy agent .md files as .agent.md (namespaced with plugin prefix)
+      const agentsPath = path.join(pluginPath, "agents");
+      if (fs.existsSync(agentsPath)) {
+        const agentFiles = fs.readdirSync(agentsPath).filter((f) => f.endsWith(".md"));
+        for (const file of agentFiles) {
+          // Skip non-agent assets (e.g. assets/ subdirectory)
+          const filePath = path.join(agentsPath, file);
+          if (!fs.statSync(filePath).isFile()) continue;
+          const targetName = file.endsWith(".agent.md") ? file : file.replace(/\.md$/, ".agent.md");
+          fs.copyFileSync(filePath, path.join(targetAgents, targetName));
+          agentCount++;
         }
       }
-    }
 
-    // Copy repo-level .github/agents/ if present in source
-    const sourceAgents = path.join(repoRoot, ".github", "agents");
-    if (fs.existsSync(sourceAgents)) {
-      const files = fs.readdirSync(sourceAgents).filter((f) => f.endsWith(".md"));
-      for (const file of files) {
-        const dest = path.join(targetAgents, file);
-        if (!fs.existsSync(dest)) {
-          fs.copyFileSync(path.join(sourceAgents, file), dest);
-          agentCount++;
+      // 2. Create instruction file from AGENTS.md
+      const agentsMd = path.join(pluginPath, "AGENTS.md");
+      if (fs.existsSync(agentsMd)) {
+        const instructionFile = path.join(targetInstructions, `${pluginName}.instructions.md`);
+        const content = fs.readFileSync(agentsMd, "utf8");
+        const withFrontmatter = `---\napplyTo: "**"\ndescription: "${pluginName} plugin instructions"\n---\n\n${content}`;
+        fs.writeFileSync(instructionFile, withFrontmatter);
+        instructionCount++;
+      }
+
+      // 3. Copy skills (each skill is a subdirectory with SKILL.md + references/)
+      const skillsPath = path.join(pluginPath, "skills");
+      if (fs.existsSync(skillsPath)) {
+        const skillDirs = fs.readdirSync(skillsPath, { withFileTypes: true })
+          .filter((d) => d.isDirectory());
+
+        for (const skillDir of skillDirs) {
+          const srcSkill = path.join(skillsPath, skillDir.name);
+          const skillMd = path.join(srcSkill, "SKILL.md");
+          if (!fs.existsSync(skillMd)) continue; // Skip dirs without SKILL.md
+
+          const destSkill = path.join(targetSkills, skillDir.name);
+          copyDirRecursive(srcSkill, destSkill);
+          skillCount++;
         }
       }
     }
@@ -292,10 +338,29 @@ async function installProjectScoped(repoRoot, plugins) {
     info("No local clone found — fetching plugin files from GitHub...");
     const GITHUB_API = `https://api.github.com/repos/${REPO}/contents`;
 
+    // Helper: recursively fetch a directory from GitHub API
+    async function fetchDirRecursive(apiPath, destDir) {
+      const json = await httpsGet(`${GITHUB_API}/${apiPath}`);
+      const entries = JSON.parse(json);
+      fs.mkdirSync(destDir, { recursive: true });
+      for (const entry of entries) {
+        const destPath = path.join(destDir, entry.name);
+        if (entry.type === "dir") {
+          await fetchDirRecursive(entry.path, destPath);
+        } else if (entry.type === "file") {
+          const content = await httpsGet(entry.download_url);
+          fs.writeFileSync(destPath, content);
+        }
+      }
+    }
+
     for (const pluginName of plugins) {
-      // Fetch agent files
+      // Resolve directory name from manifest source path
+      const dirName = pluginSourceMap[pluginName] || pluginName;
+
+      // 1. Fetch agent files
       try {
-        const agentsJson = await httpsGet(`${GITHUB_API}/plugins/${pluginName}/agents`);
+        const agentsJson = await httpsGet(`${GITHUB_API}/plugins/${dirName}/agents`);
         const agentFiles = JSON.parse(agentsJson).filter(
           (f) => f.type === "file" && f.name.endsWith(".md")
         );
@@ -308,45 +373,41 @@ async function installProjectScoped(repoRoot, plugins) {
           agentCount++;
         }
       } catch {
-        // Plugin may not have an agents/ directory — that's fine
+        // Plugin may not have an agents/ directory
       }
 
-      // Fetch AGENTS.md for instructions
+      // 2. Fetch AGENTS.md for instructions
       try {
-        const content = await httpsGet(`${GITHUB_RAW}/plugins/${pluginName}/AGENTS.md`);
+        const content = await httpsGet(`${GITHUB_RAW}/plugins/${dirName}/AGENTS.md`);
         const instructionFile = path.join(targetInstructions, `${pluginName}.instructions.md`);
-        const withFrontmatter = `---\napplyTo: "**"\n---\n\n${content}`;
+        const withFrontmatter = `---\napplyTo: "**"\ndescription: "${pluginName} plugin instructions"\n---\n\n${content}`;
         fs.writeFileSync(instructionFile, withFrontmatter);
         instructionCount++;
       } catch {
-        // No AGENTS.md for this plugin — skip
+        // No AGENTS.md for this plugin
       }
-    }
 
-    // Fetch repo-level .github/agents/ if any
-    try {
-      const repoAgentsJson = await httpsGet(`${GITHUB_API}/.github/agents`);
-      const repoAgentFiles = JSON.parse(repoAgentsJson).filter(
-        (f) => f.type === "file" && f.name.endsWith(".md")
-      );
-      for (const file of repoAgentFiles) {
-        const dest = path.join(targetAgents, file.name);
-        if (!fs.existsSync(dest)) {
-          const content = await httpsGet(file.download_url);
-          fs.writeFileSync(dest, content);
-          agentCount++;
+      // 3. Fetch skills
+      try {
+        const skillsJson = await httpsGet(`${GITHUB_API}/plugins/${dirName}/skills`);
+        const skillDirs = JSON.parse(skillsJson).filter((f) => f.type === "dir");
+        for (const skillDir of skillDirs) {
+          const destSkill = path.join(targetSkills, skillDir.name);
+          await fetchDirRecursive(`plugins/${dirName}/skills/${skillDir.name}`, destSkill);
+          skillCount++;
         }
+      } catch {
+        // Plugin may not have skills/
       }
-    } catch {
-      // No repo-level agents — fine
     }
   }
 
-  ok(`${agentCount} agent file(s) installed to .github/agents/`);
-  ok(`${instructionCount} instruction file(s) installed to .github/instructions/`);
+  ok(`${agentCount} agent file(s) → .github/agents/`);
+  ok(`${instructionCount} instruction file(s) → .github/instructions/`);
+  ok(`${skillCount} skill(s) → .github/skills/`);
   console.log("");
-  info("Commit these files to share with your team.");
-  info("VS Code with GitHub Copilot will pick them up automatically.");
+  info("Commit .github/ to share with your team.");
+  info("VS Code with GitHub Copilot will pick these up automatically.");
 }
 
 // ── Main ──────────────────────────────────────────────────────
@@ -495,21 +556,47 @@ async function main() {
   header("Reading marketplace");
 
   const { manifest, repoRoot } = await loadMarketplace();
-  const plugins = manifest.plugins.map((p) => p.name);
+  const allPlugins = manifest.plugins.map((p) => p.name);
+
+  // Build a lookup: plugin name → source directory name (from manifest source path)
+  const pluginSourceMap = {};
+  for (const p of manifest.plugins) {
+    // source is like "./plugins/code-apps" — extract the last segment
+    const dirName = path.basename(p.source);
+    pluginSourceMap[p.name] = dirName;
+  }
+
+  // Filter by --plugin flag if specified
+  let plugins;
+  if (SELECTED_PLUGINS.length > 0) {
+    const unknown = SELECTED_PLUGINS.filter((p) => !allPlugins.includes(p));
+    if (unknown.length > 0) {
+      fail(`Unknown plugin(s): ${unknown.join(", ")}`);
+      info(`Available: ${allPlugins.join(", ")}`);
+      process.exit(1);
+    }
+    plugins = SELECTED_PLUGINS;
+  } else {
+    plugins = allPlugins;
+    if (SCOPE === "project" && plugins.length > 1) {
+      warn("No --plugin specified — installing ALL plugins.");
+      info("Tip: use --plugin <name> to install only what you need.");
+      info(`Available: ${allPlugins.join(", ")}`);
+    }
+  }
 
   console.log(`  Marketplace : ${manifest.name}`);
-  console.log("  Plugins     :");
-  for (const p of plugins) console.log(`    - ${p}`);
+  console.log(`  Installing  : ${plugins.join(", ")}`);
 
   if (plugins.length === 0) {
-    warn("No plugins found in the marketplace.");
+    warn("No plugins to install.");
     process.exit(0);
   }
 
   // ── Install ────────────────────────────────────────────────
   if (SCOPE === "project") {
     // Project-scoped: copy into .github/ (GitHub Copilot convention)
-    await installProjectScoped(repoRoot, plugins);
+    await installProjectScoped(repoRoot, plugins, pluginSourceMap);
   } else {
     // User-scoped: use Claude Code CLI
     if (tools.includes("claude")) {
@@ -525,11 +612,18 @@ async function main() {
   header("Done!");
   console.log("");
   if (SCOPE === "project") {
-    console.log("  Installed into .github/ (GitHub Copilot convention).");
-    console.log("  Commit .github/agents/ and .github/instructions/ to share with your team.");
+    console.log(`  Installed plugin(s): ${plugins.join(", ")}`);
+    console.log("  Location: .github/ (GitHub Copilot convention)");
+    console.log("");
+    console.log("  Structure:");
+    console.log("    .github/agents/          Agent personas (.agent.md)");
+    console.log("    .github/instructions/    Plugin instructions (.instructions.md)");
+    console.log("    .github/skills/          Skills with workflows (SKILL.md)");
+    console.log("");
+    console.log("  Commit .github/ to share with your team.");
     console.log("  VS Code with GitHub Copilot will use these automatically.");
     console.log("");
-    console.log("  To uninstall, delete the installed files from .github/agents/ and .github/instructions/.");
+    console.log("  To uninstall, delete the installed files from .github/.");
   } else {
     console.log("  Installed at user scope via Claude Code (available in all projects).");
     console.log("  Plugins will stay current via the marketplace auto-update mechanism.");
@@ -543,6 +637,7 @@ async function main() {
   console.log("  Get started:");
   if (SCOPE === "project") {
     console.log("    Open VS Code with GitHub Copilot in this project.");
+    console.log("    Skills are available as slash commands (e.g. /create-code-app).");
   } else {
     console.log("    claude session  ->  /power-pages:create-site");
   }
