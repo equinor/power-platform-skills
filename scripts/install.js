@@ -6,7 +6,8 @@
  * the marketplace and install plugins for Claude Code and GitHub Copilot.
  *
  * Usage:
- *   node scripts/install.js                                              (from local clone)
+ *   node scripts/install.js                                              (from local clone, user scope)
+ *   node scripts/install.js --scope project                              (install into .claude/plugins/ in cwd)
  *   curl -fsSL https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scripts/install.js | node
  *
  * TODO: Update URL to equinor/power-platform-skills when the repo is transferred.
@@ -24,6 +25,37 @@ const REPO = "hjaf/power-platform-skills";
 const MARKETPLACE_NAME = "power-platform-skills";
 const GITHUB_RAW = `https://raw.githubusercontent.com/${REPO}/main`;
 const HOME = os.homedir();
+
+// ── CLI arguments ─────────────────────────────────────────────
+// --scope user    Install for the current user via Claude Code CLI (~/.claude/plugins/)
+// --scope project Install into the current project's .github/ directory
+//                 (GitHub Copilot convention: agents/, instructions/)
+const args = process.argv.slice(2);
+const scopeIdx = args.indexOf("--scope");
+const SCOPE = scopeIdx !== -1 && args[scopeIdx + 1] ? args[scopeIdx + 1] : "user";
+
+if (!["user", "project"].includes(SCOPE)) {
+  console.error(`Invalid scope: "${SCOPE}". Use --scope user or --scope project.`);
+  process.exit(1);
+}
+
+if (args.includes("--help") || args.includes("-h")) {
+  console.log(`Usage: node scripts/install.js [--scope user|project]
+
+Options:
+  --scope user      Install plugins for the current user via Claude Code CLI (default)
+                    Location: ~/.claude/plugins/
+  --scope project   Install agents and instructions into the current project
+                    Location: .github/agents/, .github/instructions/
+                    Convention: https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot
+  --help, -h        Show this help message
+
+Docs:
+  Claude Code plugins: https://code.claude.com/docs/en/plugins
+  GitHub Copilot customization: https://docs.github.com/en/copilot/customizing-copilot
+`);
+  process.exit(0);
+}
 
 // ── Colors (disabled when output is piped) ────────────────────
 const tty = process.stdout.isTTY;
@@ -116,23 +148,26 @@ async function loadMarketplace() {
   const localFile = path.join(repoRoot, ".claude-plugin", "marketplace.json");
 
   if (fs.existsSync(localFile)) {
-    return JSON.parse(fs.readFileSync(localFile, "utf8"));
+    return { manifest: JSON.parse(fs.readFileSync(localFile, "utf8")), repoRoot };
   }
 
   // Also check cwd (handles running from repo root or piped download)
-  const cwdFile = path.join(process.cwd(), ".claude-plugin", "marketplace.json");
+  const cwdRoot = process.cwd();
+  const cwdFile = path.join(cwdRoot, ".claude-plugin", "marketplace.json");
   if (fs.existsSync(cwdFile)) {
-    return JSON.parse(fs.readFileSync(cwdFile, "utf8"));
+    return { manifest: JSON.parse(fs.readFileSync(cwdFile, "utf8")), repoRoot: cwdRoot };
   }
 
   info("Fetching marketplace manifest from GitHub...");
   const raw = await httpsGet(`${GITHUB_RAW}/.claude-plugin/marketplace.json`);
-  return JSON.parse(raw);
+  return { manifest: JSON.parse(raw), repoRoot: null };
 }
 
 // ── Claude Code installation ──────────────────────────────────
 function installClaude(plugins) {
-  header("Claude Code");
+  header("Claude Code (user-scoped)");
+
+  info("Location: ~/.claude/plugins/");
 
   // 1. Register marketplace via CLI (CLI clones the repo automatically)
   info("Registering marketplace...");
@@ -163,7 +198,7 @@ function installClaude(plugins) {
   for (const plugin of plugins) {
     info(`Installing ${plugin}...`);
     const installResult = run(
-      `claude plugin install "${plugin}@${MARKETPLACE_NAME}" --scope user`
+      `claude plugin install "${plugin}@${MARKETPLACE_NAME}" --scope ${SCOPE}`
     );
     if (installResult.ok) {
       ok(`${plugin} installed`);
@@ -187,50 +222,131 @@ function installClaude(plugins) {
   }
 }
 
-// ── GitHub Copilot installation ───────────────────────────────
-function installCopilot(plugins) {
-  header("GitHub Copilot");
+// ── GitHub Copilot project install (.github/ convention) ──────
+async function installProjectScoped(repoRoot, plugins) {
+  header("GitHub Copilot (project-scoped)");
 
-  // 1. Register marketplace via CLI (CLI clones the repo automatically)
-  info("Registering marketplace...");
-  const addResult = run(`copilot plugin marketplace add "${REPO}"`);
-  if (addResult.ok) {
-    ok("Marketplace registered");
-  } else if (addResult.output.includes("already")) {
-    ok("Marketplace already registered");
+  info("Installing into .github/ (GitHub Copilot convention)");
+  info("Docs: https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot");
+
+  const targetGithub = path.join(process.cwd(), ".github");
+  const targetAgents = path.join(targetGithub, "agents");
+  const targetInstructions = path.join(targetGithub, "instructions");
+
+  // Ensure directories exist
+  fs.mkdirSync(targetAgents, { recursive: true });
+  fs.mkdirSync(targetInstructions, { recursive: true });
+
+  let agentCount = 0;
+  let instructionCount = 0;
+
+  if (repoRoot) {
+    // ── Local mode: copy from disk ──
+    const pluginsDir = path.join(repoRoot, "plugins");
+
+    if (fs.existsSync(pluginsDir)) {
+      const pluginDirs = fs.readdirSync(pluginsDir, { withFileTypes: true })
+        .filter((d) => d.isDirectory());
+
+      for (const pluginDir of pluginDirs) {
+        const pluginPath = path.join(pluginsDir, pluginDir.name);
+        const agentsPath = path.join(pluginPath, "agents");
+
+        // Copy agent .md files as .agent.md
+        if (fs.existsSync(agentsPath)) {
+          const agentFiles = fs.readdirSync(agentsPath).filter((f) => f.endsWith(".md"));
+          for (const file of agentFiles) {
+            const targetName = file.endsWith(".agent.md") ? file : file.replace(/\.md$/, ".agent.md");
+            const dest = path.join(targetAgents, targetName);
+            fs.copyFileSync(path.join(agentsPath, file), dest);
+            agentCount++;
+          }
+        }
+
+        // Create a plugin instruction file from AGENTS.md if present
+        const agentsMd = path.join(pluginPath, "AGENTS.md");
+        if (fs.existsSync(agentsMd)) {
+          const instructionFile = path.join(targetInstructions, `${pluginDir.name}.instructions.md`);
+          const content = fs.readFileSync(agentsMd, "utf8");
+          const withFrontmatter = `---\napplyTo: "**"\n---\n\n${content}`;
+          fs.writeFileSync(instructionFile, withFrontmatter);
+          instructionCount++;
+        }
+      }
+    }
+
+    // Copy repo-level .github/agents/ if present in source
+    const sourceAgents = path.join(repoRoot, ".github", "agents");
+    if (fs.existsSync(sourceAgents)) {
+      const files = fs.readdirSync(sourceAgents).filter((f) => f.endsWith(".md"));
+      for (const file of files) {
+        const dest = path.join(targetAgents, file);
+        if (!fs.existsSync(dest)) {
+          fs.copyFileSync(path.join(sourceAgents, file), dest);
+          agentCount++;
+        }
+      }
+    }
   } else {
-    fail(`Failed to register marketplace: ${addResult.output}`);
-    return;
-  }
+    // ── Remote mode: fetch from GitHub ──
+    info("No local clone found — fetching plugin files from GitHub...");
+    const GITHUB_API = `https://api.github.com/repos/${REPO}/contents`;
 
-  // 2. Enable auto-update (CLI does not set this)
-  const configPath = path.join(HOME, ".copilot", "config.json");
-  enableAutoUpdate(configPath, (data) => data.marketplaces);
+    for (const pluginName of plugins) {
+      // Fetch agent files
+      try {
+        const agentsJson = await httpsGet(`${GITHUB_API}/plugins/${pluginName}/agents`);
+        const agentFiles = JSON.parse(agentsJson).filter(
+          (f) => f.type === "file" && f.name.endsWith(".md")
+        );
+        for (const file of agentFiles) {
+          const content = await httpsGet(file.download_url);
+          const targetName = file.name.endsWith(".agent.md")
+            ? file.name
+            : file.name.replace(/\.md$/, ".agent.md");
+          fs.writeFileSync(path.join(targetAgents, targetName), content);
+          agentCount++;
+        }
+      } catch {
+        // Plugin may not have an agents/ directory — that's fine
+      }
 
-  // 3. Install each plugin via CLI
-  for (const plugin of plugins) {
-    info(`Installing ${plugin}...`);
-    const installResult = run(`copilot plugin install "${plugin}@${MARKETPLACE_NAME}"`);
-    if (installResult.ok) {
-      ok(`${plugin} installed`);
-    } else if (installResult.output.includes("already installed")) {
-      ok(`${plugin} already installed`);
-    } else {
-      fail(`Failed to install ${plugin}: ${installResult.output}`);
+      // Fetch AGENTS.md for instructions
+      try {
+        const content = await httpsGet(`${GITHUB_RAW}/plugins/${pluginName}/AGENTS.md`);
+        const instructionFile = path.join(targetInstructions, `${pluginName}.instructions.md`);
+        const withFrontmatter = `---\napplyTo: "**"\n---\n\n${content}`;
+        fs.writeFileSync(instructionFile, withFrontmatter);
+        instructionCount++;
+      } catch {
+        // No AGENTS.md for this plugin — skip
+      }
+    }
+
+    // Fetch repo-level .github/agents/ if any
+    try {
+      const repoAgentsJson = await httpsGet(`${GITHUB_API}/.github/agents`);
+      const repoAgentFiles = JSON.parse(repoAgentsJson).filter(
+        (f) => f.type === "file" && f.name.endsWith(".md")
+      );
+      for (const file of repoAgentFiles) {
+        const dest = path.join(targetAgents, file.name);
+        if (!fs.existsSync(dest)) {
+          const content = await httpsGet(file.download_url);
+          fs.writeFileSync(dest, content);
+          agentCount++;
+        }
+      }
+    } catch {
+      // No repo-level agents — fine
     }
   }
 
-  // 4. Verify installation
-  info("Verifying installation...");
-  const listResult = run("copilot plugin list");
-  if (listResult.ok) {
-    const installed = plugins.filter((p) => listResult.output.includes(p));
-    if (installed.length > 0) {
-      ok(`Verified: ${installed.join(", ")}`);
-    } else {
-      warn("Plugins not found in plugin list output");
-    }
-  }
+  ok(`${agentCount} agent file(s) installed to .github/agents/`);
+  ok(`${instructionCount} instruction file(s) installed to .github/instructions/`);
+  console.log("");
+  info("Commit these files to share with your team.");
+  info("VS Code with GitHub Copilot will pick them up automatically.");
 }
 
 // ── Main ──────────────────────────────────────────────────────
@@ -243,7 +359,7 @@ async function main() {
   header("Checking prerequisites");
   ok(`Node.js ${process.version}`);
 
-  // Detect tools — require CLI in PATH (CLI commands need the binary)
+  // Detect tools
   const tools = [];
 
   if (hasCommand("claude")) {
@@ -251,19 +367,18 @@ async function main() {
     tools.push("claude");
     ok(`Claude Code ${ver.ok ? ver.output : "(version unknown)"}`);
   }
-  if (hasCommand("copilot")) {
-    const ver = run("copilot --version");
-    tools.push("copilot");
-    ok(`GitHub Copilot CLI ${ver.ok ? ver.output : "(version unknown)"}`);
+
+  if (tools.length === 0 && SCOPE === "user") {
+    fail("Claude Code CLI not found in PATH (required for user-scoped install).");
+    console.log("");
+    console.log("  Options:");
+    console.log("    Install Claude Code: https://docs.anthropic.com/en/docs/claude-code");
+    console.log("    Or use --scope project for GitHub Copilot (.github/ convention)");
+    process.exit(1);
   }
 
-  if (tools.length === 0) {
-    fail("Neither Claude Code nor GitHub Copilot CLI found in PATH.");
-    console.log("");
-    console.log("  Install at least one and ensure it is on your PATH:");
-    console.log("    Claude Code     https://docs.anthropic.com/en/docs/claude-code");
-    console.log("    GitHub Copilot  https://docs.github.com/en/copilot");
-    process.exit(1);
+  if (SCOPE === "project") {
+    info("Project-scoped install: no CLI required (copies files to .github/)");
   }
 
   // ── PAC CLI ──────────────────────────────────────────────────
@@ -379,7 +494,7 @@ async function main() {
   // ── Marketplace ────────────────────────────────────────────
   header("Reading marketplace");
 
-  const manifest = await loadMarketplace();
+  const { manifest, repoRoot } = await loadMarketplace();
   const plugins = manifest.plugins.map((p) => p.name);
 
   console.log(`  Marketplace : ${manifest.name}`);
@@ -392,18 +507,44 @@ async function main() {
   }
 
   // ── Install ────────────────────────────────────────────────
-  if (tools.includes("claude")) installClaude(plugins);
-  if (tools.includes("copilot")) installCopilot(plugins);
+  if (SCOPE === "project") {
+    // Project-scoped: copy into .github/ (GitHub Copilot convention)
+    await installProjectScoped(repoRoot, plugins);
+  } else {
+    // User-scoped: use Claude Code CLI
+    if (tools.includes("claude")) {
+      installClaude(plugins);
+    } else {
+      fail("Claude Code CLI not found. User-scoped install requires 'claude' in PATH.");
+      info("For project-scoped install (GitHub Copilot), use: --scope project");
+      process.exit(1);
+    }
+  }
 
   // ── Summary ────────────────────────────────────────────────
   header("Done!");
   console.log("");
-  console.log("  Plugins will stay current via the marketplace auto-update mechanism.");
-  console.log("  Run this script again anytime to re-install or update.");
+  if (SCOPE === "project") {
+    console.log("  Installed into .github/ (GitHub Copilot convention).");
+    console.log("  Commit .github/agents/ and .github/instructions/ to share with your team.");
+    console.log("  VS Code with GitHub Copilot will use these automatically.");
+    console.log("");
+    console.log("  To uninstall, delete the installed files from .github/agents/ and .github/instructions/.");
+  } else {
+    console.log("  Installed at user scope via Claude Code (available in all projects).");
+    console.log("  Plugins will stay current via the marketplace auto-update mechanism.");
+    console.log("");
+    console.log("  To uninstall:");
+    for (const p of plugins) {
+      console.log(`    claude plugin uninstall ${p}`);
+    }
+  }
   console.log("");
   console.log("  Get started:");
-  for (const tool of tools) {
-    console.log(`    ${tool} session  ->  /power-pages:create-site`);
+  if (SCOPE === "project") {
+    console.log("    Open VS Code with GitHub Copilot in this project.");
+  } else {
+    console.log("    claude session  ->  /power-pages:create-site");
   }
   console.log("");
 }

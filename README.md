@@ -1,16 +1,41 @@
 # Power Platform Skills
 
-Official agent skills/plugins for Power Platform development by Microsoft.
+Agent skills and plugins for Power Platform development, aligned for Equinor internal use.
 
 ## Overview
 
-This repository is a **plugin marketplace** containing Claude Code/GitHub Copilot plugins for Power Platform services. Each plugin provides skills, agents, and commands to help developers build on the Power Platform.
+This repository is a **plugin marketplace** containing agent plugins for Power Platform services. Each plugin provides skills, agents, and commands to help developers build on the Power Platform.
+
+**Primary platform:** GitHub Copilot (VS Code) via the `.github/` convention.
+**Also supported:** Claude Code via the plugin marketplace system.
 
 ## Installation
 
-### Quick Install (Recommended)
+### GitHub Copilot (VS Code) — Project-Scoped
 
-Run the installer to set up all plugins with auto-update enabled:
+For team use, install skills and agents into your project's `.github/` directory so all contributors benefit:
+
+```bash
+node scripts/install.js --scope project
+```
+
+This copies agent definitions into `.github/agents/` and instructions into `.github/instructions/`, following the [GitHub Copilot customization convention](https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot). Commit these files to share with your team.
+
+Or run without cloning:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scripts/install.js | node - --scope project
+```
+
+### Claude Code — User-Scoped
+
+For Claude Code users, the installer registers the marketplace and installs plugins at user level:
+
+```bash
+node scripts/install.js
+```
+
+Or run directly without cloning:
 
 **Windows (PowerShell)**:
 
@@ -18,7 +43,7 @@ Run the installer to set up all plugins with auto-update enabled:
 iwr https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scripts/install.js -OutFile install.js; node install.js; del install.js
 ```
 
-**Mac OS/Linux/Windows (cmd)**:
+**macOS/Linux**:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scripts/install.js | node
@@ -26,14 +51,14 @@ curl -fsSL https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scr
 
 The installer automatically:
 
-- Installs `pac` CLI if not already installed
-- Detects available tools (Claude Code, GitHub Copilot CLI)
+- Detects available tools (Claude Code CLI)
 - Registers the plugin marketplace and installs all listed plugins
 - Enables auto-update so plugins stay current
+- Installs `pac` CLI if not already present
 
-### Manual Installation
+### Manual Installation (Claude Code)
 
-If you prefer to install manually, run these commands inside a Claude Code or GitHub Copilot CLI session:
+Inside a Claude Code session:
 
 1. Add the marketplace
 
@@ -49,6 +74,30 @@ If you prefer to install manually, run these commands inside a Claude Code or Gi
     /plugin install code-apps@power-platform-skills
     /plugin install canvas-apps@power-platform-skills
     ```
+
+### Where Are Things Installed?
+
+| Scope | Platform | Location |
+|-------|----------|----------|
+| `project` | GitHub Copilot (VS Code) | `.github/agents/`, `.github/instructions/` |
+| `user` (default) | Claude Code | `~/.claude/plugins/` |
+
+The marketplace registry (Claude Code) is stored at `~/.claude/plugins/known_marketplaces.json`.
+
+### Uninstall
+
+**GitHub Copilot (project-scoped):** Delete the installed files from `.github/agents/` and `.github/instructions/`.
+
+**Claude Code (user-scoped):**
+
+```bash
+# Inside a Claude Code session
+/plugin uninstall power-pages
+/plugin uninstall model-apps
+/plugin uninstall code-apps
+/plugin uninstall canvas-apps
+/plugin marketplace remove power-platform-skills
+```
 
 ## Available Plugins
 
