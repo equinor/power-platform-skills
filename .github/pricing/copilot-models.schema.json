@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GitHub Copilot Model Pricing",
+  "description": "Per-token pricing for models available in GitHub Copilot, grouped by plan.",
+  "type": "object",
+  "required": ["source", "last_updated", "currency", "unit", "plans"],
+  "properties": {
+    "source": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL of the authoritative pricing page."
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date",
+      "description": "ISO 8601 date when this file was last refreshed."
+    },
+    "currency": {
+      "type": "string",
+      "const": "USD"
+    },
+    "unit": {
+      "type": "string",
+      "const": "per 1M tokens"
+    },
+    "plans": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["plan", "models"],
+        "properties": {
+          "plan": {
+            "type": "string",
+            "description": "License tier or agreement name (e.g., 'default', 'enterprise', 'business')."
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["provider", "model", "status", "tier", "input", "cached_input", "output"],
+              "properties": {
+                "provider": {
+                  "type": "string",
+                  "description": "Model vendor (OpenAI, Anthropic, Google, GitHub)."
+                },
+                "model": {
+                  "type": "string",
+                  "description": "Full model name as shown on the pricing page."
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["GA", "Public preview"],
+                  "description": "Availability status."
+                },
+                "tier": {
+                  "type": "string",
+                  "enum": ["Lightweight", "Versatile", "Powerful"],
+                  "description": "Model capability tier."
+                },
+                "input": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Cost per 1M input tokens (USD)."
+                },
+                "cached_input": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Cost per 1M cached input tokens (USD)."
+                },
+                "output": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Cost per 1M output tokens (USD)."
+                },
+                "cache_write": {
+                  "type": ["number", "null"],
+                  "minimum": 0,
+                  "description": "Cost per 1M cache write tokens (USD). Applies to Anthropic models; null for others."
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

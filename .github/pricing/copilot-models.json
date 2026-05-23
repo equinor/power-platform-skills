@@ -1,0 +1,234 @@
+{
+  "$schema": "./copilot-models.schema.json",
+  "source": "https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing",
+  "last_updated": "2026-05-21",
+  "currency": "USD",
+  "unit": "per 1M tokens",
+  "plans": [
+    {
+      "plan": "default",
+      "models": [
+        {
+          "provider": "Anthropic",
+          "model": "Claude Haiku 4.5",
+          "status": "GA",
+          "tier": "Versatile",
+          "input": 1.00,
+          "cached_input": 0.10,
+          "output": 5.00,
+          "cache_write": 1.25
+        },
+        {
+          "provider": "Anthropic",
+          "model": "Claude Opus 4.5",
+          "status": "GA",
+          "tier": "Powerful",
+          "input": 5.00,
+          "cached_input": 0.50,
+          "output": 25.00,
+          "cache_write": 6.25
+        },
+        {
+          "provider": "Anthropic",
+          "model": "Claude Opus 4.6",
+          "status": "GA",
+          "tier": "Powerful",
+          "input": 5.00,
+          "cached_input": 0.50,
+          "output": 25.00,
+          "cache_write": 6.25
+        },
+        {
+          "provider": "Anthropic",
+          "model": "Claude Opus 4.7",
+          "status": "GA",
+          "tier": "Powerful",
+          "input": 5.00,
+          "cached_input": 0.50,
+          "output": 25.00,
+          "cache_write": 6.25
+        },
+        {
+          "provider": "Anthropic",
+          "model": "Claude Sonnet 4",
+          "status": "GA",
+          "tier": "Versatile",
+          "input": 3.00,
+          "cached_input": 0.30,
+          "output": 15.00,
+          "cache_write": 3.75
+        },
+        {
+          "provider": "Anthropic",
+          "model": "Claude Sonnet 4.5",
+          "status": "GA",
+          "tier": "Versatile",
+          "input": 3.00,
+          "cached_input": 0.30,
+          "output": 15.00,
+          "cache_write": 3.75
+        },
+        {
+          "provider": "Anthropic",
+          "model": "Claude Sonnet 4.6",
+          "status": "GA",
+          "tier": "Versatile",
+          "input": 3.00,
+          "cached_input": 0.30,
+          "output": 15.00,
+          "cache_write": 3.75
+        },
+        {
+          "provider": "GitHub",
+          "model": "Goldeneye",
+          "status": "Public preview",
+          "tier": "Powerful",
+          "input": 1.25,
+          "cached_input": 0.125,
+          "output": 10.00,
+          "cache_write": null
+        },
+        {
+          "provider": "GitHub",
+          "model": "Raptor mini",
+          "status": "Public preview",
+          "tier": "Versatile",
+          "input": 0.25,
+          "cached_input": 0.025,
+          "output": 2.00,
+          "cache_write": null
+        },
+        {
+          "provider": "Google",
+          "model": "Gemini 2.5 Pro",
+          "status": "GA",
+          "tier": "Powerful",
+          "input": 1.25,
+          "cached_input": 0.125,
+          "output": 10.00,
+          "cache_write": null
+        },
+        {
+          "provider": "Google",
+          "model": "Gemini 3 Flash",
+          "status": "Public preview",
+          "tier": "Lightweight",
+          "input": 0.50,
+          "cached_input": 0.05,
+          "output": 3.00,
+          "cache_write": null
+        },
+        {
+          "provider": "Google",
+          "model": "Gemini 3.1 Pro",
+          "status": "Public preview",
+          "tier": "Powerful",
+          "input": 2.00,
+          "cached_input": 0.20,
+          "output": 12.00,
+          "cache_write": null
+        },
+        {
+          "provider": "Google",
+          "model": "Gemini 3.5 Flash",
+          "status": "GA",
+          "tier": "Lightweight",
+          "input": 1.50,
+          "cached_input": 0.15,
+          "output": 9.00,
+          "cache_write": null
+        },
+        {
+          "provider": "OpenAI",
+          "model": "GPT-4.1",
+          "status": "GA",
+          "tier": "Versatile",
+          "input": 2.00,
+          "cached_input": 0.50,
+          "output": 8.00,
+          "cache_write": null
+        },
+        {
+          "provider": "OpenAI",
+          "model": "GPT-5 mini",
+          "status": "GA",
+          "tier": "Lightweight",
+          "input": 0.25,
+          "cached_input": 0.025,
+          "output": 2.00,
+          "cache_write": null
+        },
+        {
+          "provider": "OpenAI",
+          "model": "GPT-5.2",
+          "status": "GA",
+          "tier": "Versatile",
+          "input": 1.75,
+          "cached_input": 0.175,
+          "output": 14.00,
+          "cache_write": null
+        },
+        {
+          "provider": "OpenAI",
+          "model": "GPT-5.2-Codex",
+          "status": "GA",
+          "tier": "Powerful",
+          "input": 1.75,
+          "cached_input": 0.175,
+          "output": 14.00,
+          "cache_write": null
+        },
+        {
+          "provider": "OpenAI",
+          "model": "GPT-5.3-Codex",
+          "status": "GA",
+          "tier": "Powerful",
+          "input": 1.75,
+          "cached_input": 0.175,
+          "output": 14.00,
+          "cache_write": null
+        },
+        {
+          "provider": "OpenAI",
+          "model": "GPT-5.4",
+          "status": "GA",
+          "tier": "Versatile",
+          "input": 2.50,
+          "cached_input": 0.25,
+          "output": 15.00,
+          "cache_write": null
+        },
+        {
+          "provider": "OpenAI",
+          "model": "GPT-5.4 mini",
+          "status": "GA",
+          "tier": "Lightweight",
+          "input": 0.75,
+          "cached_input": 0.075,
+          "output": 4.50,
+          "cache_write": null
+        },
+        {
+          "provider": "OpenAI",
+          "model": "GPT-5.4 nano",
+          "status": "GA",
+          "tier": "Lightweight",
+          "input": 0.20,
+          "cached_input": 0.02,
+          "output": 1.25,
+          "cache_write": null
+        },
+        {
+          "provider": "OpenAI",
+          "model": "GPT-5.5",
+          "status": "GA",
+          "tier": "Powerful",
+          "input": 5.00,
+          "cached_input": 0.50,
+          "output": 30.00,
+          "cache_write": null
+        }
+      ]
+    }
+  ]
+}
