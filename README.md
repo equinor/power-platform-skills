@@ -25,6 +25,8 @@ node scripts/install.js --scope project --plugin power-pages,code-apps-preview
 
 This copies agent definitions into `.github/agents/`, instructions into `.github/instructions/`, and skills into `.github/skills/`, following the [GitHub Copilot customization convention](https://docs.github.com/en/copilot/customizing-copilot). Commit these files to share with your team.
 
+> **Note:** There is no automatic update for project-scoped installs. To get the latest plugin content, re-run the installer and commit the updated files.
+
 Or run without cloning:
 
 ```bash
@@ -59,7 +61,7 @@ The installer automatically:
 
 - Detects available tools (Claude Code CLI)
 - Registers the plugin marketplace and installs all listed plugins
-- Enables auto-update so plugins stay current
+- Enables auto-update in the **Claude Code CLI** so plugins stay current without manual steps
 - Installs `pac` CLI if not already present
 
 ### Manual Installation (Claude Code)
