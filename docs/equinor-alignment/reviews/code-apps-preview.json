@@ -175,7 +175,12 @@
       "type": "manual-review",
       "reference": "2026-05-23 owner answers",
       "summary": "Owner confirmed: @equinor/dcs-power-platform-team owns the plugin; support via #powerplatform. Full connector set in scope, zone-dependent; primarily Red Zone, experimentation at all zones. Vite is under Tech Radar evaluation (defer for now). add-mcscopilot excluded from controlled pilot — different component type. Fork references to be updated to equinor/power-platform-skills (repo transfer pending)."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-05-23 upstream sync review",
+      "summary": "Fetched upstream/main (microsoft/power-platform-skills). Two upstream changes deferred: (1) development-standards.md — Microsoft removed EDS section and replaced EDS token-based theming with a generic dark-mode default; deferred because edsRequired=true and EDS is Adopt on Equinor Tech Radar. (2) create-code-app/SKILL.md Step 9 EDS component guidance — Microsoft replaced EDS component usage with generic React; deferred for the same EDS reason. One upstream change accepted via manual merge: baseline scaffold deploy in create-code-app Step 6 and shared-instructions.md is now pre-approved (no confirmation prompt) because the skill targets development environments only; promotion to test and production environments is planned via a separate CI/CD skill or agent. Three URL-bearing files (plugin.json, README.md, version-check.md) already updated locally to reference equinor/power-platform-skills and kept as-is. No Equinor alignment docs overwritten."
     }
   ],
-  "notes": "Skills and agents reviewed 2026-05-22. Production interaction blocked (all deploys require confirmation). EDS integrated into generation workflow. Re-reviewed 2026-05-23: owner assigned, zones clarified (Green/Yellow/Red, primarily Red), Copilot Studio excluded from scope, fork references updated in plugin files pending repo transfer. Remaining blockers: DLP mapping, Vite radar outcome, Copilot manifest, report-issue channel."
+  "notes": "Skills and agents reviewed 2026-05-22. Production interaction blocked (all deploys require confirmation — intentionally scoped to dev; test/prod promotion planned via a separate CI/CD skill or agent). EDS integrated into generation workflow. Re-reviewed 2026-05-23: owner assigned, zones clarified (Green/Yellow/Red, primarily Red), Copilot Studio excluded from scope, fork references updated in plugin files pending repo transfer. Upstream sync 2026-05-23: three EDS-removing upstream changes deferred; Equinor guardrails preserved. Remaining blockers: DLP mapping, Vite radar outcome, Copilot manifest, report-issue channel."
 }

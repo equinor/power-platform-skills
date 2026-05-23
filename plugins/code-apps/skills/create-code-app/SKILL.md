@@ -123,9 +123,9 @@ See [preferred-environment.md](${CLAUDE_PLUGIN_ROOT}/shared/preferred-environmen
 
 ### Step 6: Build & Deploy (baseline)
 
-Build and deploy the bare template to verify the pipeline works before adding data sources.
+> **Pre-approved**: This baseline deploy is part of the scaffold flow and does not require a separate confirmation prompt.
 
-**Confirm before deploying:** Ask the user: _"Ready to deploy the baseline app to [environment name]? This will create the live app."_ Wait for explicit confirmation before running `npx power-apps push`.
+Build and deploy the bare template to verify the pipeline works before adding data sources.
 
 ```bash
 npm run build
