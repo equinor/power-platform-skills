@@ -6,8 +6,8 @@
     "name": "Microsoft",
     "url": "https://www.microsoft.com"
   },
-  "homepage": "https://github.com/hjaf/power-platform-skills/",
-  "repository": "https://github.com/hjaf/power-platform-skills/",
+  "homepage": "https://github.com/equinor/power-platform-skills/",
+  "repository": "https://github.com/equinor/power-platform-skills/",
   "license": "MIT",
   "keywords": [
     "power-apps",

@@ -1,11 +1,11 @@
 {
   "pluginName": "code-apps-preview",
-  "reviewDate": "2026-05-22",
+  "reviewDate": "2026-05-23",
   "reviewer": "GitHub Copilot",
   "publicationStatus": "defer",
   "ownership": {
-    "owner": "not assigned",
-    "supportChannel": "not assigned",
+    "owner": "@equinor/dcs-power-platform-team",
+    "supportChannel": "#powerplatform — https://equinor.enterprise.slack.com/archives/C01BDAML708",
     "upstreamSource": "microsoft/power-platform-skills/plugins/code-apps",
     "upstreamVersion": "1.0.0"
   },
@@ -39,7 +39,9 @@
   },
   "powerPlatformGovernance": {
     "supportedZones": [
-      "not-assessed"
+      "green",
+      "yellow",
+      "red"
     ],
     "intendedUsers": [
       "professional-it-developer"
@@ -85,7 +87,7 @@
         "name": "Vite",
         "radarState": "unknown",
         "usedFor": "Code app build tooling.",
-        "source": "not checked"
+        "source": "Equinor Tech Radar evaluation in progress — treat as blocked until outcome confirmed"
       },
       {
         "name": "Equinor Design System (EDS)",
@@ -98,6 +100,12 @@
         "radarState": "unknown",
         "usedFor": "Generated app integrations.",
         "source": "connector-specific review needed"
+      },
+      {
+        "name": "Microsoft Copilot Studio",
+        "radarState": "not-applicable",
+        "usedFor": "add-mcscopilot skill present in plugin but excluded from controlled-pilot scope. Skill targets a different component type; not intended for this pilot.",
+        "source": "owner confirmed out of scope 2026-05-23"
       }
     ],
     "hasHoldTechnology": false,
@@ -126,10 +134,11 @@
     "rollbackDocumented": false
   },
   "blockers": [
-    "Internal owner and support channel are not assigned.",
-    "Connector and DLP governance is not mapped.",
-    "Technology Radar status is unknown for Vite and connector-specific technologies.",
-    "GitHub Copilot marketplace manifest is missing."
+    "Connector and DLP governance is not mapped. Full connector set scope confirmed; DLP group mapping per connector and per zone must be completed before pilot.",
+    "Vite Tech Radar evaluation is in progress (defer). Treat as blocked until Equinor Tech Radar review is published and outcome is Adopt or Trial.",
+    "GitHub Copilot marketplace manifest is missing.",
+    "version-check.md, plugin.json, and README updated to reference equinor/power-platform-skills; blocker cleared pending repo transfer from hjaf/power-platform-skills to equinor/power-platform-skills.",
+    "report-issue skill targets microsoft/power-platform-skills (public Microsoft upstream); Equinor-aligned reporting channel or guidance is needed."
   ],
   "evidence": [
     {
@@ -156,7 +165,17 @@
       "type": "manual-review",
       "reference": "2026-05-22 skill and agent review",
       "summary": "All 14 skills, 1 agent, and shared instructions reviewed. No bundled scripts or hooks. No secrets embedded. Safety guardrails adequate."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-05-23 re-review",
+      "summary": "Re-review pass. Found three new alignment issues: version-check.md fetches from personal fork hjaf/power-platform-skills (not Equinor-controlled); plugin.json and README reference same personal fork; add-mcscopilot skill (Microsoft Copilot Studio connector) radar status not assessed. report-issue skill targets public Microsoft repo — Equinor reporting path not defined. All four original blockers remain open. Status remains defer."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-05-23 owner answers",
+      "summary": "Owner confirmed: @equinor/dcs-power-platform-team owns the plugin; support via #powerplatform. Full connector set in scope, zone-dependent; primarily Red Zone, experimentation at all zones. Vite is under Tech Radar evaluation (defer for now). add-mcscopilot excluded from controlled pilot — different component type. Fork references to be updated to equinor/power-platform-skills (repo transfer pending)."
     }
   ],
-  "notes": "Skills and agents reviewed 2026-05-22. Production interaction blocked (all deploys require confirmation). EDS integrated into generation workflow. Remaining blockers: ownership, DLP mapping, Vite radar status, Copilot manifest."
+  "notes": "Skills and agents reviewed 2026-05-22. Production interaction blocked (all deploys require confirmation). EDS integrated into generation workflow. Re-reviewed 2026-05-23: owner assigned, zones clarified (Green/Yellow/Red, primarily Red), Copilot Studio excluded from scope, fork references updated in plugin files pending repo transfer. Remaining blockers: DLP mapping, Vite radar outcome, Copilot manifest, report-issue channel."
 }
