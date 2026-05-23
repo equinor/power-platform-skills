@@ -1,0 +1,56 @@
+{
+    "name": "Node (GHCR)",
+    // Pinned by CalVer release tag + digest.
+    //   - The digest guarantees we pull the exact same image every time
+    //     (Docker resolves by digest, ignoring the tag string).
+    //   - The tag is what Dependabot (devcontainers ecosystem) compares
+    //     against newer published tags to propose update PRs.
+    // Bumped automatically by Dependabot once the build workflow has
+    // published a fresh CalVer tag to GHCR.
+    "image": "ghcr.io/equinor/appsec-devcontainer/node:2026.04.30.1@sha256:6c595e1108df7fb57081b71e8906dd6c3c6fbc6fef105a2c4466bb4c51311e16",
+
+    "features": {
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/devcontainers/features/azure-cli:1": {},
+        "ghcr.io/devcontainers/features/copilot-cli:1": {},
+        "ghcr.io/devcontainers/features/dotnet:2": {
+			"version": "10.0"
+		}
+    },
+
+    "remoteEnv": {
+        "GITHUB_USER": "${localEnv:GITHUB_USER}"
+    },
+    "postCreateCommand": "bash .devcontainer/post-create.sh",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode-remote.remote-containers",
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "davidanson.vscode-markdownlint",
+                "redhat.vscode-yaml",
+                "streetsidesoftware.code-spell-checker",
+                "GitHub.copilot",
+                "GitHub.copilot-chat"
+            ],
+            "settings": {
+                "git.autofetch": true,
+                "git.autofetchPeriod": 180,
+                "files.trimTrailingWhitespace": true,
+                "files.insertFinalNewline": true,
+                "editor.formatOnSave": true,
+                "[javascript]": {
+                    "editor.defaultFormatter": "esbenp.prettier-vscode"
+                },
+                "[typescript]": {
+                    "editor.defaultFormatter": "esbenp.prettier-vscode"
+                },
+                "terminal.integrated.defaultProfile.linux": "zsh"
+            }
+        }
+    },
+
+    // Stop the container when VS Code disconnects so tmpfs data is wiped
+    "shutdownAction": "stopContainer"
+}
