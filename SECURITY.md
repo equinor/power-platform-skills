@@ -1,14 +1,16 @@
-<!-- BEGIN MICROSOFT SECURITY.MD V1.0.0 BLOCK -->
+If you discover a security vulnerability in this project, please follow the steps below to report it.
 
-## Security
+### For "non-critical" issues
 
-Microsoft takes the security of our software products and services seriously, which
-includes all source code repositories in our GitHub organizations.
+- **Alternative A:**
+Create a GitHub issue for the vulnerability. Avoid putting sensitive information in the issue.
 
-**Please do not report security vulnerabilities through public GitHub issues.**
+- **Alternative B:**
+Send an email to the project's maintainer at [Hjalmar Otto Fjøsne](mailto:hjaf@equinor.com) describing the issue.
 
-For security reporting information, locations, contact information, and policies,
-please review the latest guidance for Microsoft repositories at
-[https://aka.ms/SECURITY.md](https://aka.ms/SECURITY.md).
+### For "critical" and time sensitive issues
 
-<!-- END MICROSOFT SECURITY.MD BLOCK -->
+Phone the Equinor helpdesk:
+
+- Norway (+47) 51 999 222
+- US/Canada (+1) 713 878 6970

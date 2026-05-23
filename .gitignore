@@ -48,3 +48,7 @@ ENV/
 Thumbs.db
 
 .playwright-mcp/
+
+# misc
+.tmp/
+.temp/

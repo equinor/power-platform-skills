@@ -8,7 +8,7 @@ A **plugin marketplace** for Power Platform development by Microsoft. The market
 
 ## Repository Structure
 
-```
+```text
 power-platform-skills/
 ├── .claude-plugin/
 │   └── marketplace.json      # Marketplace manifest (lists all available plugins)
@@ -62,6 +62,7 @@ Do not mark a plugin as ready for internal publication until it has a completed 
 Skills that apply to all plugins live in `shared/skills/<skill-name>/`. The workflow logic is written once in a shared `.md` file, and each plugin has a thin `skills/<skill-name>/SKILL.md` that contains only the YAML frontmatter and a reference to the shared workflow file.
 
 **Pattern:**
+
 - `shared/skills/<skill-name>/<workflow>.md` — Full workflow (phases, instructions, field definitions)
 - `shared/skills/<skill-name>/SKILL.template.md` — Template SKILL.md (frontmatter + reference to workflow); supports `{{PLUGIN_NAME}}` placeholder
 - `plugins/<plugin>/skills/<skill-name>/SKILL.md` — Per-plugin wrapper generated from the template above
@@ -78,6 +79,6 @@ When you add new plugins or change the repository-level structure, update this f
 
 ## External Documentation
 
-- <a href="https://learn.microsoft.com/en-us/power-pages/configure/create-code-sites">Power Pages Code Sites</a>
-- <a href="https://learn.microsoft.com/en-us/power-platform/developer/cli/reference/pages">PAC CLI Reference</a>
-- <a href="https://learn.microsoft.com/en-us/rest/api/power-platform/powerpages/websites/create-website">Create Website API</a>
+- [Power Pages Code Sites](https://learn.microsoft.com/en-us/power-pages/configure/create-code-sites)
+- [PAC CLI Reference](https://learn.microsoft.com/en-us/power-platform/developer/cli/reference/pages)
+- [Create Website API](https://learn.microsoft.com/en-us/rest/api/power-platform/powerpages/websites/create-website)
