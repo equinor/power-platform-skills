@@ -106,7 +106,7 @@ Before promoting a plugin to `controlled-pilot`, confirm:
 When referencing external documentation, order by authority:
 
 1. Equinor Management System (docmap.equinor.com / aris.equinor.com)
-2. developer.equinor.com
+2. varia.equinor.com
 3. techradar.equinor.com
 4. Equinor Digital Direction (<https://apps.equinor.com/edd>)
 5. Microsoft official docs (learn.microsoft.com)

@@ -72,7 +72,7 @@ allowed-tools:
 When referencing external documentation, prefer higher-authority sources:
 
 1. Equinor Management System (docmap.equinor.com / aris.equinor.com)
-2. developer.equinor.com
+2. varia.equinor.com
 3. techradar.equinor.com
 4. Equinor Digital Direction (apps.equinor.com/edd)
 5. Official Microsoft documentation (learn.microsoft.com)

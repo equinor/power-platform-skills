@@ -56,7 +56,7 @@ Use this checklist when reviewing documentation files. Scope-specific rules (SKI
 Verify external references follow the prescribed precedence:
 
 1. Equinor Management System
-2. developer.equinor.com
+2. varia.equinor.com
 3. techradar.equinor.com
 4. Equinor Digital Direction
 5. Official Microsoft documentation
