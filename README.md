@@ -16,7 +16,12 @@ This repository is a **plugin marketplace** containing agent plugins for Power P
 This repository is a fork of [`microsoft/power-platform-skills`][upstream_github], maintained for Equinor internal use. It is not a neutral mirror — it applies Equinor governance, security standards, and the shared practices of the [Equinor IT professional network][equinor_varia] before any plugin is piloted or published internally.
 
 > [!TIP]
-> [View the live diff on GitHub →][fork_compare] opens GitHub's native comparison view and shows every file-level change relative to the upstream `microsoft/power-platform-skills` main branch.
+> [View the full diff on GitHub →][fork_compare] — includes all changes: plugins, governance docs, dev container, and repo tooling.
+> To see only plugin changes locally, run:
+>
+> ```bash
+> git diff upstream/main -- plugins/
+> ```
 
 ### Why a fork and not the upstream directly?
 
