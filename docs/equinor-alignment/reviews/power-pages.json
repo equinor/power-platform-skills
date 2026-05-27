@@ -1,16 +1,16 @@
 {
   "pluginName": "power-pages",
-  "reviewDate": "2026-05-22",
+  "reviewDate": "2026-05-27",
   "reviewer": "GitHub Copilot",
   "publicationStatus": "defer",
   "ownership": {
     "owner": "not assigned",
     "supportChannel": "not assigned",
     "upstreamSource": "microsoft/power-platform-skills/plugins/power-pages",
-    "upstreamVersion": "1.3.0"
+    "upstreamVersion": "2.0.0"
   },
   "scope": {
-    "summary": "Creates, tests, activates, and deploys Power Pages code sites; can create Dataverse data models, sample data, web roles, site settings, table permissions, Web API integrations, server logic, and cloud flow integrations.",
+    "summary": "Creates, tests, activates, and deploys Power Pages code sites; can create Dataverse data models, sample data, web roles, site settings, table permissions, Web API integrations, server logic, and cloud flow integrations. Includes ALM workflows (plan-alm, setup-solution, setup-pipeline, export-solution, import-solution, deploy-pipeline, ensure-pipelines-host, force-link-environment, configure-env-variables, diagnose-deployment) and security skills (manage-firewall, manage-headers, scan-site, security-review).",
     "createsOrModifiesAssets": true,
     "deploysAssets": true,
     "deletesAssets": false,
@@ -177,6 +177,11 @@
   ],
   "evidence": [
     {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/3b2009f..2923950",
+      "summary": "Synced upstream commits 3b2009f..2923950 (2026-05-27): Power Pages ALM (10 new skills, 45 lib helpers, 6 reference docs) and security skills (manage-firewall, manage-headers, scan-site, security-review). See commits: 2c82e39 (ALM), e55e1d3 (security), 2923950 (docs update)."
+    },
+    {
       "type": "file",
       "reference": "plugins/power-pages/README.md",
       "summary": "Documents site creation, deployment, activation, Dataverse data modeling, Web API integration, server logic, cloud flow, and testing workflows."
@@ -192,5 +197,5 @@
       "summary": "Contains many Node.js scripts that require security and behavior review before publication."
     }
   ],
-  "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists."
+  "notes": "Initial review record only. Upstream v2.0.0 synced 2026-05-27 adds significant ALM and security capabilities (10 new ALM skills, 4 security skills, 45 lib helpers, 6 reference docs). This record intentionally defers publication until detailed review evidence exists. The expanded surface area — especially ALM pipeline management, deployment automation, firewall rules, and security scanning — increases the review scope considerably."
 }
