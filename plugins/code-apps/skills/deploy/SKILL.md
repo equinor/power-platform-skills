@@ -50,6 +50,8 @@ If deploy fails, report the error and stop — do not retry silently. Common fix
 - Auth error / token expired → `npx power-apps logout`, then retry — the CLI will re-prompt browser login.
 - Environment mismatch → update `environmentId` in `power.config.json` to the correct value and retry.
 
+**Post-deploy check:** If the project uses EDS fonts via CDN (`cdn.eds.equinor.com` in `index.html`), remind the user to verify the environment's CSP allows it. If fonts are broken, they need to add `https://cdn.eds.equinor.com` to the `style-src` and `font-src` directives in PPAC (Environments → Settings → Product → Privacy + Security → Content security policy → App tab). See the [create-code-app troubleshooting guide](../create-code-app/references/troubleshooting.md#eds-font-loading-csp) for details.
+
 ### Step 4: Update Memory Bank
 
 If `memory-bank.md` exists, update:
