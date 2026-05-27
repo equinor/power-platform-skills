@@ -125,10 +125,10 @@ curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/
 
 The installer automatically:
 
-- Detects available tools (Claude Code CLI)
+- Detects available tools (Claude Code, GitHub Copilot CLI)
+- Installs `pac` CLI if not already installed
 - Registers the plugin marketplace and installs all listed plugins
-- Enables auto-update in the **Claude Code CLI** so plugins stay current without manual steps
-- Installs `pac` CLI if not already present
+- Enables auto-update so plugins stay current without manual steps
 
 ### Manual Installation (Claude Code)
 

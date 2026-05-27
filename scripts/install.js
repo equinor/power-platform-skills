@@ -8,9 +8,7 @@
  * Usage:
  *   node scripts/install.js                                              (from local clone, user scope)
  *   node scripts/install.js --scope project                              (install into .claude/plugins/ in cwd)
- *   curl -fsSL https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scripts/install.js | node
- *
- * TODO: Update URL to equinor/power-platform-skills when the repo is transferred.
+ *   curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node
  */
 
 const { execSync } = require("child_process");
@@ -20,8 +18,7 @@ const os = require("os");
 const https = require("https");
 
 // ── Config ────────────────────────────────────────────────────
-// TODO: Update to "equinor/power-platform-skills" when the repo is transferred to the Equinor org.
-const REPO = "hjaf/power-platform-skills";
+const REPO = "equinor/power-platform-skills";
 const MARKETPLACE_NAME = "power-platform-skills";
 const GITHUB_RAW = `https://raw.githubusercontent.com/${REPO}/main`;
 const HOME = os.homedir();
@@ -69,7 +66,7 @@ Options:
 Examples:
   node scripts/install.js --scope project --plugin code-apps
   node scripts/install.js --scope project --plugin power-pages,model-apps
-  curl -fsSL https://raw.githubusercontent.com/hjaf/power-platform-skills/main/scripts/install.js | node - --scope project --plugin code-apps
+  curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node - --scope project --plugin code-apps
 
 Docs:
   Claude Code plugins: https://code.claude.com/docs/en/plugins
