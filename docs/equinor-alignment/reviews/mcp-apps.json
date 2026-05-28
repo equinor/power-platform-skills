@@ -1,59 +1,60 @@
 {
   "pluginName": "mcp-apps",
-  "reviewDate": "2026-05-22",
+  "reviewDate": "2026-05-28",
   "reviewer": "GitHub Copilot",
   "publicationStatus": "defer",
   "ownership": {
-    "owner": "not assigned",
-    "supportChannel": "not assigned",
+    "owner": "@equinor/dcs-power-platform-team",
+    "supportChannel": "#powerplatform (Slack)",
     "upstreamSource": "microsoft/power-platform-skills/plugins/mcp-apps",
     "upstreamVersion": "1.0.0"
   },
   "scope": {
-    "summary": "Generates self-contained HTML widgets for MCP Apps protocol hosts, using pasted JSON tool output and optional interactive callServerTool patterns.",
+    "summary": "Generates self-contained HTML widgets for MCP Apps protocol hosts, using pasted JSON tool output and optional interactive callServerTool patterns. Widgets are single HTML files that load Fluent UI Web Components and @modelcontextprotocol/ext-apps from CDN. The plugin does not itself require or run an MCP server.",
     "createsOrModifiesAssets": true,
     "deploysAssets": false,
     "deletesAssets": false,
     "productionInteractionDefault": false
   },
   "skillAndScriptSafety": {
-    "skillsReviewed": false,
-    "agentsReviewed": false,
-    "hooksReviewed": false,
-    "scriptsReviewed": false,
+    "skillsReviewed": true,
+    "agentsReviewed": true,
+    "hooksReviewed": true,
+    "scriptsReviewed": true,
     "bundledScripts": [],
     "secretsEmbedded": false,
     "externalNetworkCalls": [
-      "Generated widgets load libraries from CDN",
-      "Generated interactive widgets may call MCP host tools"
+      "Generated widgets load @fluentui/web-components from unpkg.com CDN",
+      "Generated widgets load @modelcontextprotocol/ext-apps and @fluentui/tokens from cdn.jsdelivr.net",
+      "Generated interactive widgets may call MCP host tools via callServerTool (scoped to the host session)"
     ]
   },
   "mcp": {
     "required": false,
     "servers": [],
     "versionsPinned": true,
-    "approvedAccessRequired": true,
-    "productionInteractionBlocked": false
+    "approvedAccessRequired": false,
+    "productionInteractionBlocked": true
   },
   "powerPlatformGovernance": {
     "assumedZone": "red",
     "intendedUsers": [
       "professional-it-developer"
     ],
-    "dataClassificationCeiling": "not-assessed",
+    "dataClassificationCeiling": "equinor-internal",
     "confidentialDataSupported": false,
     "dependencies": [
       {
-        "name": "MCP host with tool calling support",
+        "name": "MCP host with MCP Apps protocol support",
         "category": "platform-feature",
-        "description": "Generated interactive widgets call MCP host tools. Requires a host that supports the MCP Apps protocol.",
+        "description": "Generated interactive widgets call MCP host tools via callServerTool. Requires a host that supports the MCP Apps protocol (Claude, ChatGPT, VS Code, Microsoft 365 Copilot).",
         "blocking": false
       },
       {
         "name": "CDN access for widget libraries",
         "category": "environment-setting",
-        "description": "Generated widgets load Fluent UI Web Components from CDN. Network policies must allow CDN access.",
-        "blocking": false
+        "description": "Generated widgets load Fluent UI Web Components from unpkg.com and ext-apps/tokens from cdn.jsdelivr.net. CSP rules may need to be updated per environment for all referenced CDNs. If EDS replaces Fluent UI Web Components, CDN dependencies may change.",
+        "blocking": true
       }
     ],
     "architectureContractRequired": false,
@@ -65,13 +66,19 @@
         "name": "Model Context Protocol",
         "radarState": "Adopt",
         "usedFor": "MCP Apps protocol widgets and interactive tool calls.",
-        "source": "equinor/techradar"
+        "source": "equinor/techradar blips/model_context_protocol.yaml (changeDate 2026-05-06)"
       },
       {
         "name": "Fluent UI Web Components",
         "radarState": "unknown",
-        "usedFor": "Generated widget UI components loaded from CDN.",
-        "source": "not checked"
+        "usedFor": "Generated widget UI components loaded from CDN (v3 beta via unpkg.com).",
+        "source": "equinor/techradar checked 2026-05-28 — no blip exists (missing from radar)"
+      },
+      {
+        "name": "Equinor Design System (EDS)",
+        "radarState": "Adopt",
+        "usedFor": "Not currently used. EDS is the preferred frontend design system per Equinor standards but widgets use Fluent UI Web Components instead.",
+        "source": "equinor/techradar blips/eds.yaml (state: Adopt)"
       }
     ],
     "hasHoldTechnology": false,
@@ -83,12 +90,12 @@
     "edsRequired": true,
     "edsPackages": [],
     "exceptions": [
-      "Current generated widgets use Fluent UI Web Components and custom design guidelines. EDS alignment is not implemented."
+      "Generated widgets currently use Fluent UI Web Components v3 (beta) and custom design-guidelines.md tokens. EDS is preferred per owner decision. Assessment needed: determine whether EDS provides sufficient components or equivalent alternatives to replace Fluent UI Web Components for MCP App widgets."
     ]
   },
   "publication": {
-    "targetRepository": "equinor/powerplatform recommended only if kept in Power Platform scope, not confirmed",
-    "copilotManifest": false,
+    "targetRepository": "equinor/powerplatform (recommended if Power Platform scope retained)",
+    "copilotManifest": true,
     "claudeManifest": true,
     "versionsSynchronized": false,
     "variaCatalogRequired": true,
@@ -98,24 +105,57 @@
     "rollbackDocumented": false
   },
   "blockers": [
-    "Internal owner and support channel are not assigned.",
-    "Skill instructions and generated widget patterns are not reviewed against Equinor MCP guidance.",
-    "Generated widgets can load CDN resources and may call MCP host tools, which needs data handling review.",
-    "EDS guidance is not integrated into generated widget workflows.",
-    "Technology Radar status is unknown for Fluent UI Web Components.",
-    "GitHub Copilot marketplace manifest is missing."
+    "EDS component equivalence assessment needed: determine whether EDS provides sufficient components to replace Fluent UI Web Components for generated widgets.",
+    "Fluent UI Web Components is missing from the Equinor Technology Radar — requires architecture discussion path (may become moot if EDS replaces it).",
+    "CDN dependency (unpkg.com, cdn.jsdelivr.net) requires CSP rule updates per environment. Dependency scope may change after EDS assessment.",
+    "Install and rollback not tested."
   ],
   "evidence": [
     {
       "type": "file",
       "reference": "plugins/mcp-apps/README.md",
-      "summary": "Documents MCP Apps widget generation, CDN-loaded output, Fluent UI components, and callServerTool-capable samples."
+      "summary": "Documents MCP Apps widget generation, CDN-loaded output, Fluent UI components, callServerTool-capable samples, and 53 eval test cases."
     },
     {
       "type": "file",
-      "reference": "plugins/mcp-apps/references/",
-      "summary": "Contains MCP Apps API and design guidance that require EDS and Equinor MCP review."
+      "reference": "plugins/mcp-apps/skills/generate-mcp-app-ui/SKILL.md",
+      "summary": "Main skill reviewed. Requires user-provided JSON before generating, uses escapeHtml for XSS prevention, type-safe data handling, correct CDN imports, and accessibility guidance."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/mcp-apps/skills/report-issue/SKILL.md",
+      "summary": "Thin wrapper referencing shared report-issue workflow. No security concerns."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/mcp-apps/references/mcp-apps-reference.md",
+      "summary": "Technical reference covering App API, Fluent UI components, CDN loading with UMD collision avoidance, HTML escaping, accessibility, and data type safety patterns."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/mcp-apps/references/design-guidelines.md",
+      "summary": "Visual design defaults using Fluent theme tokens. Covers loading/data/error states, typography, spacing, color tokens, contrast rules, and prefers-reduced-motion."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/mcp-apps/samples/flight-status-widget.html",
+      "summary": "Read-only sample widget. Uses escapeHtml, theme support, Fluent components. No secrets or external calls beyond CDN."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/mcp-apps/samples/weather-refresh-widget.html",
+      "summary": "Interactive sample with callServerTool for refresh. Demonstrates tool calling pattern. No secrets or production endpoints."
+    },
+    {
+      "type": "external-source",
+      "reference": "equinor/techradar",
+      "summary": "MCP: Adopt (2026-05-06). EDS: Adopt. Fluent UI Web Components: missing-from-radar (checked 2026-05-28)."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-05-28 owner answers",
+      "summary": "Owner confirmed: @equinor/dcs-power-platform-team owns the plugin; support via #powerplatform Slack. EDS should be preferred — needs assessment whether EDS provides sufficient/equivalent components to replace Fluent UI Web Components. CDN dependency is contingent on EDS outcome; CSP rules need per-environment updates for all referenced CDNs. Copilot CLI and Claude CLI use the same manifest mechanism."
     }
   ],
-  "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists."
+  "notes": "Full review completed 2026-05-28. Skills, samples, and references are reviewed and contain no secrets, no production interaction, and include XSS/accessibility protections. Owner assigned 2026-05-28 (@equinor/dcs-power-platform-team, #powerplatform). EDS preferred — assessment needed for component equivalence vs Fluent UI Web Components. CDN dependency requires per-environment CSP updates. Copilot CLI and Claude CLI use the same manifest (copilotManifest set true). Remaining blockers: EDS assessment, Fluent UI radar status (may become moot), CDN/CSP planning, install test. Plugin eligible for controlled-pilot once EDS assessment is completed and install is tested."
 }
