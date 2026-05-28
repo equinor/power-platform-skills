@@ -57,16 +57,15 @@ Keep the first pass narrow. For `code-apps-preview`, prioritize:
 For every technology listed with `radarState: "unknown"` in the review record, or any new technology identified in Step 2, **actively look up** the current state:
 
 1. **Check the baseline known facts** in `docs/equinor-alignment/baseline.md` (section "Known relevant radar facts").
-2. **If not listed there**, fetch the blip from the `equinor/techradar` GitHub repository:
+2. **If not listed there**, fetch the blip from the `equinor/techradar` GitHub repository (internal — requires authenticated access):
    ```bash
-   curl -fsSL "https://raw.githubusercontent.com/equinor/techradar/main/blips/<technology_slug>.yaml" 2>/dev/null
+   gh api repos/equinor/techradar/contents/blips/<technology_slug>.yaml --jq '.content' | base64 -d
    ```
    The `ring` field in the YAML gives the current state (`adopt`, `trial`, `assess`, or `hold`). Common slugs: `vite.yaml`, `react.yaml`, `model_context_protocol.yaml`.
-3. **If the blip file does not exist** (404), check the web page:
-   ```bash
-   curl -fsSL "https://techradar.equinor.com/" 2>/dev/null | grep -i "<technology_name>"
-   ```
+3. **If the blip file does not exist** (404), check the web page at `https://techradar.equinor.com/` for the technology name.
 4. **If still not found**, mark as `missing-from-radar` (not `unknown`) and document the architecture discussion path.
+
+> **Note:** `equinor/techradar` is an internal repository. Always use `gh` (GitHub CLI) which leverages the user's existing authentication. Do not use `curl` against `raw.githubusercontent.com` as it will fail without a token.
 
 Do not rely solely on the review record's existing `radarState` values — they may be stale. Always re-verify `unknown` and `not-assessed` entries.
 

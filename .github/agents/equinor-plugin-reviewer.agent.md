@@ -28,12 +28,14 @@ For upstream synchronization, delegate to the **Upstream Sync Agent** (`.github/
 
 Do not accept `radarState: "unknown"` at face value. For every technology with an unknown or stale state:
 
-1. Fetch the blip YAML from `equinor/techradar`:
+1. Fetch the blip YAML from `equinor/techradar` (internal repo — requires authenticated access):
    ```bash
-   curl -fsSL "https://raw.githubusercontent.com/equinor/techradar/main/blips/<slug>.yaml" 2>/dev/null
+   gh api repos/equinor/techradar/contents/blips/<slug>.yaml --jq '.content' | base64 -d
    ```
-2. If not found, check `techradar.equinor.com`.
+2. If not found (404), check `techradar.equinor.com`.
 3. Only mark as `missing-from-radar` after both checks fail.
+
+> **Note:** Never use `curl` against `raw.githubusercontent.com` for this repo — it is private. Use `gh` which leverages the user's existing GitHub authentication.
 
 ## Guardrails
 
