@@ -44,26 +44,33 @@
     "productionInteractionBlocked": false
   },
   "powerPlatformGovernance": {
-    "supportedZones": [
-      "not-assessed"
-    ],
+    "assumedZone": "red",
     "intendedUsers": [
       "certified-citizen-developer",
-      "certified-citizen-agent-creator",
-      "not-assessed"
+      "certified-citizen-agent-creator"
     ],
     "dataClassificationCeiling": "not-assessed",
     "confidentialDataSupported": false,
-    "connectors": [
+    "dependencies": [
       {
-        "name": "Canvas App connectors",
-        "category": "not-assessed",
-        "zone": "not-assessed",
-        "dlpGroup": "not-assessed",
-        "riskNotes": "MCP server can list APIs and data sources and generate app integrations. Connector-specific DLP review is required."
+        "name": "Canvas Authoring MCP server (.NET runtime)",
+        "category": "developer-prerequisite",
+        "description": "Requires .NET runtime and dnx to install the prerelease Canvas Authoring MCP package.",
+        "blocking": true
+      },
+      {
+        "name": "Power Apps environment with canvas app creation rights",
+        "category": "environment-setting",
+        "description": "User must have Maker role or equivalent in the target environment. DLP policies affect which connectors are available to generated apps but do not block the plugin itself.",
+        "blocking": true
+      },
+      {
+        "name": "Power Apps Studio coauthoring access",
+        "category": "platform-feature",
+        "description": "Live coauthoring sync requires access to the Power Apps authoring service.",
+        "blocking": true
       }
     ],
-    "dlpImpact": "High. Canvas apps can use many connectors and the MCP server can discover connector and data source metadata.",
     "architectureContractRequired": true,
     "ciRequired": true
   },
@@ -116,7 +123,7 @@
     "Skills, agents, and MCP configuration are not reviewed against Equinor guidance.",
     "MCP server is installed through dnx with prerelease package use and no explicit version pinning.",
     "Production-system interaction is possible by default through live coauthoring and authoring service access.",
-    "Power Platform zone, certification, connector, and DLP mapping are not documented.",
+    "Dependencies and environment prerequisites are not fully documented.",
     "Technology Radar status is unknown for .NET in this context.",
     "GitHub Copilot marketplace manifest is missing."
   ],

@@ -57,25 +57,38 @@
     "productionInteractionBlocked": false
   },
   "powerPlatformGovernance": {
-    "supportedZones": [
-      "not-assessed"
-    ],
+    "assumedZone": "red",
     "intendedUsers": [
-      "professional-it-developer",
-      "not-assessed"
+      "professional-it-developer"
     ],
     "dataClassificationCeiling": "not-assessed",
     "confidentialDataSupported": false,
-    "connectors": [
+    "dependencies": [
       {
-        "name": "Dataverse",
-        "category": "service-specific",
-        "zone": "not-assessed",
-        "dlpGroup": "not-assessed",
-        "riskNotes": "Used for entities, records, schema generation, model-driven app pages, and deployment targets."
+        "name": "Dataverse environment with schema creation permissions",
+        "category": "environment-setting",
+        "description": "Plugin creates Dataverse entities, columns, relationships, and records. Requires environment with appropriate security roles and DLP allowing Dataverse usage.",
+        "blocking": true
+      },
+      {
+        "name": "PAC CLI authenticated session",
+        "category": "developer-prerequisite",
+        "description": "Deployment and solution management require authenticated PAC CLI.",
+        "blocking": true
+      },
+      {
+        "name": "Azure CLI (az)",
+        "category": "developer-prerequisite",
+        "description": "Used for Dataverse authentication token acquisition.",
+        "blocking": true
+      },
+      {
+        "name": "Model-driven app creation permission",
+        "category": "access-role",
+        "description": "User must have permissions to create model-driven apps and generative pages in the target environment.",
+        "blocking": true
       }
     ],
-    "dlpImpact": "High. Workflow can create Dataverse schema and deploy generated pages to model-driven apps.",
     "architectureContractRequired": true,
     "ciRequired": true
   },
@@ -133,7 +146,7 @@
     "Internal owner and support channel are not assigned.",
     "Skills, agents, scripts, and MCP configuration are not reviewed against Equinor guidance.",
     "Production-system interaction is possible by default through Dataverse schema creation, app creation, deployment, and browser verification workflows.",
-    "Power Platform zone mapping and data classification ceiling are not documented.",
+    "Data classification ceiling is not documented.",
     "EDS position is unresolved because generated UI currently uses Fluent UI V9.",
     "Technology Radar status is unknown for Fluent UI and Playwright.",
     "GitHub Copilot marketplace manifest is missing."

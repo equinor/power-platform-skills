@@ -49,14 +49,20 @@ Assign exactly one status:
 
 ### Power Platform Zone And Data Handling
 
-- Which zones are supported: Green, Yellow, Red, or not applicable?
+- What is the assumed zone? Default to Red since GitHub Copilot users are developers operating in the red zone.
 - Which user persona is intended: personal maker, certified citizen developer, certified citizen agent creator, professional IT developer, platform team, or other?
 - What is the maximum supported information classification?
 - Does any workflow handle, store, generate, export, or publish `EQUINOR-CONFIDENTIAL` data? If yes, block publication unless explicit approval and platform support exist.
-- Which connectors are used or recommended?
-- Are custom connectors, HTTP, Dataverse, SharePoint, Teams, Outlook, OneDrive, SQL, SAP, FTP, or external APIs involved?
-- Does the workflow require DLP changes, endpoint filtering, connector action control, or environment owner approval?
 - Does the generated solution require Architecture Contract or CI updates?
+
+### Dependencies
+
+- What environment settings are required for the plugin to function (e.g., enabled features, security roles, site creation)?
+- Are there DLP policies that would prevent specific skills from working? If yes, document as non-blocking dependencies unless the plugin is entirely unusable without them.
+- What developer prerequisites are needed (CLI tools, runtimes, SDKs)?
+- What platform features must be available (code apps, canvas authoring, MCP hosts)?
+- Are specific licenses or access roles required?
+- For each dependency, is it a hard blocker or a soft constraint that only affects certain skills?
 
 ### Technology Radar
 
@@ -99,7 +105,7 @@ Use these minimum rules when setting `publicationStatus`:
 | `Hold` technology without deviation permit | `defer` |
 | `EQUINOR-CONFIDENTIAL` handling without explicit approval and support | `defer` |
 | MCP dependency without access and security review | `controlled-pilot` at most |
-| App generation with connector or DLP impact | `controlled-pilot` at most until Power Platform owner review |
+| App generation with blocking dependencies unsatisfied | `controlled-pilot` at most until dependencies documented |
 | External-facing Power Pages generation | `controlled-pilot` at most until Red Zone and external exposure handling are documented |
 | Alignment workflow with no app generation and reviewed scripts | Eligible for `ready-for-internal-pilot` |
 

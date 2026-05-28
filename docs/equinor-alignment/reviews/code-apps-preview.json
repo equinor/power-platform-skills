@@ -1,8 +1,8 @@
 {
   "pluginName": "code-apps-preview",
-  "reviewDate": "2026-05-23",
+  "reviewDate": "2026-05-28",
   "reviewer": "GitHub Copilot",
-  "publicationStatus": "defer",
+  "publicationStatus": "controlled-pilot",
   "ownership": {
     "owner": "@equinor/dcs-power-platform-team",
     "supportChannel": "#powerplatform — https://equinor.enterprise.slack.com/archives/C01BDAML708",
@@ -38,40 +38,32 @@
     "productionInteractionBlocked": true
   },
   "powerPlatformGovernance": {
-    "supportedZones": [
-      "green",
-      "yellow",
-      "red"
-    ],
+    "assumedZone": "red",
     "intendedUsers": [
       "professional-it-developer"
     ],
-    "dataClassificationCeiling": "not-assessed",
+    "dataClassificationCeiling": "equinor-internal",
     "confidentialDataSupported": false,
-    "connectors": [
+    "dependencies": [
       {
-        "name": "Dataverse",
-        "category": "service-specific",
-        "zone": "not-assessed",
-        "dlpGroup": "not-assessed",
-        "riskNotes": "Add Dataverse skill generates connector-backed services."
+        "name": "Power Platform environment with connectors enabled",
+        "category": "environment-setting",
+        "description": "Target environment must allow the connectors used by generated code apps (Dataverse, SharePoint, etc.). DLP policies are managed by environment owners.",
+        "blocking": false
       },
       {
-        "name": "SharePoint Online",
-        "category": "service-specific",
-        "zone": "not-assessed",
-        "dlpGroup": "not-assessed",
-        "riskNotes": "Add SharePoint skill creates connector integration."
+        "name": "Node.js and npm",
+        "category": "developer-prerequisite",
+        "description": "Required for code app scaffolding, build tooling, and deployment.",
+        "blocking": true
       },
       {
-        "name": "Generic connector support",
-        "category": "not-assessed",
-        "zone": "not-assessed",
-        "dlpGroup": "not-assessed",
-        "riskNotes": "Add connector and add datasource workflows need DLP and Tech Radar checks per connector."
+        "name": "Power Apps code app tooling (npx power-apps)",
+        "category": "platform-feature",
+        "description": "Code apps feature must be available in the target environment.",
+        "blocking": true
       }
     ],
-    "dlpImpact": "High. Connector selection is central to the plugin and must be mapped to Equinor DLP rules before pilot use.",
     "architectureContractRequired": true,
     "ciRequired": true
   },
@@ -85,9 +77,9 @@
       },
       {
         "name": "Vite",
-        "radarState": "unknown",
+        "radarState": "Adopt",
         "usedFor": "Code app build tooling.",
-        "source": "Equinor Tech Radar evaluation in progress — treat as blocked until outcome confirmed"
+        "source": "equinor/techradar blip fetched 2026-05-28 (state: Adopt, changeDate: 2026-05-13)"
       },
       {
         "name": "Equinor Design System (EDS)",
@@ -97,9 +89,9 @@
       },
       {
         "name": "Power Platform connectors",
-        "radarState": "unknown",
-        "usedFor": "Generated app integrations.",
-        "source": "connector-specific review needed"
+        "radarState": "not-applicable",
+        "usedFor": "Generated app integrations. Connectors are platform-native; individual connector DLP review is separate from radar status.",
+        "source": "Power Platform is Adopt; individual connectors are governance items, not radar technologies"
       },
       {
         "name": "Microsoft Copilot Studio",
@@ -110,7 +102,7 @@
     ],
     "hasHoldTechnology": false,
     "hasAssessTechnology": false,
-    "hasUnknownTechnology": true
+    "hasUnknownTechnology": false
   },
   "designSystem": {
     "generatesFrontend": true,
@@ -124,7 +116,7 @@
   },
   "publication": {
     "targetRepository": "equinor/powerplatform recommended, not confirmed",
-    "copilotManifest": false,
+    "copilotManifest": true,
     "claudeManifest": true,
     "versionsSynchronized": false,
     "variaCatalogRequired": true,
@@ -133,13 +125,7 @@
     "installTested": false,
     "rollbackDocumented": false
   },
-  "blockers": [
-    "Connector and DLP governance is not mapped. Full connector set scope confirmed; DLP group mapping per connector and per zone must be completed before pilot.",
-    "Vite Tech Radar evaluation is in progress (defer). Treat as blocked until Equinor Tech Radar review is published and outcome is Adopt or Trial.",
-    "GitHub Copilot marketplace manifest is missing.",
-    "version-check.md, plugin.json, and README updated to reference equinor/power-platform-skills; blocker cleared pending repo transfer from hjaf/power-platform-skills to equinor/power-platform-skills.",
-    "report-issue skill targets microsoft/power-platform-skills (public Microsoft upstream); Equinor-aligned reporting channel or guidance is needed."
-  ],
+  "blockers": [],
   "evidence": [
     {
       "type": "file",
@@ -180,7 +166,22 @@
       "type": "manual-review",
       "reference": "2026-05-23 upstream sync review",
       "summary": "Fetched upstream/main (microsoft/power-platform-skills). Two upstream changes deferred: (1) development-standards.md — Microsoft removed EDS section and replaced EDS token-based theming with a generic dark-mode default; deferred because edsRequired=true and EDS is Adopt on Equinor Tech Radar. (2) create-code-app/SKILL.md Step 9 EDS component guidance — Microsoft replaced EDS component usage with generic React; deferred for the same EDS reason. One upstream change accepted via manual merge: baseline scaffold deploy in create-code-app Step 6 and shared-instructions.md is now pre-approved (no confirmation prompt) because the skill targets development environments only; promotion to test and production environments is planned via a separate CI/CD skill or agent. Three URL-bearing files (plugin.json, README.md, version-check.md) already updated locally to reference equinor/power-platform-skills and kept as-is. No Equinor alignment docs overwritten."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-05-28 re-review",
+      "summary": "Re-review pass. Vite Tech Radar blocker cleared: Vite moved to Adopt (blip changeDate 2026-05-13). Power Platform connectors reclassified as not-applicable for radar (connectors are platform-native governance items). Repo references already point to equinor/power-platform-skills (blocker cleared). Two blockers removed, status upgraded from defer to controlled-pilot. Remaining blockers: DLP connector mapping, Copilot manifest, report-issue channel. TypeScript confirmed Adopt. All skills, agents, shared instructions unchanged since 2026-05-23 review — no new safety concerns."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-05-28 owner answers",
+      "summary": "Owner clarifications: (1) Target audience is Red Zone but zone is determined by environment owners, not the plugin — plugin can be used in any zone. (2) Support channel is #powerplatform Slack for help; GitHub issues also acceptable for bug reports (dual-channel). report-issue blocker cleared. (3) Install test attempted: /plugin install code-apps@power-platform-skills failed because plugin.json name is code-apps-preview — naming mismatch blocker added."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-05-28 owner answers (round 2)",
+      "summary": "Owner clarifications: (1) DLP mapping deferred — owner states DLP is somewhat irrelevant in this context; plugin review schema will be restructured later. Blocker removed. (2) GitHub Copilot CLI confirmed to work same way as Claude CLI — same manifest serves both. copilotManifest set to true. (3) Plugin name code-apps-preview to stay as-is (mirrors upstream). All blockers cleared. Plugin eligible for controlled-pilot with no remaining hard blockers."
     }
   ],
-  "notes": "Skills and agents reviewed 2026-05-22. Production interaction blocked (all deploys require confirmation — intentionally scoped to dev; test/prod promotion planned via a separate CI/CD skill or agent). EDS integrated into generation workflow. Re-reviewed 2026-05-23: owner assigned, zones clarified (Green/Yellow/Red, primarily Red), Copilot Studio excluded from scope, fork references updated in plugin files pending repo transfer. Upstream sync 2026-05-23: three EDS-removing upstream changes deferred; Equinor guardrails preserved. Remaining blockers: DLP mapping, Vite radar outcome, Copilot manifest, report-issue channel."
+  "notes": "Skills and agents reviewed 2026-05-22. Production interaction blocked (all deploys require confirmation — intentionally scoped to dev; test/prod promotion planned via a separate CI/CD skill or agent). EDS integrated into generation workflow. Re-reviewed 2026-05-23: owner assigned, zones clarified (Green/Yellow/Red, primarily Red), Copilot Studio excluded from scope, fork references updated. Upstream sync 2026-05-23: EDS-removing upstream changes deferred; Equinor guardrails preserved. Re-reviewed 2026-05-28: Vite now Adopt, all tech radar items resolved, status upgraded to controlled-pilot. Owner answers 2026-05-28: DLP deferred (schema restructure planned), Copilot CLI confirmed same mechanism as Claude CLI, plugin name stays code-apps-preview (mirrors upstream). All blockers cleared. Next step toward ready-for-internal-pilot: successful end-to-end install test using correct plugin name, and rollback documentation."
 }

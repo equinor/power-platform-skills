@@ -36,17 +36,26 @@
     "productionInteractionBlocked": false
   },
   "powerPlatformGovernance": {
-    "supportedZones": [
-      "not-applicable"
-    ],
+    "assumedZone": "red",
     "intendedUsers": [
-      "professional-it-developer",
-      "not-assessed"
+      "professional-it-developer"
     ],
     "dataClassificationCeiling": "not-assessed",
     "confidentialDataSupported": false,
-    "connectors": [],
-    "dlpImpact": "Not directly a Power Platform connector workflow, but generated widgets may visualize or send tool data through MCP hosts.",
+    "dependencies": [
+      {
+        "name": "MCP host with tool calling support",
+        "category": "platform-feature",
+        "description": "Generated interactive widgets call MCP host tools. Requires a host that supports the MCP Apps protocol.",
+        "blocking": false
+      },
+      {
+        "name": "CDN access for widget libraries",
+        "category": "environment-setting",
+        "description": "Generated widgets load Fluent UI Web Components from CDN. Network policies must allow CDN access.",
+        "blocking": false
+      }
+    ],
     "architectureContractRequired": false,
     "ciRequired": false
   },

@@ -75,32 +75,44 @@
     "productionInteractionBlocked": false
   },
   "powerPlatformGovernance": {
-    "supportedZones": [
-      "not-assessed"
-    ],
+    "assumedZone": "red",
     "intendedUsers": [
-      "professional-it-developer",
-      "not-assessed"
+      "professional-it-developer"
     ],
     "dataClassificationCeiling": "not-assessed",
     "confidentialDataSupported": false,
-    "connectors": [
+    "dependencies": [
       {
-        "name": "Dataverse",
-        "category": "service-specific",
-        "zone": "not-assessed",
-        "dlpGroup": "not-assessed",
-        "riskNotes": "Used for tables, metadata, Web API integration, permissions, site settings, and sample data."
+        "name": "Power Pages environment with site creation enabled",
+        "category": "environment-setting",
+        "description": "Environment must support Power Pages site provisioning, Dataverse tables, and Web API configuration.",
+        "blocking": true
       },
       {
-        "name": "Power Automate cloud flows",
-        "category": "service-specific",
-        "zone": "not-assessed",
-        "dlpGroup": "not-assessed",
-        "riskNotes": "Cloud flow integration skill can register and invoke flows from Power Pages."
+        "name": "DLP allowing Dataverse and cloud flow connectors",
+        "category": "dlp-policy",
+        "description": "Cloud flow integration and Dataverse Web API usage require compatible DLP policy on the target environment. Not a plugin blocker but affects which skills are usable.",
+        "blocking": false
+      },
+      {
+        "name": "PAC CLI authenticated session",
+        "category": "developer-prerequisite",
+        "description": "Deployment, ALM pipelines, and solution management require authenticated PAC CLI.",
+        "blocking": true
+      },
+      {
+        "name": "Azure CLI (az)",
+        "category": "developer-prerequisite",
+        "description": "Used for Dataverse and Key Vault authentication.",
+        "blocking": true
+      },
+      {
+        "name": "External exposure approval",
+        "category": "access-role",
+        "description": "Power Pages sites are externally facing. External exposure handling must be documented and approved.",
+        "blocking": true
       }
     ],
-    "dlpImpact": "High. Workflows can create Dataverse assets, configure web roles, invoke cloud flows, and expose Power Pages endpoints. Requires zone-specific DLP and external exposure review.",
     "architectureContractRequired": true,
     "ciRequired": true
   },
@@ -170,7 +182,7 @@
     "Internal owner and support channel are not assigned.",
     "Skills, agents, hooks, scripts, and MCP configuration are not reviewed against Equinor guidance.",
     "Production-system interaction is possible by default through deploy, activate, Dataverse, Web API, permissions, and cloud flow workflows.",
-    "Power Platform zone mapping and data classification ceiling are not documented.",
+    "Data classification ceiling is not documented.",
     "EDS guidance is not integrated into generated frontend workflows.",
     "Technology Radar status is unknown for several framework and testing dependencies.",
     "GitHub Copilot marketplace manifest is missing."

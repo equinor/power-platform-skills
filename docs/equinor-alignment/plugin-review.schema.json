@@ -172,29 +172,24 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "supportedZones",
+        "assumedZone",
         "intendedUsers",
         "dataClassificationCeiling",
         "confidentialDataSupported",
-        "connectors",
-        "dlpImpact",
+        "dependencies",
         "architectureContractRequired",
         "ciRequired"
       ],
       "properties": {
-        "supportedZones": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "enum": [
-              "green",
-              "yellow",
-              "red",
-                "not-assessed",
-              "not-applicable"
-            ]
-          }
+        "assumedZone": {
+          "type": "string",
+          "description": "The assumed Power Platform zone. Defaults to red since GitHub Copilot users are developers operating in the red zone.",
+          "enum": [
+            "green",
+            "yellow",
+            "red",
+            "not-applicable"
+          ]
         },
         "intendedUsers": {
           "type": "array",
@@ -224,14 +219,12 @@
         "confidentialDataSupported": {
           "type": "boolean"
         },
-        "connectors": {
+        "dependencies": {
           "type": "array",
+          "description": "Platform, environment, and developer dependencies that affect plugin usability. Replaces connector/DLP-focused fields since those are situational and environment-specific.",
           "items": {
-            "$ref": "#/$defs/connectorReview"
+            "$ref": "#/$defs/dependency"
           }
-        },
-        "dlpImpact": {
-          "type": "string"
         },
         "architectureContractRequired": {
           "type": "boolean"
@@ -424,15 +417,14 @@
         }
       }
     },
-    "connectorReview": {
+    "dependency": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "name",
         "category",
-        "zone",
-        "dlpGroup",
-        "riskNotes"
+        "description",
+        "blocking"
       ],
       "properties": {
         "name": {
@@ -441,33 +433,20 @@
         "category": {
           "type": "string",
           "enum": [
-            "service-specific",
-            "technology-or-protocol",
-            "custom",
-            "not-assessed"
+            "environment-setting",
+            "dlp-policy",
+            "developer-prerequisite",
+            "platform-feature",
+            "license",
+            "access-role"
           ]
         },
-        "zone": {
-          "type": "string",
-          "enum": [
-            "green",
-            "yellow",
-            "red",
-            "not-applicable",
-            "not-assessed"
-          ]
-        },
-        "dlpGroup": {
-          "type": "string",
-          "enum": [
-            "business",
-            "non-business",
-            "blocked",
-            "not-assessed"
-          ]
-        },
-        "riskNotes": {
+        "description": {
           "type": "string"
+        },
+        "blocking": {
+          "type": "boolean",
+          "description": "Whether this dependency is a hard blocker for plugin use if not satisfied."
         }
       }
     },
