@@ -22,7 +22,7 @@ Read these before making recommendations or edits:
 
 For plugin review, use the workflow in `.github/skills/review-plugin/SKILL.md`.
 
-For upstream synchronization, use the workflow in `.github/skills/sync-upstream/SKILL.md`.
+For upstream synchronization, delegate to the **Upstream Sync Agent** (`.github/agents/sync-upstream.agent.md`), which handles the full PR-based sync workflow including automatic plugin re-reviews.
 
 ## Technology Radar Lookup
 

@@ -46,8 +46,9 @@ Skills are defined in `SKILL.md` files with YAML frontmatter (`name`, `descripti
 The governance and review workflows are in `.github/skills/` and `.github/agents/`, not in `plugins/`:
 
 - `.github/skills/review-plugin/` — Plugin review workflow against Equinor standards
-- `.github/skills/sync-upstream/` — Upstream synchronization workflow
+- `.github/skills/sync-upstream/` — PR-based upstream synchronization workflow
 - `.github/agents/equinor-plugin-reviewer.agent.md` — Agent persona for plugin reviews
+- `.github/agents/sync-upstream.agent.md` — Agent persona for upstream sync (PR-based, with auto re-review)
 
 ### Cross-Plugin Shared Skills
 
@@ -75,15 +76,21 @@ node scripts/install.js
 
 ### Upstream Synchronization
 
-To inspect upstream Microsoft changes before merging:
+To inspect upstream Microsoft changes before syncing:
 
 ```bash
 git fetch upstream main --tags
-git log upstream/main..HEAD --oneline
-git diff upstream/main -- plugins/power-pages/
+git log --oneline --no-merges $(git merge-base HEAD upstream/main)..upstream/main
+git diff --name-status $(git merge-base HEAD upstream/main)..upstream/main -- plugins/
 ```
 
-Use the `sync-upstream` skill for guided synchronization that preserves Equinor guardrails.
+Use the `sync-upstream` skill or the **Upstream Sync Agent** for guided PR-based synchronization. The workflow:
+
+1. Creates a `sync/upstream-YYYY-MM-DD` branch
+2. Analyzes upstream git history for context
+3. Merges changes while preserving Equinor-specific content
+4. Triggers plugin re-reviews for affected reviewed plugins
+5. Opens a pull request for human review
 
 ## PR and Code Review
 
