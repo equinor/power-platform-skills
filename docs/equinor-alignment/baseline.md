@@ -20,7 +20,7 @@ Do not use this baseline as a substitute for Architecture Contract approval, dat
 | Topic | Baseline decision |
 | --- | --- |
 | Canonical Power Platform source | Use `equinor/powerplatform` as the preferred source of truth for internally governed Power Platform plugins. |
-| Marketplace pattern | Use dual manifests for GitHub Copilot and Claude compatibility, following the `equinor/techradar` pattern. |
+| Marketplace pattern | Both GitHub Copilot and Claude CLI support the same plugin structure. A single manifest serves both tools. Follow the `equinor/techradar` pattern. |
 | Central marketplace | Treat `equinor/copilot-plugins` as experimental aggregation unless it becomes the official corporate marketplace. |
 | Discovery | Use Varia catalog and TechDocs for internal discovery, with Architecture Contract links where components are published. |
 | First publication wave | Publish the alignment and review workflow before any app-generating plugin. |
@@ -66,18 +66,16 @@ Required implications for this repository:
 
 Sources: `equinor/powerplatform:docs/governance/zone/index.md`, `admin/compliance_working_requirements.md`, and `admin/security/dlp-management.md`.
 
-Power Platform governance in Equinor is organized around Green, Yellow, and Red zones. Each plugin and skill must state which zone and user persona it supports.
+Power Platform governance in Equinor is organized around Green, Yellow, and Red zones. GitHub Copilot users are developers operating in the Red zone by default. Each plugin assumes Red zone unless explicitly stated otherwise.
 
 Required implications for this repository:
 
-- State the supported zone for each plugin and relevant skill.
+- Assume Red zone for all plugins unless the plugin explicitly targets citizen makers in Green or Yellow zones.
 - State the intended user persona, such as personal maker, certified citizen developer, certified citizen agent creator, or professional IT developer.
 - State the data classification ceiling. The platform does not support `EQUINOR-CONFIDENTIAL` information in the current documented position.
 - Make solution owners and creators accountable for data classification, sharing, and compliance decisions.
-- Document connector use and DLP impact for generated apps, generated flows, custom connectors, HTTP endpoints, Dataverse, SharePoint, and other service integrations.
-- Keep Green Zone guidance restrictive: approved service-specific connectors only, no custom connectors by default, and no uncontrolled external endpoints.
-- Treat Yellow Zone guidance as certified and controlled experimentation with overlays and explicit risk ownership.
-- Treat Red Zone guidance as production-oriented and dependent on Architecture Contract, CI, environment owner, and track decisions.
+- Document dependencies that affect plugin usability: environment settings, DLP policies, developer prerequisites, platform features, licenses, and access roles. DLP and connector availability are situational — they depend on the target environment, not the plugin itself.
+- For each dependency, state whether it is a hard blocker (plugin cannot function) or a soft constraint (only some skills are affected).
 - For outward-facing Power Pages or external sharing scenarios, require explicit mitigation guidance before pilot publication.
 
 ## Technology Radar Policy
@@ -141,9 +139,9 @@ A plugin is not ready for broad internal recommendation until it has:
 - Named owner and support channel.
 - Reviewed `plugin.json`, marketplace entry, and version.
 - Reviewed skills, agents, hooks, scripts, resources, and MCP configuration.
-- Documented supported zones and personas.
+- Documented assumed zone and intended personas.
 - Documented data classification ceiling and production restrictions.
-- Documented DLP, connector, and Architecture Contract implications.
+- Documented dependencies (environment settings, DLP, prerequisites, platform features, access roles) with blocking status.
 - Documented Tech Radar status for recommended technologies.
 - Documented EDS position for generated UI.
 - Local installation test evidence.
@@ -184,6 +182,6 @@ Fetch these only when a plugin review reaches a decision that depends on them:
 - GL0797 for human-centered design process.
 - GL0847 for privileged access and privileged accounts.
 - GL0848 for system accounts.
-- Power Platform DLP connector registry and connector-specific assessment records.
+- Power Platform DLP policy documentation and environment-level dependency guidance.
 - Architecture Contract examples for Power Platform solutions and internal developer tooling.
 - Internal plugin marketplace roadmap or ownership decision if `equinor/copilot-plugins` changes status.

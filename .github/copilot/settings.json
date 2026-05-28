@@ -1,0 +1,10 @@
+{
+  "extraKnownMarketplaces": {
+    "techradar-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "equinor/techradar"
+      }
+    }
+  }
+}

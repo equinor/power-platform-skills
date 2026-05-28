@@ -11,6 +11,10 @@ model: opus
 
 Use this workflow to review one plugin at a time against the Equinor alignment baseline. Start with `code-apps-preview` unless the user names another plugin.
 
+## Prerequisites
+
+- **Techradar plugin** — Install the `techradar` plugin from `equinor/techradar` for Tech Radar lookups. If installed, the `techradar-check` skill handles blip resolution automatically via GitHub MCP. If not installed, this skill falls back to direct GitHub MCP calls or a local clone.
+
 ## Inputs
 
 - Target plugin name, for example `code-apps-preview`.
@@ -54,21 +58,34 @@ Keep the first pass narrow. For `code-apps-preview`, prioritize:
 
 ### 3. Look Up Technology Radar States
 
-For every technology listed with `radarState: "unknown"` in the review record, or any new technology identified in Step 2, **actively look up** the current state:
+For every technology listed with `radarState: "unknown"` in the review record, or any new technology identified in Step 2, **actively look up** the current state.
+
+This step uses the same approach as the `techradar-check` skill from `equinor/techradar`. If that plugin is installed, invoke it directly. Otherwise follow the procedure below.
 
 1. **Check the baseline known facts** in `docs/equinor-alignment/baseline.md` (section "Known relevant radar facts").
-2. **If not listed there**, clone the `equinor/techradar` repo (internal) and read the blip file:
+2. **If not listed there**, use GitHub MCP to read the blip directly from `equinor/techradar`:
+   - First, list blip filenames: `get_file_contents(owner: "equinor", repo: "techradar", path: "blips")`
+   - Infer the most likely filename from the listing using normalized variants (e.g., `vite.yaml`, `react.yaml`, `model_context_protocol.yaml`).
+   - Read the blip: `get_file_contents(owner: "equinor", repo: "techradar", path: "blips/<key>.yaml")`
+   - The `state` field in the YAML gives the current ring (`Adopt`, `Trial`, `Assess`, or `Hold`).
+   - Only use `search_code` as a last resort if the key cannot be inferred from the directory listing.
+3. **Check in-flight activity** — list open PRs/issues in `equinor/techradar` for technologies that are `Not found`, `Assess`, or `Hold`. Summarize relevant proposals alongside the blip result.
+4. **If GitHub MCP is unavailable**, fall back to the local checkout in `.tmp/techradar`:
    ```bash
-   git clone --depth 1 --filter=blob:none --sparse https://github.com/equinor/techradar.git /tmp/techradar 2>/dev/null
-   cd /tmp/techradar && git sparse-checkout set blips 2>/dev/null
-   cat blips/<technology_slug>.yaml
+   if [ -d .tmp/techradar/.git ]; then
+     cd .tmp/techradar && git pull --ff-only 2>/dev/null && cd -
+   else
+     mkdir -p .tmp
+     git clone --depth 1 --filter=blob:none --sparse https://github.com/equinor/techradar.git .tmp/techradar 2>/dev/null
+     cd .tmp/techradar && git sparse-checkout set blips 2>/dev/null && cd -
+   fi
+   cat .tmp/techradar/blips/<technology_slug>.yaml
    ```
-   The `state` field in the YAML gives the current ring (`Adopt`, `Trial`, `Assess`, or `Hold`). Common slugs: `vite.yaml`, `react.yaml`, `model_context_protocol.yaml`.
-3. **If the blip file does not exist**, check the web page at `https://techradar.equinor.com/` for the technology name.
-4. **If still not found**, mark as `missing-from-radar` (not `unknown`) and document the architecture discussion path.
-5. **Clean up** after lookup: `rm -rf /tmp/techradar`
+5. **If still not found**, mark as `missing-from-radar` (not `unknown`) and document the architecture discussion path.
 
-> **Note:** `equinor/techradar` is an internal repository. The clone uses git's credential helper (provided by VS Code / dev container) for authentication. Do not use `curl` against `raw.githubusercontent.com` or `gh api` as neither will have tokens in this environment.
+> **Important:** Do NOT delete `.tmp/techradar` during or after the review. The folder is in `.gitignore` and persists between reviews so future runs can pull fresh data without re-cloning.
+
+> **Abstraction level:** The radar tracks platforms, languages, major frameworks, techniques, and tools — not individual library-level packages. Do not look up ordinary npm/PyPI packages. See the techradar-check skill for details.
 
 Do not rely solely on the review record's existing `radarState` values — they may be stale. Always re-verify `unknown` and `not-assessed` entries.
 
@@ -81,7 +98,7 @@ Classify findings under these headings:
 - Production interaction
 - Power Platform zone and user persona
 - Data classification ceiling
-- Connector and DLP impact
+- Dependencies (environment settings, DLP, prerequisites, platform features, access roles)
 - Technology Radar status (use results from Step 3)
 - EDS and frontend generation
 - Manifest and publication readiness
@@ -91,7 +108,7 @@ Classify findings under these headings:
 
 Use the review outcome rules from `plugin-review-checklist.md`.
 
-Do not recommend `ready-for-internal-pilot` unless all required evidence exists. For a first `code-apps-preview` pass, `controlled-pilot` is the likely maximum until owner, support channel, DLP posture, EDS position, and local install testing are complete.
+Do not recommend `ready-for-internal-pilot` unless all required evidence exists. For a first `code-apps-preview` pass, `controlled-pilot` is the likely maximum until owner, support channel, dependency documentation, EDS position, and local install testing are complete.
 
 ### 6. Apply Adjustments
 
@@ -101,10 +118,9 @@ For `code-apps-preview`, likely adjustments are:
 
 - Add Equinor pilot guidance to plugin README or AGENTS.
 - Add non-production environment confirmation before deploy or push steps.
-- Add connector and DLP review gates before add-data-source or add-connector steps.
+- Add dependency documentation for environment settings, DLP policies, and prerequisites.
 - Add EDS-first guidance for generated React UI, or document a justified exception.
-- Add Technology Radar checks for React, Vite, connectors, and any other recommended stack.
-- Keep generic connector use as `controlled-pilot` at most until connector-specific review exists.
+- Add Technology Radar checks for React, Vite, and any other recommended stack.
 
 ### 7. Update Review Record
 

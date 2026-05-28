@@ -2,6 +2,10 @@
 evals/artifacts/
 evals/temp/
 
+# Temporary working data (techradar checkout, etc.)
+.tmp/
+.temp/
+
 # Eval reports (aggregated results)
 evals/reports/
 evals/**/*-workspace/
@@ -49,6 +53,3 @@ Thumbs.db
 
 .playwright-mcp/
 
-# misc
-.tmp/
-.temp/
