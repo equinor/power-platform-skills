@@ -84,13 +84,13 @@ git log --oneline --no-merges $(git merge-base HEAD upstream/main)..upstream/mai
 git diff --name-status $(git merge-base HEAD upstream/main)..upstream/main -- plugins/
 ```
 
-Use the `sync-upstream` skill or the **Upstream Sync Agent** for guided PR-based synchronization. The workflow:
+Use the `sync-upstream` skill or the **Upstream Sync Agent** for guided PR-based synchronization. The workflow is **one-way** (pull FROM upstream, PR into the Equinor fork's `main`). Never create or submit pull requests to the upstream `microsoft/power-platform-skills` repository.
 
 1. Creates a `sync/upstream-YYYY-MM-DD` branch
 2. Analyzes upstream git history for context
 3. Merges changes while preserving Equinor-specific content
 4. Triggers plugin re-reviews for affected reviewed plugins
-5. Opens a pull request for human review
+5. Opens a pull request on the Equinor fork for human review
 
 ## PR and Code Review
 

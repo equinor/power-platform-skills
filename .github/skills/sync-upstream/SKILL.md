@@ -11,6 +11,8 @@ model: opus
 
 Synchronize changes from `microsoft/power-platform-skills` into this fork via a **pull request** on a dedicated sync branch. Never merge directly to `main`.
 
+**Direction:** This workflow pulls FROM upstream INTO this fork. Never create, push, or submit pull requests TO the upstream `microsoft/power-platform-skills` repository. All PRs target `origin` (the Equinor fork) only.
+
 Default to read-only discovery. Do not apply changes until the user approves the sync plan.
 
 ## Inputs
@@ -107,13 +109,13 @@ Also inspect shared dependencies: `shared/`, `scripts/`, `.claude-plugin/marketp
 
 Classify every changed file into one of these categories:
 
-| Category | Criteria | Action |
-| --- | --- | --- |
-| **Direct copy** | File has no Equinor-specific content and is fully upstream-owned | Copy from upstream |
-| **Intelligent merge** | File contains both upstream content and Equinor sections (READMEs, AGENTS.md, shared docs, workflows) | Merge preserving Equinor content |
-| **Equinor-only** | File is entirely Equinor-created (`docs/equinor-alignment/**`, review records, `.github/skills/`, `.github/agents/`) | Never overwrite — skip |
-| **Review required** | File contains scripts, hooks, `.mcp.json`, or production-interaction patterns | Defer until inspected |
-| **New file** | File does not exist locally | Copy from upstream (new content) |
+| Category              | Criteria                                                                                                             | Action                           |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| **Direct copy**       | File has no Equinor-specific content and is fully upstream-owned                                                     | Copy from upstream               |
+| **Intelligent merge** | File contains both upstream content and Equinor sections (READMEs, AGENTS.md, shared docs, workflows)                | Merge preserving Equinor content |
+| **Equinor-only**      | File is entirely Equinor-created (`docs/equinor-alignment/**`, review records, `.github/skills/`, `.github/agents/`) | Never overwrite — skip           |
+| **Review required**   | File contains scripts, hooks, `.mcp.json`, or production-interaction patterns                                        | Defer until inspected            |
+| **New file**          | File does not exist locally                                                                                          | Copy from upstream (new content) |
 
 **Protected paths — never direct-copy without explicit approval:**
 
@@ -141,6 +143,7 @@ git checkout upstream/main -- <path>
 For files requiring merge, follow this process:
 
 1. **Read the upstream version:**
+
    ```bash
    git show upstream/main:<path>
    ```
@@ -221,6 +224,7 @@ Merge strategy: direct-copy (<n>), intelligent-merge (<n>), deferred (<n>)"
 ```
 
 If the changeset is large, split into multiple commits by category:
+
 - `sync: direct-copy upstream files` — for files taken as-is
 - `sync: merge upstream changes preserving Equinor content` — for intelligently merged files
 - `sync: update review records for affected plugins` — for review record updates
@@ -232,6 +236,8 @@ git push origin sync/upstream-$(date +%Y-%m-%d)
 ```
 
 #### 5.3 Create Pull Request
+
+The PR targets `origin` (the Equinor fork), merging the sync branch into `main`. Never target the upstream Microsoft repository.
 
 ```bash
 gh pr create \
@@ -291,7 +297,9 @@ To make future syncs easier, when adding Equinor-specific content to upstream fi
 
 ```markdown
 <!-- equinor-start: description of addition -->
+
 Equinor-specific content here...
+
 <!-- equinor-end -->
 ```
 
@@ -299,9 +307,9 @@ This allows the sync workflow to reliably identify and preserve Equinor sections
 
 ## Naming Convention
 
-| Pattern | Example |
-| --- | --- |
-| Branch | `sync/upstream-2026-05-28` |
-| Branch (same-day duplicate) | `sync/upstream-2026-05-28-2` |
-| Commit prefix | `sync:` |
-| PR title | `sync: upstream microsoft/power-platform-skills 2026-05-28` |
+| Pattern                     | Example                                                     |
+| --------------------------- | ----------------------------------------------------------- |
+| Branch                      | `sync/upstream-2026-05-28`                                  |
+| Branch (same-day duplicate) | `sync/upstream-2026-05-28-2`                                |
+| Commit prefix               | `sync:`                                                     |
+| PR title                    | `sync: upstream microsoft/power-platform-skills 2026-05-28` |
