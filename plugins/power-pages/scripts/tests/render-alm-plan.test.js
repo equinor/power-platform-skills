@@ -1515,8 +1515,9 @@ test('render-alm-plan: NoHost host card reflects chosenEnvUrl when user picked e
       html.includes('Will install Pipelines app on existing env'),
       'Card should describe the existing-env install path'
     );
+    const chosenEnvHost = new URL('https://orgc4f78248.crm5.dynamics.com/').hostname;
     assert.ok(
-      html.includes('orgc4f78248.crm5.dynamics.com'),
+      html.includes(chosenEnvHost),
       'Card should surface the chosen env URL'
     );
     assert.ok(
