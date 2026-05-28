@@ -1,6 +1,6 @@
 {
   "pluginName": "power-pages",
-  "reviewDate": "2026-05-27",
+  "reviewDate": "2026-05-28",
   "reviewer": "GitHub Copilot",
   "publicationStatus": "defer",
   "ownership": {
@@ -10,7 +10,7 @@
     "upstreamVersion": "2.0.0"
   },
   "scope": {
-    "summary": "Creates, tests, activates, and deploys Power Pages code sites; can create Dataverse data models, sample data, web roles, site settings, table permissions, Web API integrations, server logic, and cloud flow integrations. Includes ALM workflows (plan-alm, setup-solution, setup-pipeline, export-solution, import-solution, deploy-pipeline, ensure-pipelines-host, force-link-environment, configure-env-variables, diagnose-deployment) and security skills (manage-firewall, manage-headers, scan-site, security-review).",
+    "summary": "Creates, tests, activates, and deploys Power Pages code sites; can create Dataverse data models, sample data, web roles, site settings, table permissions, Web API integrations, server logic, and cloud flow integrations. Includes ALM workflows (plan-alm, setup-solution, setup-pipeline, export-solution, import-solution, deploy-pipeline, ensure-pipelines-host, force-link-environment, configure-env-variables, diagnose-deployment), security skills (manage-firewall, manage-headers, scan-site, security-review), and multi-provider authentication setup (Entra ID, OIDC, SAML2, WS-Federation, local, social) with SPA flows and user-profile pages.",
     "createsOrModifiesAssets": true,
     "deploysAssets": true,
     "deletesAssets": false,
@@ -190,6 +190,11 @@
   "evidence": [
     {
       "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/2923950..b4c46e9",
+      "summary": "Synced upstream commit b4c46e9 (2026-05-28): setup-auth multi-provider authentication and SPA flows (PR #173). Adds Entra ID (workforce + External ID/CIAM), generic OIDC, SAML2, WS-Federation, local, and social auth. New scripts: check-solution-installed.js, render-auth-report.js. YAML quoting fix in create-site-setting.js. 25 eval scenarios (was 9)."
+    },
+    {
+      "type": "external-source",
       "reference": "https://github.com/microsoft/power-platform-skills/compare/3b2009f..2923950",
       "summary": "Synced upstream commits 3b2009f..2923950 (2026-05-27): Power Pages ALM (10 new skills, 45 lib helpers, 6 reference docs) and security skills (manage-firewall, manage-headers, scan-site, security-review). See commits: 2c82e39 (ALM), e55e1d3 (security), 2923950 (docs update)."
     },
@@ -209,5 +214,5 @@
       "summary": "Contains many Node.js scripts that require security and behavior review before publication."
     }
   ],
-  "notes": "Initial review record only. Upstream v2.0.0 synced 2026-05-27 adds significant ALM and security capabilities (10 new ALM skills, 4 security skills, 45 lib helpers, 6 reference docs). This record intentionally defers publication until detailed review evidence exists. The expanded surface area — especially ALM pipeline management, deployment automation, firewall rules, and security scanning — increases the review scope considerably."
+  "notes": "Initial review record only. Upstream v2.0.0 synced through 2026-05-28 adds significant ALM, security, and authentication capabilities. Latest sync (b4c46e9) adds multi-provider authentication with SPA flows, solution-detection scripts, and auth-report rendering. New scripts (check-solution-installed.js) interact with Dataverse API using Azure CLI tokens — proper URL sanitization and input validation confirmed. This record intentionally defers publication until detailed review evidence exists. The expanded surface area — especially ALM pipeline management, deployment automation, firewall rules, security scanning, and now multi-provider auth — increases the review scope considerably."
 }
