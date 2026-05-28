@@ -43,7 +43,7 @@ The table below summarises every category of change. The review records in [`doc
 
 | Category | What was added or changed | Why |
 | --- | --- | --- |
-| **`plugins/equinor-alignment/`** | New plugin: `equinor-plugin-reviewer` agent + `review-plugin` and `sync-upstream` skills | Automates governance review and upstream synchronisation using the Equinor checklist |
+| **`.github/skills/` and `.github/agents/`** | `equinor-plugin-reviewer` agent + `review-plugin` and `sync-upstream` skills | Automates governance review and upstream synchronisation using the Equinor checklist |
 | **`docs/equinor-alignment/`** | Baseline, checklist, JSON schema, and per-plugin review records | Provides the canonical, reviewable source of truth for internal publication decisions |
 | **`.github/skills/`** | `review-plugin`, `sync-upstream`, `docs-conventions`, `docs-review`, `copilot-cost`, `update-copilot-pricing` | Installs Equinor-specific agent skills into every project that uses this fork |
 | **`.github/copilot-instructions.md`** | Project-level Copilot instructions | Grounds Copilot in Equinor authority hierarchy (EMS → varia.equinor.com → Tech Radar → Microsoft docs) |
@@ -61,7 +61,6 @@ Current review status for each plugin. A review record reaching `controlled-pilo
 
 | Plugin | Status | Review record |
 | --- | --- | --- |
-| `equinor-alignment` | in-review | — |
 | `code-apps-preview` | defer | [reviews/code-apps-preview.json](docs/equinor-alignment/reviews/code-apps-preview.json) |
 | `power-pages` | defer | [reviews/power-pages.json](docs/equinor-alignment/reviews/power-pages.json) |
 | `model-apps` | defer | [reviews/model-apps.json](docs/equinor-alignment/reviews/model-apps.json) |
@@ -99,7 +98,7 @@ Or run without cloning:
 curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node - --scope project --plugin code-apps-preview
 ```
 
-Available plugins: `power-pages`, `model-apps`, `mcp-apps`, `canvas-apps`, `code-apps-preview`, `equinor-alignment`
+Available plugins: `power-pages`, `model-apps`, `mcp-apps`, `canvas-apps`, `code-apps-preview`
 
 ### Claude Code — User-Scoped
 

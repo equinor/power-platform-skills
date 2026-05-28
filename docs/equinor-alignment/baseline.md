@@ -102,6 +102,8 @@ Known relevant radar facts from the initial research:
 - Power Apps Studio: `Adopt`.
 - Retrieval Augmented Generation: `Assess`.
 
+This list is a **static subset** and may become stale. When reviewing a plugin, always verify technology states against the live source at `equinor/techradar` (GitHub repo, `blips/*.yaml`) or `techradar.equinor.com`. Do not treat a technology as `unknown` without attempting a lookup.
+
 ## Equinor Design System Guidance
 
 Sources: `equinor/design-system`, `eds.equinor.com`, and `storybook.eds.equinor.com`.

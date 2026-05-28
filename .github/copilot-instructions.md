@@ -41,12 +41,13 @@ Each plugin under `plugins/<name>/` follows this layout:
 
 Skills are defined in `SKILL.md` files with YAML frontmatter (`name`, `description`, `allowed-tools`, `model`, `hooks`). The `allowed-tools` field must use a **comma-separated list** -- not JSON array syntax (`["Read", "Write"]`) or YAML list syntax.
 
-### Equinor Alignment Plugin
+### Equinor Alignment Skills
 
-`plugins/equinor-alignment/` is an Equinor-specific plugin not present in the upstream Microsoft fork. It contains:
+The governance and review workflows are in `.github/skills/` and `.github/agents/`, not in `plugins/`:
 
-- `skills/review-plugin/` — Plugin review workflow against Equinor standards
-- `skills/sync-upstream/` — Upstream synchronization workflow
+- `.github/skills/review-plugin/` — Plugin review workflow against Equinor standards
+- `.github/skills/sync-upstream/` — Upstream synchronization workflow
+- `.github/agents/equinor-plugin-reviewer.agent.md` — Agent persona for plugin reviews
 
 ### Cross-Plugin Shared Skills
 

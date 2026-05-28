@@ -8,11 +8,11 @@ Start here:
 - [Plugin review checklist](plugin-review-checklist.md): human review questions and outcome rules for plugin readiness.
 - [Plugin review schema](plugin-review.schema.json): JSON schema for machine-readable plugin review records.
 
-The Wave 0 reviewer workflow lives in `plugins/equinor-alignment/` and includes:
+The Wave 0 reviewer workflow lives in `.github/skills/` and `.github/agents/` and includes:
 
-- `equinor-plugin-reviewer`, an agent for plugin review and upstream sync facilitation.
-- `review-plugin`, a skill for applying this checklist to a target plugin.
-- `sync-upstream`, a skill for inspecting and selectively synchronizing updates from `microsoft/power-platform-skills`.
+- `.github/agents/equinor-plugin-reviewer.agent.md`, an agent for plugin review and upstream sync facilitation.
+- `.github/skills/review-plugin/SKILL.md`, a skill for applying this checklist to a target plugin.
+- `.github/skills/sync-upstream/SKILL.md`, a skill for inspecting and selectively synchronizing updates from `microsoft/power-platform-skills`.
 
 Initial review records are stored in [reviews/](reviews/). They are intentionally marked `defer` until detailed plugin owner, script, MCP, DLP, Tech Radar, EDS, and publication evidence exists.
 

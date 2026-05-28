@@ -17,13 +17,23 @@ Read these before making recommendations or edits:
 - `docs/equinor-alignment/plugin-review-checklist.md`
 - `docs/equinor-alignment/plugin-review.schema.json`
 - The target review record in `docs/equinor-alignment/reviews/`
-- `plugins/equinor-alignment/agents/equinor-plugin-reviewer.md`
 
 ## Workflows
 
-For plugin review, use the canonical workflow in `plugins/equinor-alignment/skills/review-plugin/SKILL.md`.
+For plugin review, use the workflow in `.github/skills/review-plugin/SKILL.md`.
 
-For upstream synchronization, use the canonical workflow in `plugins/equinor-alignment/skills/sync-upstream/SKILL.md`.
+For upstream synchronization, use the workflow in `.github/skills/sync-upstream/SKILL.md`.
+
+## Technology Radar Lookup
+
+Do not accept `radarState: "unknown"` at face value. For every technology with an unknown or stale state:
+
+1. Fetch the blip YAML from `equinor/techradar`:
+   ```bash
+   curl -fsSL "https://raw.githubusercontent.com/equinor/techradar/main/blips/<slug>.yaml" 2>/dev/null
+   ```
+2. If not found, check `techradar.equinor.com`.
+3. Only mark as `missing-from-radar` after both checks fail.
 
 ## Guardrails
 

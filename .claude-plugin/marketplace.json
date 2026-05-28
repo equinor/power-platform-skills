@@ -76,21 +76,6 @@
                 "connectors",
                 "microsoft"
             ]
-        },
-        {
-            "name": "equinor-alignment",
-            "source": "./plugins/equinor-alignment",
-            "description": "Review and synchronize Power Platform plugins against Equinor governance, Tech Radar, MCP, EDS, and publication requirements",
-            "category": "governance",
-            "tags": [
-                "equinor",
-                "alignment",
-                "governance",
-                "plugin-review",
-                "upstream-sync",
-                "technology-radar",
-                "eds"
-            ]
         }
     ]
 }
