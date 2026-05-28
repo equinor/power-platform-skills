@@ -57,15 +57,18 @@ Keep the first pass narrow. For `code-apps-preview`, prioritize:
 For every technology listed with `radarState: "unknown"` in the review record, or any new technology identified in Step 2, **actively look up** the current state:
 
 1. **Check the baseline known facts** in `docs/equinor-alignment/baseline.md` (section "Known relevant radar facts").
-2. **If not listed there**, fetch the blip from the `equinor/techradar` GitHub repository (internal — requires authenticated access):
+2. **If not listed there**, clone the `equinor/techradar` repo (internal) and read the blip file:
    ```bash
-   gh api repos/equinor/techradar/contents/blips/<technology_slug>.yaml --jq '.content' | base64 -d
+   git clone --depth 1 --filter=blob:none --sparse https://github.com/equinor/techradar.git /tmp/techradar 2>/dev/null
+   cd /tmp/techradar && git sparse-checkout set blips 2>/dev/null
+   cat blips/<technology_slug>.yaml
    ```
-   The `ring` field in the YAML gives the current state (`adopt`, `trial`, `assess`, or `hold`). Common slugs: `vite.yaml`, `react.yaml`, `model_context_protocol.yaml`.
-3. **If the blip file does not exist** (404), check the web page at `https://techradar.equinor.com/` for the technology name.
+   The `state` field in the YAML gives the current ring (`Adopt`, `Trial`, `Assess`, or `Hold`). Common slugs: `vite.yaml`, `react.yaml`, `model_context_protocol.yaml`.
+3. **If the blip file does not exist**, check the web page at `https://techradar.equinor.com/` for the technology name.
 4. **If still not found**, mark as `missing-from-radar` (not `unknown`) and document the architecture discussion path.
+5. **Clean up** after lookup: `rm -rf /tmp/techradar`
 
-> **Note:** `equinor/techradar` is an internal repository. Always use `gh` (GitHub CLI) which leverages the user's existing authentication. Do not use `curl` against `raw.githubusercontent.com` as it will fail without a token.
+> **Note:** `equinor/techradar` is an internal repository. The clone uses git's credential helper (provided by VS Code / dev container) for authentication. Do not use `curl` against `raw.githubusercontent.com` or `gh api` as neither will have tokens in this environment.
 
 Do not rely solely on the review record's existing `radarState` values — they may be stale. Always re-verify `unknown` and `not-assessed` entries.
 

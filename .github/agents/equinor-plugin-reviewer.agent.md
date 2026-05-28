@@ -28,14 +28,18 @@ For upstream synchronization, delegate to the **Upstream Sync Agent** (`.github/
 
 Do not accept `radarState: "unknown"` at face value. For every technology with an unknown or stale state:
 
-1. Fetch the blip YAML from `equinor/techradar` (internal repo — requires authenticated access):
+1. Clone and read the blip YAML from `equinor/techradar` (internal repo):
    ```bash
-   gh api repos/equinor/techradar/contents/blips/<slug>.yaml --jq '.content' | base64 -d
+   git clone --depth 1 --filter=blob:none --sparse https://github.com/equinor/techradar.git /tmp/techradar 2>/dev/null
+   cd /tmp/techradar && git sparse-checkout set blips 2>/dev/null
+   cat blips/<slug>.yaml
+   rm -rf /tmp/techradar
    ```
-2. If not found (404), check `techradar.equinor.com`.
+   The `state` field gives the ring: `Adopt`, `Trial`, `Assess`, or `Hold`.
+2. If not found, check `techradar.equinor.com`.
 3. Only mark as `missing-from-radar` after both checks fail.
 
-> **Note:** Never use `curl` against `raw.githubusercontent.com` for this repo — it is private. Use `gh` which leverages the user's existing GitHub authentication.
+> **Note:** This repo is private. Use `git clone` (which inherits VS Code's credential helper) — not `curl` or `gh api`, which lack tokens in this environment.
 
 ## Guardrails
 
