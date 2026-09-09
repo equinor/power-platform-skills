@@ -11,7 +11,7 @@ Every plugin also ships a `/report-issue` skill that collects the relevant versi
 
 ## Questions and discussion
 
-For questions about using these plugins, ask in [#powerplatform on Slack][slack_powerplatform].
+Equinor staff can ask in the **#powerplatform** channel on Equinor's internal Slack workspace. Everyone else should use GitHub Issues, which is the only support route that works from outside Equinor.
 
 For questions about whether a plugin may be used internally, start with [the Equinor alignment overview](docs/equinor-alignment/README.md) and the per-plugin [review records](docs/equinor-alignment/reviews/).
 
@@ -26,4 +26,3 @@ For security vulnerabilities, follow [SECURITY.md](SECURITY.md) instead of filin
 <!-- references -->
 
 [gh_issues]: https://github.com/equinor/power-platform-skills/issues
-[slack_powerplatform]: https://equinor.enterprise.slack.com/archives/C01BDAML708

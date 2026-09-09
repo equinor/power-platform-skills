@@ -1,10 +1,10 @@
 {
     "name": "power-platform-skills",
     "owner": {
-        "name": "Microsoft"
+        "name": "Equinor"
     },
     "metadata": {
-        "description": "Plugins for Power Platform development with Claude Code and GitHub Copilot",
+        "description": "Equinor-maintained fork of Microsoft's Power Platform development plugins for Claude Code and GitHub Copilot",
         "pluginRoot": "."
     },
     "plugins": [

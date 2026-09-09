@@ -5,7 +5,7 @@
   "publicationStatus": "controlled-pilot",
   "ownership": {
     "owner": "@equinor/dcs-power-platform-team",
-    "supportChannel": "#powerplatform — https://equinor.enterprise.slack.com/archives/C01BDAML708",
+    "supportChannel": "#powerplatform (Slack)",
     "upstreamSource": "microsoft/power-platform-skills/plugins/code-apps",
     "upstreamVersion": "1.1.0"
   },
