@@ -1,0 +1,185 @@
+{
+  "pluginName": "mobile-app",
+  "reviewDate": "2026-09-09",
+  "reviewer": "GitHub Copilot",
+  "publicationStatus": "defer",
+  "ownership": {
+    "owner": "not assigned",
+    "supportChannel": "not assigned",
+    "upstreamSource": "microsoft/power-platform-skills/plugins/mobile-apps",
+    "upstreamVersion": "0.3.0"
+  },
+  "scope": {
+    "summary": "Builds and deploys Power Apps code apps for mobile using an Expo / React Native template, including Dataverse data-model planning and provisioning, connector wiring, native device capabilities, Mobile Offline Profiles, screen generation, and deployment through Power Apps Wrap.",
+    "createsOrModifiesAssets": true,
+    "deploysAssets": true,
+    "deletesAssets": false,
+    "productionInteractionDefault": true
+  },
+  "skillAndScriptSafety": {
+    "skillsReviewed": false,
+    "agentsReviewed": false,
+    "hooksReviewed": false,
+    "scriptsReviewed": false,
+    "bundledScripts": [],
+    "secretsEmbedded": false,
+    "externalNetworkCalls": [
+      "Dataverse Web API (table, column, relationship, and offline-profile writes)",
+      "Power Platform BAP API for environment resolution",
+      "npm registry and Expo tooling during template preparation",
+      "Power Apps Wrap portal URLs"
+    ]
+  },
+  "mcp": {
+    "required": false,
+    "servers": [
+      {
+        "name": "microsoft-learn",
+        "transport": "http",
+        "version": "hosted, not pinned",
+        "purpose": "Hosted Microsoft Learn documentation lookups for Power Platform behaviour."
+      }
+    ],
+    "versionsPinned": false,
+    "approvedAccessRequired": true,
+    "productionInteractionBlocked": false
+  },
+  "powerPlatformGovernance": {
+    "assumedZone": "red",
+    "intendedUsers": [
+      "professional-it-developer",
+      "not-assessed"
+    ],
+    "dataClassificationCeiling": "not-assessed",
+    "confidentialDataSupported": false,
+    "dependencies": [
+      {
+        "name": "Node.js and npm with Expo toolchain",
+        "category": "developer-prerequisite",
+        "description": "The workflow expects a freshly materialized Expo template with npm dependencies installed, including @microsoft/power-apps-native-host.",
+        "blocking": true
+      },
+      {
+        "name": "Azure CLI (az) sign-in",
+        "category": "developer-prerequisite",
+        "description": "Environment resolution and Dataverse calls acquire tokens through the Azure CLI.",
+        "blocking": true
+      },
+      {
+        "name": "Dataverse environment with maker rights",
+        "category": "access-role",
+        "description": "Data-model provisioning writes tables, columns, relationships, and mobile offline profiles into the target environment.",
+        "blocking": true
+      },
+      {
+        "name": "Power Apps Wrap",
+        "category": "platform-feature",
+        "description": "Distribution of the generated mobile app depends on Power Apps Wrap being available and approved for the tenant.",
+        "blocking": true
+      },
+      {
+        "name": "Connector availability under DLP",
+        "category": "dlp-policy",
+        "description": "Connector-backed skills (SharePoint, Teams, Office 365, Excel, OneDrive, Azure DevOps) depend on the environment's DLP policy allowing the connector.",
+        "blocking": false
+      }
+    ],
+    "architectureContractRequired": true,
+    "ciRequired": true
+  },
+  "technologyRadar": {
+    "technologies": [
+      {
+        "name": "React Native",
+        "radarState": "unknown",
+        "usedFor": "Runtime framework for the generated mobile app.",
+        "source": "not checked"
+      },
+      {
+        "name": "Expo",
+        "radarState": "unknown",
+        "usedFor": "Build and tooling layer for the generated mobile app.",
+        "source": "not checked"
+      },
+      {
+        "name": "Tamagui",
+        "radarState": "unknown",
+        "usedFor": "Design-system and styling layer used by the generated screens.",
+        "source": "not checked"
+      },
+      {
+        "name": "TypeScript",
+        "radarState": "Adopt",
+        "usedFor": "Generated application source.",
+        "source": "equinor/techradar"
+      },
+      {
+        "name": "Model Context Protocol",
+        "radarState": "Adopt",
+        "usedFor": "Optional hosted Microsoft Learn documentation server.",
+        "source": "equinor/techradar"
+      }
+    ],
+    "hasHoldTechnology": false,
+    "hasAssessTechnology": false,
+    "hasUnknownTechnology": true
+  },
+  "designSystem": {
+    "generatesFrontend": true,
+    "edsRequired": true,
+    "edsPackages": [],
+    "exceptions": [
+      "The plugin generates React Native (Tamagui) screens and ships its own brand/design-system workflow. EDS does not publish React Native components, so an Equinor mobile design-token mapping is required before this plugin can produce EDS-aligned UI."
+    ]
+  },
+  "publication": {
+    "targetRepository": "equinor/powerplatform recommended, not confirmed",
+    "copilotManifest": true,
+    "claudeManifest": true,
+    "versionsSynchronized": true,
+    "variaCatalogRequired": true,
+    "techDocsRequired": true,
+    "architectureContractLinkRequired": true,
+    "installTested": false,
+    "rollbackDocumented": false
+  },
+  "blockers": [
+    "Internal owner and support channel are not assigned.",
+    "Skills, agents, hooks, and the 20+ bundled Node scripts are not reviewed against Equinor guidance.",
+    "The plugin writes Dataverse schema and mobile offline profiles directly, so production-system interaction is possible by default.",
+    "Technology Radar status is unknown for React Native, Expo, and Tamagui.",
+    "No Equinor Design System mapping exists for the generated React Native UI.",
+    "The upstream template is materialized with `degit` from `microsoft/power-platform-skills/plugins/mobile-apps/template#main` rather than from this fork; the provenance of the template used at runtime needs an owner decision.",
+    "Power Apps Wrap distribution has not been assessed against Equinor mobile application management requirements.",
+    "CodeQL: `scripts/lib/sanitize-external-content.js` strips HTML with a single-pass `/<[^>]*>/g`, which leaves an unclosed tag such as `<img src=x onerror=...` intact. The sanitized brand notes can reach generated preview HTML, so this needs an upstream fix before the plugin is piloted.",
+    "CodeQL: `scripts/render-dataverse-planning-evidence.js` escapes `|` for Markdown table cells without escaping backslash first, so a value containing a backslash before a pipe corrupts the generated evidence table. Cosmetic, but it is generated-document integrity."
+  ],
+  "evidence": [
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/0188a8b..d7b0e96",
+      "summary": "Initial review after the plugin arrived in the fork through upstream sync 2026-09-09 (mobile-app v0.3.0). The upstream 1DS telemetry stack was excluded, so `scripts/lib/telemetry/`, `scripts/lib/mobile-telemetry*.js`, `hooks/run-telemetry.js`, `scripts/emit-telemetry-checkpoint.js`, `hooks/hooks.json`, and the `/telemetry` skill are not present in this fork."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/mobile-apps/README.md",
+      "summary": "Documents the Expo template flow, skill catalogue, agents, and deployment through Power Apps Wrap."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/mobile-apps/.mcp.json",
+      "summary": "Registers only the hosted Microsoft Learn HTTP MCP server; no locally launched MCP process."
+    },
+    {
+      "type": "command",
+      "reference": "cd plugins/mobile-apps && node --test scripts/tests/*.test.js",
+      "summary": "162 passing, 1 skipped after removing telemetry-dependent tests and the dead `mobileapp-hook-utils` helper."
+    },
+    {
+      "type": "external-source",
+      "reference": "https://github.com/equinor/power-platform-skills/security/code-scanning",
+      "summary": "CodeQL raised two findings in unmodified upstream code shipped by this plugin: incomplete multi-character HTML sanitization in `scripts/lib/sanitize-external-content.js` and incomplete Markdown cell escaping in `scripts/render-dataverse-planning-evidence.js`. Both are recorded as blockers here rather than patched in the fork, so the fix lands upstream and future syncs do not conflict."
+    }
+  ],
+  "notes": "Initial review record only. Publication is deferred until detailed review evidence exists. The telemetry checkpoint calls that remain in the skill workflow prose are inert in this fork because `scripts/emit-telemetry-checkpoint.js` is not shipped; app.json `expo.extra.telemetry.cluster` is likewise never populated because the region resolver is part of the excluded stack."
+}

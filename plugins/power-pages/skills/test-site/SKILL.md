@@ -10,7 +10,7 @@ allowed-tools: Read, Bash, Glob, Grep, AskUserQuestion, TaskCreate, TaskUpdate, 
 model: opus
 ---
 
-> **Plugin check**: Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/check-version.js"` — if it outputs a message, show it to the user before proceeding.
+> **Plugin check**: Run `node "${PLUGIN_ROOT}/scripts/check-version.js"` — if it outputs a message, show it to the user before proceeding.
 
 # Test Power Pages Site
 
@@ -76,7 +76,7 @@ If no URL was provided, attempt auto-detection:
 2. Run the activation status check script:
 
    ```bash
-   node "${CLAUDE_PLUGIN_ROOT}/scripts/check-activation-status.js" --projectRoot "<PROJECT_ROOT>"
+   node "${PLUGIN_ROOT}/scripts/check-activation-status.js" --projectRoot "<PROJECT_ROOT>"
    ```
 
 3. Evaluate the JSON result:
@@ -394,13 +394,21 @@ Record the findings and any recommended frontend fixes for the Phase 6 report.
 For each failed API request, provide specific remediation:
 
 - **401 Unauthorized**: "This endpoint requires authentication. If you skipped login in Phase 3, try re-running with authentication. Otherwise, check that the auth token is being passed correctly."
-- **403 Forbidden on `/_api/` calls**: "Check the following:\n  1. **Table permissions** — Ensure a table permission exists for this table with the correct scope and privileges (Read, Write, etc.) assigned to the appropriate web role.\n  2. **Site settings** — Verify `Webapi/<tablename>/enabled` is set to `true` and `Webapi/<tablename>/fields` lists the required columns (exact Dataverse LogicalNames, all lowercase, comma-separated). If the failing request uses aggregate OData (`$apply`, `aggregate`, grouped totals), set `Webapi/<tablename>/fields` to `*`.\n  3. **Web role assignment** — Confirm the authenticated user has the correct web role assigned."
+- **403 Forbidden on `/_api/` calls**: "Check the following:\n  1. **Table permissions** — Ensure a table permission exists for this table with the correct scope and privileges (Read, Write, etc.) assigned to the appropriate web role.\n  2. **Site settings** — Verify `Webapi/<tablename>/enabled` is set to `true`. The fields value uses LogicalNames for ordinary columns, `_<LogicalName>_value` for lookup reads, and exact Navigation Properties for relationships written through `@odata.bind`. For aggregate OData, include every grouping key, aggregate input, filter column, and ordered column.\n  3. **Web role assignment** — Confirm the authenticated user has the correct web role assigned."
 - **404 Not Found**: "Verify the entity set name (should be the plural form of the table logical name). Check that the table exists in Dataverse and is published."
 - **500 Internal Server Error**: "Enable the `Webapi/error/innererror` site setting (set to `true`) to get detailed error messages. Redeploy and retest to see the inner error details."
 
 #### 5.5 Test Form Submissions (Optional)
 
-If forms are detected on any page (via `browser_snapshot` showing form elements), ask the user before interacting:
+<!-- gate: test-site:5.5.form-submit | category=consent | cancel-leaves=nothing -->
+
+> 🚦 **Gate (consent · test-site:5.5.form-submit):** About to submit a form on the live site — may create or modify Dataverse records. Destructive against shared state (the live Dataverse env); requires explicit opt-in.
+>
+> **Trigger:** Forms detected via `browser_snapshot` in Phase 5.
+> **Why we ask:** Auto-submitting test data into production records pollutes real customer data.
+> **Cancel leaves:** Nothing — read-only API checks continue from earlier 5.x phases.
+
+If forms are detected on any page (via `browser_snapshot` showing form elements), ask the user via `AskUserQuestion` before interacting:
 
 | Question | Header | Options |
 |----------|--------|---------|
@@ -484,7 +492,7 @@ Mark the "Test authenticated pages and APIs" task as `completed`.
 
 #### 6.1 Record Skill Usage
 
-> Reference: `${CLAUDE_PLUGIN_ROOT}/references/skill-tracking-reference.md`
+> Reference: `${PLUGIN_ROOT}/references/skill-tracking-reference.md`
 
 Follow the skill tracking instructions in the reference to record this skill's usage. Use `--skillName "TestSite"`.
 
@@ -722,12 +730,12 @@ EOF
 ```
 or — when invoked from `plan-alm`, the orchestrator may supply the JSON inline. Either way, the marker file location is fixed: `docs/alm/last-test-site.json` (sibling to `docs/alm/last-deploy.json` and `docs/alm/last-pipeline.json`).
 
-**Always include `stageName` in the marker when known.** The agent learns the stage label from the upstream context — plan-alm Phase 7's per-target loop, `docs/alm/last-deploy.json`'s `stageName`, or an explicit user mention. If the stage cannot be inferred (e.g. test-site invoked standalone against an arbitrary URL), set `stageName` to `null`; the refresh helper has fallback resolution paths but the explicit field is the most reliable signal.
+**Always include `stageName` in the marker when known.** The agent learns the stage label from the upstream context — `docs/alm/last-deploy.json`'s `stageName`, the plan's `stages[]`, or an explicit user mention. If the stage cannot be inferred (e.g. test-site invoked standalone against an arbitrary URL), set `stageName` to `null`; the refresh helper has fallback resolution paths but the explicit field is the most reliable signal.
 
 #### 6.7b Refresh the ALM plan (if one exists)
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/lib/refresh-alm-plan-data.js" \
+node "${PLUGIN_ROOT}/scripts/lib/refresh-alm-plan-data.js" \
   --projectRoot "." \
   --phase test-site \
   --stageName "{stageName}" \
@@ -737,6 +745,8 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/lib/refresh-alm-plan-data.js" \
 `{stageName}` is the stage label this run tested (e.g. `Staging`, `Production`). Pass an empty string when unknown — `refreshTestSite` falls back to (1) the marker's `stageName` field (set in 6.7a above), then (2) the single target stage in `planData.stages` if there's only one. Multi-stage plans with no explicit stageName + no marker stageName won't be captured (the refresh re-renders without a per-stage validationRun update); always pass it explicitly when you can.
 
 The helper reads `docs/alm/last-test-site.json`, populates `planData.validationRuns[{resolvedStage}]` with the categorized test outcome, and re-renders `docs/alm-plan.html` so the Validation tab updates immediately. When `docs/.alm-plan-data.json` is absent (standalone invocation, no plan in the project), the helper returns `ok:false` as a soft no-op — safe to run unconditionally.
+
+**Point the user at the next step (user-driven sequencing).** The helper's stdout JSON includes `nextStep: { name, skill: string | null } | null`. When non-null, branch on `skill`: when `skill` is non-null, tell the user *"Plan updated. Next in your plan: **{nextStep.name}** → run `{nextStep.skill}` when you're ready."*; when `skill` is `null` (an internal step such as Finalize, no user command), name the step only — *"Plan updated. Next in your plan: **{nextStep.name}**."* — and never print `run null`. (Typically: deploy/activate/test the next stage.) When `null` (this was the last step) or the helper returned `ok:false`, say nothing about a next step. **Never auto-invoke the next skill** — the user drives execution.
 
 #### 6.8 Suggest Next Steps
 

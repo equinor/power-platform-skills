@@ -11,7 +11,7 @@ Copilot plugin for building Power Apps code apps with React and Vite. Works with
 
 ## Install
 
-The plugin marketplace is hosted in the `plugin` folder of the [microsoft/PowerAppsCodeApps](https://github.com/microsoft/PowerAppsCodeApps) repository.
+The plugin marketplace for this fork is hosted in this repository.
 
 Open Claude Code or GitHub Copilot in any folder and run the following commands:
 
@@ -22,7 +22,7 @@ Open Claude Code or GitHub Copilot in any folder and run the following commands:
 
 2. Install the plugin:
    ```
-   "/plugin install code-apps@power-platform-skills"
+   /plugin install code-apps-preview@power-platform-skills
    ```
 
 ## Available Commands
@@ -37,6 +37,7 @@ Open Claude Code or GitHub Copilot in any folder and run the following commands:
 | `/add-teams`        | Add Teams messaging connector                                |
 | `/add-office365`    | Add Office 365 Outlook connector (calendar, email, contacts) |
 | `/add-azuredevops`  | Add Azure DevOps connector                                   |
+| `/add-workiq`       | Add Work IQ (M365 Copilot Search) connector                  |
 | `/add-connector`    | Add any other Power Platform connector                       |
 | `/add-datasource`   | Ask your copilot to recommend the right data source          |
 
@@ -45,7 +46,7 @@ Start with `/create-code-app` — it walks you through everything.
 ## Uninstall
 
 ```
-/plugin uninstall code-apps
+/plugin uninstall code-apps-preview
 ```
 
 ## Documentation

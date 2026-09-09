@@ -1,3 +1,9 @@
+# Deliberately separate from `power-pages-script-tests.yml`.
+# This workflow runs policy enforcement (gate markers, ALM-aware-by-default,
+# discovery coverage) — pure-Node, OS-independent, completes in seconds, so
+# it runs on a single OS to surface red checks fast.
+# The sibling workflow runs functional unit tests across ubuntu × windows × macos.
+# See PLUGIN_DEVELOPMENT_GUIDE.md and references/approval-gates.md.
 name: power-pages-alm-lint
 
 on:
@@ -7,16 +13,25 @@ on:
         paths:
             - "plugins/power-pages/**"
 
+permissions:
+    contents: read
+
 jobs:
     alm-lint:
         name: alm-lint
         runs-on: ubuntu-latest
+        # Consistency backstop: keep all power-pages CI opted out of telemetry
+        # transmission. This job runs only the linter today (no emission), so the
+        # var is inert here — it guarantees no transmission if an emitting step is
+        # ever added to this workflow.
+        env:
+            POWER_PLATFORM_SKILLS_TELEMETRY_POWER_PAGES_OPTOUT: "1"
         steps:
             - name: checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
             - name: setup-node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version: 20
 

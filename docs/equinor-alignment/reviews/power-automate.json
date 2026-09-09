@@ -1,0 +1,173 @@
+{
+  "pluginName": "power-automate",
+  "reviewDate": "2026-09-09",
+  "reviewer": "GitHub Copilot",
+  "publicationStatus": "defer",
+  "ownership": {
+    "owner": "not assigned",
+    "supportChannel": "not assigned",
+    "upstreamSource": "microsoft/power-platform-skills/plugins/power-automate",
+    "upstreamVersion": "3.0.5"
+  },
+  "scope": {
+    "summary": "Builds, edits, runs, and debugs Power Automate cloud flows through the bundled FlowAgent MCP server, including connection lifecycle management, surgical flow edits, copying flows across environments, run management, and expression validation.",
+    "createsOrModifiesAssets": true,
+    "deploysAssets": true,
+    "deletesAssets": true,
+    "productionInteractionDefault": true
+  },
+  "skillAndScriptSafety": {
+    "skillsReviewed": false,
+    "agentsReviewed": false,
+    "hooksReviewed": false,
+    "scriptsReviewed": false,
+    "bundledScripts": [
+      {
+        "path": "plugins/power-automate/server/mcp.mjs",
+        "purpose": "Self-contained, pre-bundled FlowAgent MCP server that exposes all flow tooling.",
+        "reviewed": false,
+        "externalCommands": [
+          "az"
+        ],
+        "networkAccess": true,
+        "secretAccess": true
+      }
+    ],
+    "secretsEmbedded": false,
+    "externalNetworkCalls": [
+      "https://api.flow.microsoft.com and https://service.flow.microsoft.com (flow CRUD and run management)",
+      "https://api.bap.microsoft.com and https://api.powerplatform.com (environment discovery)",
+      "https://apihub.azure.com (connection and connector metadata)",
+      "https://login.microsoftonline.com (token acquisition through MSAL)",
+      "https://graph.microsoft.com (directory lookups)",
+      "https://mobile.events.data.microsoft.com (MSAL library telemetry endpoint present in the bundle)"
+    ]
+  },
+  "mcp": {
+    "required": true,
+    "servers": [
+      {
+        "name": "flowagent",
+        "transport": "stdio",
+        "version": "3.0.5, bundled in-repo as server/mcp.mjs",
+        "purpose": "Exposes Power Automate flow authoring, run, and connection tools to the agent."
+      },
+      {
+        "name": "microsoft-learn",
+        "transport": "http",
+        "version": "hosted, not pinned",
+        "purpose": "Hosted Microsoft Learn documentation lookups."
+      }
+    ],
+    "versionsPinned": false,
+    "approvedAccessRequired": true,
+    "productionInteractionBlocked": false
+  },
+  "powerPlatformGovernance": {
+    "assumedZone": "red",
+    "intendedUsers": [
+      "professional-it-developer",
+      "certified-citizen-developer"
+    ],
+    "dataClassificationCeiling": "not-assessed",
+    "confidentialDataSupported": false,
+    "dependencies": [
+      {
+        "name": "Azure CLI (az login)",
+        "category": "developer-prerequisite",
+        "description": "The MCP server acquires Power Automate and Dataverse tokens through the Azure CLI identity.",
+        "blocking": true
+      },
+      {
+        "name": "Node.js 18 or later",
+        "category": "developer-prerequisite",
+        "description": "Required to run the bundled MCP server; no npm install step is needed.",
+        "blocking": true
+      },
+      {
+        "name": "Power Automate maker rights",
+        "category": "access-role",
+        "description": "Creating, editing, running, and deleting cloud flows requires maker permissions in the target environment.",
+        "blocking": true
+      },
+      {
+        "name": "Connector availability under DLP",
+        "category": "dlp-policy",
+        "description": "Flows created by the plugin are subject to the environment's DLP policy; connector combinations blocked by policy will fail at save or run time.",
+        "blocking": false
+      }
+    ],
+    "architectureContractRequired": true,
+    "ciRequired": true
+  },
+  "technologyRadar": {
+    "technologies": [
+      {
+        "name": "Power Automate",
+        "radarState": "Adopt",
+        "usedFor": "Target platform for the flows this plugin authors.",
+        "source": "equinor/techradar"
+      },
+      {
+        "name": "Model Context Protocol",
+        "radarState": "Adopt",
+        "usedFor": "FlowAgent MCP server and hosted Microsoft Learn server.",
+        "source": "equinor/techradar"
+      },
+      {
+        "name": "Node.js",
+        "radarState": "Adopt",
+        "usedFor": "Runtime for the bundled MCP server.",
+        "source": "equinor/techradar"
+      }
+    ],
+    "hasHoldTechnology": false,
+    "hasAssessTechnology": false,
+    "hasUnknownTechnology": false
+  },
+  "designSystem": {
+    "generatesFrontend": false,
+    "edsRequired": false,
+    "edsPackages": [],
+    "exceptions": [
+      "The plugin produces cloud flow definitions, not user interface code, so EDS does not apply."
+    ]
+  },
+  "publication": {
+    "targetRepository": "equinor/powerplatform recommended, not confirmed",
+    "copilotManifest": true,
+    "claudeManifest": true,
+    "versionsSynchronized": true,
+    "variaCatalogRequired": true,
+    "techDocsRequired": true,
+    "architectureContractLinkRequired": true,
+    "installTested": false,
+    "rollbackDocumented": false
+  },
+  "blockers": [
+    "Internal owner and support channel are not assigned.",
+    "The `.mcp.json` bootstrap falls back to `process.cwd()` when neither PLUGIN_ROOT nor CLAUDE_PLUGIN_ROOT is set, so opening an untrusted workspace that contains `server/mcp.mjs` causes that file to be imported and executed as the FlowAgent server. It performs none of the absolute-path, realpath, or path-escape checks upstream added to the power-pages launcher. This must fail closed before the plugin is piloted, and should be reported upstream.",
+    "The plugin ships a 2.6 MB pre-bundled MCP server (`server/mcp.mjs`) whose source is not in this repository; it cannot be meaningfully code-reviewed in its bundled form and needs a supply-chain assessment plus a documented rebuild path.",
+    "The bundled MSAL library references `mobile.events.data.microsoft.com`; whether that telemetry path is reachable in normal operation has not been determined.",
+    "Skills allow creating, updating, deleting, and running flows in any environment the signed-in identity can reach, so production-system interaction is possible by default.",
+    "Copying flows across environments has not been assessed against Equinor environment-segregation and data-movement requirements."
+  ],
+  "evidence": [
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/0188a8b..d7b0e96",
+      "summary": "Initial review after the plugin arrived in the fork through upstream sync 2026-09-09 (power-automate v3.0.5)."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/power-automate/.mcp.json",
+      "summary": "Launches the bundled `server/mcp.mjs` through a Node bootstrap that prefers PLUGIN_ROOT / CLAUDE_PLUGIN_ROOT but **falls back to `process.cwd()`** when neither is set, so a `server/mcp.mjs` in an untrusted working directory would be imported and executed. Unlike power-pages, this bootstrap performs no absolute-path, realpath, or path-escape validation. Also registers the hosted Microsoft Learn HTTP server."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/power-automate/server/mcp.mjs",
+      "summary": "Single 2.6 MB pre-bundled ES module containing the FlowAgent MCP server and its dependencies, including MSAL."
+    }
+  ],
+  "notes": "Initial review record only. Publication is deferred until detailed review evidence exists. The pre-bundled MCP server is the dominant risk in this plugin: it is the only committed artefact in the fork whose upstream source is not reviewable here, and it holds delegated tokens for flow and connection management."
+}

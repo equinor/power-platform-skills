@@ -46,6 +46,7 @@ Skills are defined in `SKILL.md` files with YAML frontmatter (`name`, `descripti
 The governance and review workflows are in `.github/skills/` and `.github/agents/`, not in `plugins/`:
 
 - `.github/skills/review-plugin/` — Plugin review workflow against Equinor standards
+- `.github/skills/code-review/` — Scope and depth rules for reviewing pull requests in this fork
 - `.github/skills/sync-upstream/` — PR-based upstream synchronization workflow
 - `.github/agents/equinor-plugin-reviewer.agent.md` — Agent persona for plugin reviews
 - `.github/agents/sync-upstream.agent.md` — Agent persona for upstream sync (PR-based, with auto re-review)
@@ -93,6 +94,8 @@ Use the `sync-upstream` skill or the **Upstream Sync Agent** for guided PR-based
 5. Opens a pull request on the Equinor fork for human review
 
 ## PR and Code Review
+
+When performing a code review, apply the scope and depth rules in `.github/skills/code-review/SKILL.md` before commenting. In short: this repository is a fork, most files are mirrored from upstream rather than authored here, and a plugin's `publicationStatus` in `docs/equinor-alignment/reviews/<plugin>.json` decides how deeply it should be reviewed. Only plugins at `controlled-pilot` or above are adopted; a `defer` plugin is reviewed for sync correctness and secrets only, not for code quality in unmodified upstream source.
 
 - **Commit format**: Conventional commits (`feat: add skill`, `docs: update review`, `fix: correct frontmatter`)
 - **Plugin changes**: Require peer review before merge

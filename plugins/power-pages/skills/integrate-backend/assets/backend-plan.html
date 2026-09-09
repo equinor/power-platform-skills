@@ -10,7 +10,7 @@
   --text:#323130; --text-dim:#605e5c; --text-bright:#201f1e; --accent:#0078d4; --accent-bg:#0078d40a; --accent-border:#0078d425;
   --pass:#107c10; --pass-bg:#107c100a; --pass-border:#107c1020; --high:#ca5010; --high-bg:#ca50100a; --high-border:#ca501020;
   --purple:#8764b8; --purple-bg:#8764b80a; --purple-border:#8764b820;
-  --webapi:#0078d4; --serverlogic:#5c2d91; --cloudflow:#ca5010;
+  --webapi:#0078d4; --aiwebapi:#00b7c3; --serverlogic:#5c2d91; --cloudflow:#ca5010;
   --mono:'Cascadia Code','Consolas',monospace; --sans:'Segoe UI','Segoe UI Web (West European)',-apple-system,system-ui,sans-serif;
   --radius:8px; --radius-sm:4px; --shadow-4:0 1.6px 3.6px 0 rgba(0,0,0,0.132),0 0.3px 0.9px 0 rgba(0,0,0,0.108);
 }
@@ -39,12 +39,13 @@ h2{font-size:21px;font-weight:800;color:var(--text-bright);letter-spacing:-0.3px
 .section-desc code{color:var(--accent);background:var(--accent-bg);padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
 h3{font-size:15px;font-weight:700;color:var(--text-bright);margin-top:24px;margin-bottom:12px;}
 .summary-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:22px;font-size:14px;color:var(--text);line-height:1.75;}
-.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px;}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;text-align:center;position:relative;overflow:hidden;box-shadow:var(--shadow-4);}
 .stat-card::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:40px;height:2px;border-radius:0 0 2px 2px;}
 .stat-card:nth-child(1)::after{background:var(--webapi);}
-.stat-card:nth-child(2)::after{background:var(--serverlogic);}
-.stat-card:nth-child(3)::after{background:var(--cloudflow);}
+.stat-card:nth-child(2)::after{background:var(--aiwebapi);}
+.stat-card:nth-child(3)::after{background:var(--serverlogic);}
+.stat-card:nth-child(4)::after{background:var(--cloudflow);}
 .stat-num{font-size:30px;font-weight:800;font-family:var(--mono);line-height:1;}
 .stat-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-top:6px;}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:10px;transition:box-shadow 0.2s,border-color 0.2s;}
@@ -60,6 +61,8 @@ h3{font-size:15px;font-weight:700;color:var(--text-bright);margin-top:24px;margi
 .approach-chip .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .approach-webapi{background:#0078d40a;border:1px solid #0078d425;color:var(--webapi);}
 .approach-webapi .dot{background:var(--webapi);}
+.approach-aiwebapi{background:#00b7c30a;border:1px solid #00b7c325;color:var(--aiwebapi);}
+.approach-aiwebapi .dot{background:var(--aiwebapi);}
 .approach-serverlogic{background:#5c2d910a;border:1px solid #5c2d9125;color:var(--serverlogic);}
 .approach-serverlogic .dot{background:var(--serverlogic);}
 .approach-cloudflow{background:#ca50100a;border:1px solid #ca501025;color:var(--cloudflow);}
@@ -67,6 +70,7 @@ h3{font-size:15px;font-weight:700;color:var(--text-bright);margin-top:24px;margi
 .mono{font-family:var(--mono);}
 .reason-box{font-size:12px;color:var(--text);background:var(--surface2);padding:10px 14px;border-radius:var(--radius-sm);line-height:1.8;}
 .reason-webapi{border-left:3px solid var(--webapi);}
+.reason-aiwebapi{border-left:3px solid var(--aiwebapi);}
 .reason-serverlogic{border-left:3px solid var(--serverlogic);}
 .reason-cloudflow{border-left:3px solid var(--cloudflow);}
 .item-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px;}
@@ -87,12 +91,17 @@ h3{font-size:15px;font-weight:700;color:var(--text-bright);margin-top:24px;margi
 .concept-header{display:flex;align-items:center;gap:14px;padding:20px 22px 0;}
 .concept-icon-box{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
 .concept-icon-webapi{background:#0078d412;color:var(--webapi);}
+.concept-icon-aiwebapi{background:#00b7c312;color:var(--aiwebapi);}
 .concept-icon-serverlogic{background:#5c2d9112;color:var(--serverlogic);}
 .concept-icon-cloudflow{background:#ca501012;color:var(--cloudflow);}
 .concept-title{font-size:16px;font-weight:800;color:var(--text-bright);}
 .concept-subtitle{font-size:12px;color:var(--text-dim);margin-top:1px;}
 .concept-body{padding:16px 22px 20px;font-size:13px;color:var(--text);line-height:1.75;}
 .concept-body p{margin-bottom:10px;}
+.note-callout{margin:0 0 14px;padding:12px 14px;border-left:3px solid var(--high);background:var(--high-bg);border-radius:6px;font-size:12.5px;line-height:1.65;color:var(--text);}
+.note-callout strong{color:var(--text-bright);font-weight:700;}
+.note-callout p{margin:0;}
+.note-callout p + p{margin-top:6px;}
 .concept-when{background:var(--surface2);border-top:1px solid var(--border);padding:14px 22px;font-size:12px;line-height:1.7;}
 .concept-when strong{color:var(--text-bright);}
 .concept-when-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-top:6px;}
@@ -206,6 +215,7 @@ h3{font-size:15px;font-weight:700;color:var(--text-bright);margin-top:24px;margi
 
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-num" style="color:var(--webapi)" id="statWebApi">0</div><div class="stat-label">Web API</div></div>
+          <div class="stat-card"><div class="stat-num" style="color:var(--aiwebapi)" id="statAiWebApi">0</div><div class="stat-label">AI Web API</div></div>
           <div class="stat-card"><div class="stat-num" style="color:var(--serverlogic)" id="statServerLogic">0</div><div class="stat-label">Server Logic</div></div>
           <div class="stat-card"><div class="stat-num" style="color:var(--cloudflow)" id="statCloudFlow">0</div><div class="stat-label">Cloud Flows</div></div>
         </div>
@@ -244,11 +254,34 @@ h3{font-size:15px;font-weight:700;color:var(--text-bright);margin-top:24px;margi
 </div>
 
 <script>
-const ITEMS = __ITEMS_DATA__;
-const RATIONALE = __RATIONALE_DATA__;
-const DATA_FLOWS = __DATA_FLOWS_DATA__;
+const ITEMS = __JSON_ITEMS_DATA__;
+const RATIONALE = __JSON_RATIONALE_DATA__;
+const DATA_FLOWS = __JSON_DATA_FLOWS_DATA__;
 
-function esc(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+function esc(str) { const d = document.createElement('div'); d.textContent = str == null ? '' : String(str); return d.innerHTML; }
+function safeIcon(value) {
+  const icon = String(value ?? '');
+  if (!/^(?:&#(?:x[0-9a-f]+|\d+);)+$/i.test(icon)) return esc(icon);
+
+  let valid = true;
+  const decoded = icon.replace(/&#(?:x([0-9a-f]+)|(\d+));/gi, (_, hex, decimal) => {
+    const codePoint = Number.parseInt(hex || decimal, hex ? 16 : 10);
+    if (codePoint > 0x10ffff || (codePoint >= 0xd800 && codePoint <= 0xdfff)) {
+      valid = false;
+      return '';
+    }
+    return String.fromCodePoint(codePoint);
+  });
+  return valid ? esc(decoded) : esc(icon);
+}
+function safeUrl(value) {
+  try {
+    const url = new URL(String(value));
+    return url.protocol === 'https:' ? url.href : '';
+  } catch {
+    return '';
+  }
+}
 
 const CONCEPTS = [
   {
@@ -269,6 +302,26 @@ const CONCEPTS = [
     docs: [
       { label: 'Web API Overview', url: 'https://learn.microsoft.com/power-pages/configure/web-api-overview' },
       { label: 'Table Permissions', url: 'https://learn.microsoft.com/power-pages/security/table-permissions' }
+    ]
+  },
+  {
+    id: 'aiwebapi',
+    icon: '&#10024;',
+    iconCls: 'concept-icon-aiwebapi',
+    title: 'AI Web API (preview)',
+    subtitle: 'Generative summaries & grounded search \u2014 preview',
+    body: '<div class="note-callout"><p><strong>Note.</strong> AI summarization APIs are a preview feature. Preview features aren\u2019t meant for production use and may have restricted functionality. These features are available before an official release so that customers can get early access and provide feedback.</p></div><p>The <strong>AI Web API</strong> is a specialization of the Web API for AI-augmented reads. It exposes two endpoints: <strong>Search Summary</strong> (grounded AI answer over the site\u2019s search index) and <strong>Data Summarization</strong> (AI summary of a single record or a collection of records). Microsoft Learn documents one ready-made Data Summarization recipe for a Copilot-style summary on the standard support-case (<code>incident</code>) detail page \u2014 use it verbatim if it fits your UX, or configure Data Summarization with your own columns and prompt for any other table.</p><p>Like regular Web API, it runs in the browser and uses the same cookie-based auth and CSRF token. It respects the same table permissions and column permissions \u2014 so once you\u2019ve wired Web API for a table, the AI endpoints can read the same data and add a generative pass on top. The output is a human-readable summary, not raw records.</p><p><strong>Read-only</strong>: neither endpoint mutates Dataverse, so the Secure Action Principle does not apply. <strong>Three-level admin gate</strong>: tenant PowerShell setting, Copilot Hub environment/site governance, and (for Search Summary) the site-level maker toggle must all allow it.</p>',
+    diagram: [
+      { label: 'Browser', value: 'Opens case detail page' },
+      { label: 'AI Web API', value: 'POST /_api/summarization/data/...' },
+      { label: 'Table Permissions', value: 'Same as Web API' },
+      { label: 'AI Summary', value: 'Rendered in UI card' }
+    ],
+    whenUse: ['Summary card on a detail page', 'Summary of a list of records', 'Suggested / related records on a page', 'AI-grounded site search with citations'],
+    whenAvoid: ['Operations that write data', 'Deterministic / exact data output', 'Data that isn\'t in Dataverse', 'Tenants without generative AI enabled'],
+    docs: [
+      { label: 'Search Summary API', url: 'https://learn.microsoft.com/power-pages/configure/search/generative-ai' },
+      { label: 'Data Summarization API', url: 'https://learn.microsoft.com/power-pages/configure/data-summarization-api' }
     ]
   },
   {
@@ -315,6 +368,7 @@ const CONCEPTS = [
 
 const APPROACH_META = {
   webapi: { label: 'Web API', color: 'var(--webapi)', cls: 'webapi' },
+  aiwebapi: { label: 'AI Web API', color: 'var(--aiwebapi)', cls: 'aiwebapi' },
   serverlogic: { label: 'Server Logic', color: 'var(--serverlogic)', cls: 'serverlogic' },
   cloudflow: { label: 'Cloud Flow', color: 'var(--cloudflow)', cls: 'cloudflow' },
 };
@@ -330,19 +384,19 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 });
 
 function approachChip(approach) {
-  const m = APPROACH_META[approach] || { label: approach, cls: 'webapi' };
+  const m = APPROACH_META[approach] || APPROACH_META.webapi;
   return `<span class="approach-chip approach-${m.cls}"><span class="dot"></span>${m.label}</span>`;
 }
 
 function complexityBadge(level) {
-  if (!level) return '';
-  return `<span class="complexity-badge complexity-${level}">${level}</span>`;
+  if (!['low', 'medium', 'high'].includes(level)) return '';
+  return `<span class="complexity-badge complexity-${level}">${esc(level)}</span>`;
 }
 
 function statusBadge(status) {
-  if (!status) return '';
   const labels = { 'new': 'New', 'existing': 'Existing', 'extends': 'Extends Existing' };
-  return `<span class="status-badge status-${status}">${labels[status] || status}</span>`;
+  if (!labels[status]) return '';
+  return `<span class="status-badge status-${status}">${labels[status]}</span>`;
 }
 
 function implementBar(approach) {
@@ -351,6 +405,12 @@ function implementBar(approach) {
       <span class="implement-label">Implement with:</span>
       <span class="implement-cmd">/integrate-webapi</span>
       <span class="implement-hint">Generates Web API service code + table permissions</span>
+    </div>`;
+  } else if (approach === 'aiwebapi') {
+    return `<div class="implement-bar">
+      <span class="implement-label">Implement with:</span>
+      <span class="implement-cmd">/add-ai-webapi</span>
+      <span class="implement-hint">Generates summarization service + Summarization/* site settings</span>
     </div>`;
   } else if (approach === 'serverlogic') {
     return `<div class="implement-bar">
@@ -400,10 +460,12 @@ conceptsContainer.innerHTML = CONCEPTS.map(c => {
 
 // --- Overview Tab ---
 const webApiCount = ITEMS.filter(i => i.approach === 'webapi').length;
+const aiWebApiCount = ITEMS.filter(i => i.approach === 'aiwebapi').length;
 const serverLogicCount = ITEMS.filter(i => i.approach === 'serverlogic').length;
 const cloudFlowCount = ITEMS.filter(i => i.approach === 'cloudflow').length;
 
 document.getElementById('statWebApi').textContent = webApiCount;
+document.getElementById('statAiWebApi').textContent = aiWebApiCount;
 document.getElementById('statServerLogic').textContent = serverLogicCount;
 document.getElementById('statCloudFlow').textContent = cloudFlowCount;
 document.getElementById('topbarCount').textContent =
@@ -421,10 +483,10 @@ summaryEl.innerHTML = usedApproaches.map(approach => {
 
 document.getElementById('rationaleContainer').innerHTML = RATIONALE.map(r => `
   <div class="principle">
-    <div class="principle-icon">${r.icon}</div>
+    <div class="principle-icon">${safeIcon(r.icon)}</div>
     <div>
-      <div class="principle-title">${r.title}</div>
-      <div class="principle-desc">${r.desc}</div>
+      <div class="principle-title">${esc(r.title)}</div>
+      <div class="principle-desc">${esc(r.desc)}</div>
     </div>
   </div>
 `).join('');
@@ -437,14 +499,14 @@ dfContainer.innerHTML = DATA_FLOWS.map(flow => {
     const connector = idx < flow.steps.length - 1 ? '<span class="flow-connector">&#10140;</span>' : '';
     return `<div class="flow-step" style="border-top:3px solid ${m.color}">
       <div class="flow-step-label">${m.label}</div>
-      <div class="flow-step-name">${step.name}</div>
-      <div class="flow-step-detail">${step.detail || ''}</div>
+      <div class="flow-step-name">${esc(step.name)}</div>
+      <div class="flow-step-detail">${esc(step.detail || '')}</div>
     </div>${connector}`;
   }).join('');
 
   return `<div class="card" style="margin-bottom:16px;">
-    <div style="font-size:14px;font-weight:700;color:var(--text-bright);margin-bottom:4px;">${flow.trigger}</div>
-    <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">${flow.description}</div>
+    <div style="font-size:14px;font-weight:700;color:var(--text-bright);margin-bottom:4px;">${esc(flow.trigger)}</div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">${esc(flow.description)}</div>
     <div class="flow-arrow">${stepsHtml}</div>
   </div>`;
 }).join('');
@@ -457,6 +519,7 @@ const orderContainer = document.getElementById('orderContainer');
 const PHASE_META = [
   { approach: 'serverlogic', title: 'Server Logic', subtitle: 'Server-side validation and business rules', color: 'var(--serverlogic)' },
   { approach: 'webapi', title: 'Web API', subtitle: 'Browser-to-Dataverse CRUD operations', color: 'var(--webapi)' },
+  { approach: 'aiwebapi', title: 'AI Web API', subtitle: 'Generative summaries and grounded search', color: 'var(--aiwebapi)' },
   { approach: 'cloudflow', title: 'Cloud Flows', subtitle: 'Async notifications and background automation', color: 'var(--cloudflow)' },
 ];
 
@@ -488,13 +551,12 @@ if (hasExplicitPhases) {
 
 orderContainer.innerHTML = phases.map((phase, phaseIdx) => {
   const itemsHtml = phase.items.map(item => {
-    const m = APPROACH_META[item.approach];
-    const depHtml = item.depends ? `<div class="dep-tag">${item.depends}</div>` : '';
+    const depHtml = item.depends ? `<div class="dep-tag">${esc(item.depends)}</div>` : '';
 
     return `<div class="phase-item">
       <div class="phase-item-left">
-        <div class="phase-item-name">${item.name} ${approachChip(item.approach)}</div>
-        <div class="phase-item-desc">${item.description}</div>
+        <div class="phase-item-name">${esc(item.name)} ${approachChip(item.approach)}</div>
+        <div class="phase-item-desc">${esc(item.description)}</div>
         ${depHtml}
         ${implementBar(item.approach)}
       </div>
@@ -504,24 +566,28 @@ orderContainer.innerHTML = phases.map((phase, phaseIdx) => {
     </div>`;
   }).join('');
 
-  return `<div class="phase-card${phaseIdx === 0 ? ' open' : ''}" onclick="this.classList.toggle('open')">
+  return `<div class="phase-card${phaseIdx === 0 ? ' open' : ''}">
     <div class="phase-header">
       <div class="phase-num" style="background:${phase.color};">${phase.num}</div>
       <div>
-        <div class="phase-title">${phase.title}</div>
-        <div class="phase-subtitle">${phase.subtitle}</div>
+        <div class="phase-title">${esc(phase.title)}</div>
+        <div class="phase-subtitle">${esc(phase.subtitle)}</div>
       </div>
       <span class="phase-chevron">&#9660;</span>
     </div>
-    <div class="phase-items" onclick="event.stopPropagation()">
+    <div class="phase-items">
       ${itemsHtml}
     </div>
   </div>`;
 }).join('');
+orderContainer.querySelectorAll('.phase-header').forEach(header => {
+  header.addEventListener('click', () => header.parentElement.classList.toggle('open'));
+});
 
 // --- Items Tab ---
 const itemParts = [];
 if (webApiCount) itemParts.push(webApiCount + ' Web API');
+if (aiWebApiCount) itemParts.push(aiWebApiCount + ' AI Web API');
 if (serverLogicCount) itemParts.push(serverLogicCount + ' Server Logic');
 if (cloudFlowCount) itemParts.push(cloudFlowCount + ' Cloud Flow');
 document.getElementById('itemsDesc').textContent =
@@ -533,25 +599,28 @@ itemsContainer.innerHTML = ITEMS.map(item => {
 
   const detailsHtml = (item.details || []).map(d =>
     `<div class="detail-item">
-      <div class="field-label">${d.label}</div>
-      <div style="font-size:13px;color:var(--text);">${d.value}</div>
+      <div class="field-label">${esc(d.label)}</div>
+      <div style="font-size:13px;color:var(--text);">${esc(d.value)}</div>
     </div>`
   ).join('');
 
-  const depHtml = item.depends ? `<div class="dep-tag">${item.depends}</div>` : '';
+  const depHtml = item.depends ? `<div class="dep-tag">${esc(item.depends)}</div>` : '';
 
-  const docsHtml = (item.docs || []).map(d =>
-    `<a class="concept-link" href="${d.url}" target="_blank">&#128214; ${d.label}</a>`
-  ).join('');
+  const docsHtml = (item.docs || []).map(d => {
+    const url = safeUrl(d.url);
+    return url
+      ? `<a class="concept-link" href="${esc(url)}" target="_blank" rel="noopener">&#128214; ${esc(d.label)}</a>`
+      : `<span class="concept-link">&#128214; ${esc(d.label)}</span>`;
+  }).join('');
 
   return `<div class="card" style="border-left:3px solid ${m.color};">
     <div class="item-header">
       <div>
-        <div class="item-name">${item.name} ${approachChip(item.approach)} ${complexityBadge(item.complexity)} ${statusBadge(item.status)}</div>
-        <div class="item-desc">${item.description}</div>
+        <div class="item-name">${esc(item.name)} ${approachChip(item.approach)} ${complexityBadge(item.complexity)} ${statusBadge(item.status)}</div>
+        <div class="item-desc">${esc(item.description)}</div>
       </div>
     </div>
-    <div class="reason-box reason-${m.cls}"><strong>Why ${m.label}:</strong> ${item.reasoning}</div>
+    <div class="reason-box reason-${m.cls}"><strong>Why ${m.label}:</strong> ${esc(item.reasoning)}</div>
     ${depHtml}
     ${detailsHtml ? `<div class="detail-grid">${detailsHtml}</div>` : ''}
     ${docsHtml ? `<div class="doc-links">${docsHtml}</div>` : ''}

@@ -1,6 +1,6 @@
 {
   "pluginName": "mcp-apps",
-  "reviewDate": "2026-05-28",
+  "reviewDate": "2026-06-30",
   "reviewer": "GitHub Copilot",
   "publicationStatus": "defer",
   "ownership": {
@@ -97,7 +97,7 @@
     "targetRepository": "equinor/powerplatform (recommended if Power Platform scope retained)",
     "copilotManifest": true,
     "claudeManifest": true,
-    "versionsSynchronized": false,
+    "versionsSynchronized": true,
     "variaCatalogRequired": true,
     "techDocsRequired": true,
     "architectureContractLinkRequired": false,
@@ -111,6 +111,11 @@
     "Install and rollback not tested."
   ],
   "evidence": [
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/9258fd9..0188a8b",
+      "summary": "Re-reviewed after upstream sync 2026-06-30 (mcp-apps v1.0.0). Added Open Plugins metadata (.plugin/plugin.json + marketplace entry) and bundled report-issue workflow content. No runtime behavior change, no new scripts, and no change to the external-call surface. Manifest mirrors now validate cleanly; remaining blockers unchanged."
+    },
     {
       "type": "file",
       "reference": "plugins/mcp-apps/README.md",
@@ -157,5 +162,5 @@
       "summary": "Owner confirmed: @equinor/dcs-power-platform-team owns the plugin; support via #powerplatform Slack. EDS should be preferred — needs assessment whether EDS provides sufficient/equivalent components to replace Fluent UI Web Components. CDN dependency is contingent on EDS outcome; CSP rules need per-environment updates for all referenced CDNs. Copilot CLI and Claude CLI use the same manifest mechanism."
     }
   ],
-  "notes": "Full review completed 2026-05-28. Skills, samples, and references are reviewed and contain no secrets, no production interaction, and include XSS/accessibility protections. Owner assigned 2026-05-28 (@equinor/dcs-power-platform-team, #powerplatform). EDS preferred — assessment needed for component equivalence vs Fluent UI Web Components. CDN dependency requires per-environment CSP updates. Copilot CLI and Claude CLI use the same manifest (copilotManifest set true). Remaining blockers: EDS assessment, Fluent UI radar status (may become moot), CDN/CSP planning, install test. Plugin eligible for controlled-pilot once EDS assessment is completed and install is tested."
+  "notes": "Full review completed 2026-05-28. Skills, samples, and references are reviewed and contain no secrets, no production interaction, and include XSS/accessibility protections. Owner assigned 2026-05-28 (@equinor/dcs-power-platform-team, #powerplatform). EDS preferred — assessment needed for component equivalence vs Fluent UI Web Components. CDN dependency requires per-environment CSP updates. Copilot CLI and Claude CLI use the same manifest (copilotManifest set true). Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content with no runtime behavior change. Remaining blockers: EDS assessment, Fluent UI radar status (may become moot), CDN/CSP planning, install test. Plugin eligible for controlled-pilot once EDS assessment is completed and install is tested."
 }

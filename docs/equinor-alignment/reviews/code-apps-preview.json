@@ -1,13 +1,13 @@
 {
   "pluginName": "code-apps-preview",
-  "reviewDate": "2026-05-28",
+  "reviewDate": "2026-09-09",
   "reviewer": "GitHub Copilot",
   "publicationStatus": "controlled-pilot",
   "ownership": {
     "owner": "@equinor/dcs-power-platform-team",
-    "supportChannel": "#powerplatform — https://equinor.enterprise.slack.com/archives/C01BDAML708",
+    "supportChannel": "#powerplatform (Slack)",
     "upstreamSource": "microsoft/power-platform-skills/plugins/code-apps",
-    "upstreamVersion": "1.0.0"
+    "upstreamVersion": "1.1.0"
   },
   "scope": {
     "summary": "Builds and deploys Power Apps code apps with React and Vite and adds Power Platform connectors such as Dataverse, SharePoint, Excel, OneDrive, Teams, Office 365 Outlook, Azure DevOps, and custom connectors.",
@@ -27,7 +27,8 @@
       "Power Apps code apps tooling (npx power-apps CLI)",
       "Power Platform connectors (via sandbox proxy)",
       "npm registry (package installs)",
-      "GitHub raw content (version check, degit template)"
+      "GitHub raw content (version check, degit template)",
+      "Work IQ Copilot MCP connector (`shared_a365copilotchatmcp`) \u2014 only when `/add-workiq` is used; its `CopilotChat` tool queries Microsoft 365 documents, emails, chats, sites, and files across the organization"
     ]
   },
   "mcp": {
@@ -62,6 +63,12 @@
         "category": "platform-feature",
         "description": "Code apps feature must be available in the target environment.",
         "blocking": true
+      },
+      {
+        "name": "Work IQ Copilot MCP connector (`shared_a365copilotchatmcp`)",
+        "category": "dlp-policy",
+        "description": "Soft constraint affecting one skill, not the plugin. `/add-workiq` wires in a connector whose `CopilotChat` tool performs AI-grounded search across Microsoft 365 documents, emails, chats, sites, and files organization-wide. That reach can exceed this record's `equinor-internal` data classification ceiling, and the connector's DLP position is not confirmed. **`/add-workiq` is therefore outside the controlled pilot** until DLP placement and a classification ceiling for the connector are confirmed. Every other skill in the plugin is unaffected.",
+        "blocking": false
       }
     ],
     "architectureContractRequired": true,
@@ -118,7 +125,7 @@
     "targetRepository": "equinor/powerplatform recommended, not confirmed",
     "copilotManifest": true,
     "claudeManifest": true,
-    "versionsSynchronized": false,
+    "versionsSynchronized": true,
     "variaCatalogRequired": true,
     "techDocsRequired": true,
     "architectureContractLinkRequired": true,
@@ -127,6 +134,16 @@
   },
   "blockers": [],
   "evidence": [
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/0188a8b..d7b0e96",
+      "summary": "Re-reviewed after upstream sync 2026-09-09 (code-apps-preview v1.1.0). Upstream renamed the CLI surface from flat `npx power-apps <verb>` to grouped `pa <group> <verb>` and added `shared/cli-binary.md` with a binary-resolution contract that requires `npx --no-install`. A new `/add-workiq` skill adds a Work IQ (M365 search / AI answers) data source \u2014 that connector's DLP position needs confirmation before use. Equinor EDS guardrails were re-applied on top of the upstream text rather than dropped. No new bundled scripts or hooks; deploy still requires explicit confirmation."
+    },
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/9258fd9..0188a8b",
+      "summary": "Re-reviewed after upstream sync 2026-06-30 (code-apps-preview v1.0.0). Added Open Plugins metadata (.plugin/plugin.json + marketplace entry) and bundled report-issue workflow content. Upstream generic theming/documentation changes were not taken where they would remove Equinor EDS guidance; fork-specific EDS guardrails remain in README, shared instructions, and create/deploy skill docs. No new scripts, hooks, or production interaction."
+    },
     {
       "type": "file",
       "reference": "plugins/code-apps/README.md",
@@ -155,33 +172,33 @@
     {
       "type": "manual-review",
       "reference": "2026-05-23 re-review",
-      "summary": "Re-review pass. Found three new alignment issues: version-check.md fetches from personal fork hjaf/power-platform-skills (not Equinor-controlled); plugin.json and README reference same personal fork; add-mcscopilot skill (Microsoft Copilot Studio connector) radar status not assessed. report-issue skill targets public Microsoft repo — Equinor reporting path not defined. All four original blockers remain open. Status remains defer."
+      "summary": "Re-review pass. Found three new alignment issues: version-check.md fetches from personal fork hjaf/power-platform-skills (not Equinor-controlled); plugin.json and README reference same personal fork; add-mcscopilot skill (Microsoft Copilot Studio connector) radar status not assessed. report-issue skill targets public Microsoft repo \u2014 Equinor reporting path not defined. All four original blockers remain open. Status remains defer."
     },
     {
       "type": "manual-review",
       "reference": "2026-05-23 owner answers",
-      "summary": "Owner confirmed: @equinor/dcs-power-platform-team owns the plugin; support via #powerplatform. Full connector set in scope, zone-dependent; primarily Red Zone, experimentation at all zones. Vite is under Tech Radar evaluation (defer for now). add-mcscopilot excluded from controlled pilot — different component type. Fork references to be updated to equinor/power-platform-skills (repo transfer pending)."
+      "summary": "Owner confirmed: @equinor/dcs-power-platform-team owns the plugin; support via #powerplatform. Full connector set in scope, zone-dependent; primarily Red Zone, experimentation at all zones. Vite is under Tech Radar evaluation (defer for now). add-mcscopilot excluded from controlled pilot \u2014 different component type. Fork references to be updated to equinor/power-platform-skills (repo transfer pending)."
     },
     {
       "type": "manual-review",
       "reference": "2026-05-23 upstream sync review",
-      "summary": "Fetched upstream/main (microsoft/power-platform-skills). Two upstream changes deferred: (1) development-standards.md — Microsoft removed EDS section and replaced EDS token-based theming with a generic dark-mode default; deferred because edsRequired=true and EDS is Adopt on Equinor Tech Radar. (2) create-code-app/SKILL.md Step 9 EDS component guidance — Microsoft replaced EDS component usage with generic React; deferred for the same EDS reason. One upstream change accepted via manual merge: baseline scaffold deploy in create-code-app Step 6 and shared-instructions.md is now pre-approved (no confirmation prompt) because the skill targets development environments only; promotion to test and production environments is planned via a separate CI/CD skill or agent. Three URL-bearing files (plugin.json, README.md, version-check.md) already updated locally to reference equinor/power-platform-skills and kept as-is. No Equinor alignment docs overwritten."
+      "summary": "Fetched upstream/main (microsoft/power-platform-skills). Two upstream changes deferred: (1) development-standards.md \u2014 Microsoft removed EDS section and replaced EDS token-based theming with a generic dark-mode default; deferred because edsRequired=true and EDS is Adopt on Equinor Tech Radar. (2) create-code-app/SKILL.md Step 9 EDS component guidance \u2014 Microsoft replaced EDS component usage with generic React; deferred for the same EDS reason. One upstream change accepted via manual merge: baseline scaffold deploy in create-code-app Step 6 and shared-instructions.md is now pre-approved (no confirmation prompt) because the skill targets development environments only; promotion to test and production environments is planned via a separate CI/CD skill or agent. Three URL-bearing files (plugin.json, README.md, version-check.md) already updated locally to reference equinor/power-platform-skills and kept as-is. No Equinor alignment docs overwritten."
     },
     {
       "type": "manual-review",
       "reference": "2026-05-28 re-review",
-      "summary": "Re-review pass. Vite Tech Radar blocker cleared: Vite moved to Adopt (blip changeDate 2026-05-13). Power Platform connectors reclassified as not-applicable for radar (connectors are platform-native governance items). Repo references already point to equinor/power-platform-skills (blocker cleared). Two blockers removed, status upgraded from defer to controlled-pilot. Remaining blockers: DLP connector mapping, Copilot manifest, report-issue channel. TypeScript confirmed Adopt. All skills, agents, shared instructions unchanged since 2026-05-23 review — no new safety concerns."
+      "summary": "Re-review pass. Vite Tech Radar blocker cleared: Vite moved to Adopt (blip changeDate 2026-05-13). Power Platform connectors reclassified as not-applicable for radar (connectors are platform-native governance items). Repo references already point to equinor/power-platform-skills (blocker cleared). Two blockers removed, status upgraded from defer to controlled-pilot. Remaining blockers: DLP connector mapping, Copilot manifest, report-issue channel. TypeScript confirmed Adopt. All skills, agents, shared instructions unchanged since 2026-05-23 review \u2014 no new safety concerns."
     },
     {
       "type": "manual-review",
       "reference": "2026-05-28 owner answers",
-      "summary": "Owner clarifications: (1) Target audience is Red Zone but zone is determined by environment owners, not the plugin — plugin can be used in any zone. (2) Support channel is #powerplatform Slack for help; GitHub issues also acceptable for bug reports (dual-channel). report-issue blocker cleared. (3) Install test attempted: /plugin install code-apps@power-platform-skills failed because plugin.json name is code-apps-preview — naming mismatch blocker added."
+      "summary": "Owner clarifications: (1) Target audience is Red Zone but zone is determined by environment owners, not the plugin \u2014 plugin can be used in any zone. (2) Support channel is #powerplatform Slack for help; GitHub issues also acceptable for bug reports (dual-channel). report-issue blocker cleared. (3) Install test attempted: /plugin install code-apps@power-platform-skills failed because plugin.json name is code-apps-preview \u2014 naming mismatch blocker added."
     },
     {
       "type": "manual-review",
       "reference": "2026-05-28 owner answers (round 2)",
-      "summary": "Owner clarifications: (1) DLP mapping deferred — owner states DLP is somewhat irrelevant in this context; plugin review schema will be restructured later. Blocker removed. (2) GitHub Copilot CLI confirmed to work same way as Claude CLI — same manifest serves both. copilotManifest set to true. (3) Plugin name code-apps-preview to stay as-is (mirrors upstream). All blockers cleared. Plugin eligible for controlled-pilot with no remaining hard blockers."
+      "summary": "Owner clarifications: (1) DLP mapping deferred \u2014 owner states DLP is somewhat irrelevant in this context; plugin review schema will be restructured later. Blocker removed. (2) GitHub Copilot CLI confirmed to work same way as Claude CLI \u2014 same manifest serves both. copilotManifest set to true. (3) Plugin name code-apps-preview to stay as-is (mirrors upstream). All blockers cleared. Plugin eligible for controlled-pilot with no remaining hard blockers."
     }
   ],
-  "notes": "Skills and agents reviewed 2026-05-22. Production interaction blocked (all deploys require confirmation — intentionally scoped to dev; test/prod promotion planned via a separate CI/CD skill or agent). EDS integrated into generation workflow. Re-reviewed 2026-05-23: owner assigned, zones clarified (Green/Yellow/Red, primarily Red), Copilot Studio excluded from scope, fork references updated. Upstream sync 2026-05-23: EDS-removing upstream changes deferred; Equinor guardrails preserved. Re-reviewed 2026-05-28: Vite now Adopt, all tech radar items resolved, status upgraded to controlled-pilot. Owner answers 2026-05-28: DLP deferred (schema restructure planned), Copilot CLI confirmed same mechanism as Claude CLI, plugin name stays code-apps-preview (mirrors upstream). All blockers cleared. Next step toward ready-for-internal-pilot: successful end-to-end install test using correct plugin name, and rollback documentation."
+  "notes": "Skills and agents reviewed 2026-05-22. Production interaction blocked (all deploys require confirmation \u2014 intentionally scoped to dev; test/prod promotion planned via a separate CI/CD skill or agent). EDS integrated into generation workflow. Re-reviewed 2026-05-23: owner assigned, zones clarified (Green/Yellow/Red, primarily Red), Copilot Studio excluded from scope, fork references updated. Upstream sync 2026-05-23: EDS-removing upstream changes deferred; Equinor guardrails preserved. Re-reviewed 2026-05-28: Vite now Adopt, all tech radar items resolved, status upgraded to controlled-pilot. Owner answers 2026-05-28: DLP deferred (schema restructure planned), Copilot CLI confirmed same mechanism as Claude CLI, plugin name stays code-apps-preview (mirrors upstream). Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content; Equinor EDS guardrails remain intentionally preserved. All blockers cleared. Next step toward ready-for-internal-pilot: successful end-to-end install test using correct plugin name, and rollback documentation. Upstream sync 2026-09-09 introduced the /add-workiq skill; it is explicitly scoped OUT of the controlled pilot until the Work IQ Copilot MCP connector's DLP placement and data classification ceiling are confirmed, recorded as a non-blocking dependency rather than a blocker because it constrains one skill and not the plugin."
 }

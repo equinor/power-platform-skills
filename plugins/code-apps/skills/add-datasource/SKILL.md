@@ -6,7 +6,7 @@ allowed-tools: Read, Edit, Write, Grep, Glob, Bash, LSP, TaskCreate, TaskUpdate,
 model: sonnet
 ---
 
-**📋 Shared Instructions: [shared-instructions.md](${CLAUDE_PLUGIN_ROOT}/shared/shared-instructions.md)** - Cross-cutting concerns.
+**📋 Shared Instructions: [shared-instructions.md](${PLUGIN_ROOT}/shared/shared-instructions.md)** - Cross-cutting concerns.
 
 # Add Data Source
 
@@ -16,7 +16,7 @@ Router skill that understands the user's goal and connects them to the right dat
 
 ### Check Memory Bank
 
-Check for `memory-bank.md` per [shared-instructions.md](${CLAUDE_PLUGIN_ROOT}/shared/shared-instructions.md).
+Check for `memory-bank.md` per [shared-instructions.md](${PLUGIN_ROOT}/shared/shared-instructions.md).
 
 ### Understand the Goal
 
@@ -40,6 +40,7 @@ Map the user's goal to the appropriate skill:
 | Work with SharePoint lists or document libraries | SharePoint Online connector | `/add-sharepoint` |
 | Send emails, read inbox, manage calendar events | Office 365 Outlook connector | `/add-office365` |
 | Invoke an AI agent or copilot built in Copilot Studio | Copilot Studio connector | `/add-mcscopilot` |
+| Search Microsoft 365 content or get AI-grounded answers over it | Work IQ Copilot MCP connector. Reaches documents, emails, chats, sites and files across the organization, so prefer a workload-specific connector when the workload is known | `/add-workiq` |
 | Something else or not sure | Generic connector (we'll figure it out) | `/add-connector` |
 
 **Important routing rules:**

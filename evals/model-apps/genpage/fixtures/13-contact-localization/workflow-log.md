@@ -8,11 +8,11 @@
 
 ### Prereq checks
 - `node --version` → v20.11.0
-- `pac help` → PAC CLI Version 2.7.3 (>= 2.7.0 verified)
+- `pac help` → PAC CLI Version 2.11.0 (> 2.10.0 verified)
 
 ### Auth check
-- `pac auth list` → active profile aurora365-user1@auroratstgeo.onmicrosoft.com
-- Active environment: https://aurorabapenv4ab3f.crm10.dynamics.com/ (reported to user)
+- `pac auth list` → active profile contoso-user001@contosotest1.onmicrosoft.com
+- Active environment: https://contosobapenv0002.crm10.dynamics.com/ (reported to user)
 
 ### Entity discovery
 - `pac model list-tables --search 'contact'` — contact entity exists
@@ -52,8 +52,8 @@
 - Plan has 1 page → fast path taken (inlined build, no Task subagent dispatched)
 - Data mode: dataverse
 - Read sample: plugins/model-apps/samples/9-list-with-caching.tsx (Dataverse list pattern)
-- Read ${CLAUDE_PLUGIN_ROOT}/references/localization.md (multi-language + RTL pattern)
-- Read ${CLAUDE_PLUGIN_ROOT}/references/verified-icons.txt
+- Read ${PLUGIN_ROOT}/references/localization.md (multi-language + RTL pattern)
+- Read ${PLUGIN_ROOT}/references/verified-icons.txt
 - Wrote page.tsx with:
   - Xrm.Utility.getGlobalContext().userSettings.languageId for language detection
   - LOCALE_MAP for 1033/1025/1036 → BCP-47 + isRtl

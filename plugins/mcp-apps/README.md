@@ -7,7 +7,7 @@ Generate interactive MCP App widgets for MCP tools using Claude Code or Visual S
 ### From the marketplace
 
 ```bash
-/plugin marketplace add microsoft/power-platform-skills
+/plugin marketplace add equinor/power-platform-skills
 /plugin install mcp-apps@power-platform-skills
 ```
 

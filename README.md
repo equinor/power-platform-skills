@@ -11,6 +11,8 @@ This repository is a **plugin marketplace** containing agent plugins for Power P
 **Primary platform:** GitHub Copilot (VS Code) via the `.github/` convention.
 **Also supported:** Claude Code via the plugin marketplace system.
 
+The canonical Open Plugins marketplace manifest lives at `marketplace.json`. The root `.claude-plugin/marketplace.json` and each plugin's `.claude-plugin/plugin.json` remain as compatibility mirrors for existing marketplace subscriptions.
+
 ## Equinor Fork
 
 This repository is a fork of [`microsoft/power-platform-skills`][upstream_github], maintained for Equinor internal use. It is not a neutral mirror — it applies Equinor governance, security standards, and the shared practices of the [Equinor IT professional network][equinor_varia] before any plugin is piloted or published internally.
@@ -50,10 +52,9 @@ The table below summarises every category of change. The review records in [`doc
 | **`.github/instructions/`** | Markdown, documentation, and alignment instruction files | Enforces shared Equinor documentation conventions across all AI-assisted authoring |
 | **`.devcontainer/`** | Dev container with Equinor CA certificates and standard tooling | Ensures consistent, trusted development environments inside Equinor's network |
 | **`plugins/code-apps/`** | <abbr title="Equinor Design System">EDS</abbr> integration guidance, mandatory deploy confirmation, updated development standards | Aligns generated code apps with Equinor Design System and prevents accidental production deploys |
-| **`scripts/install.js`** | Extended to support GitHub Copilot project-scoped installation and Equinor fork URL | Lets teams install into `.github/` for shared team use, not only user-level Claude Code install |
+| **`scripts/install.js`** | Extended to support GitHub Copilot project-scoped installation, Equinor fork URLs, and Open Plugins marketplace resolution | Lets teams install into `.github/` for shared team use while staying compatible with the upstream marketplace layout |
 | **`scripts/validate-plugin-reviews.js`** | New script | CI-validates review records against the JSON schema before any plugin state change merges |
 | **`SECURITY.md`** | Updated to Equinor responsible disclosure contacts | Replaces Microsoft-only disclosure path with Equinor contacts |
-| **`CODE_OF_CONDUCT.md`, `SUPPORT.md`** | Removed | Superseded by Equinor's own conduct and support processes |
 
 ### Plugin publication status
 
@@ -61,11 +62,14 @@ Current review status for each plugin. A review record reaching `controlled-pilo
 
 | Plugin | Status | Review record |
 | --- | --- | --- |
-| `code-apps-preview` | defer | [reviews/code-apps-preview.json](docs/equinor-alignment/reviews/code-apps-preview.json) |
+| `code-apps-preview` | controlled-pilot | [reviews/code-apps-preview.json](docs/equinor-alignment/reviews/code-apps-preview.json) |
 | `power-pages` | defer | [reviews/power-pages.json](docs/equinor-alignment/reviews/power-pages.json) |
 | `model-apps` | defer | [reviews/model-apps.json](docs/equinor-alignment/reviews/model-apps.json) |
 | `canvas-apps` | defer | [reviews/canvas-apps.json](docs/equinor-alignment/reviews/canvas-apps.json) |
 | `mcp-apps` | defer | [reviews/mcp-apps.json](docs/equinor-alignment/reviews/mcp-apps.json) |
+| `mobile-app` | defer | [reviews/mobile-app.json](docs/equinor-alignment/reviews/mobile-app.json) |
+| `power-apps-mobile-extension` | defer | [reviews/power-apps-mobile-extension.json](docs/equinor-alignment/reviews/power-apps-mobile-extension.json) |
+| `power-automate` | defer | [reviews/power-automate.json](docs/equinor-alignment/reviews/power-automate.json) |
 
 `defer` means the plugin has an initial review record but lacks sufficient evidence (owner confirmation, <abbr title="Data Loss Prevention Policy">DLP</abbr> mapping, Tech Radar positioning, or EDS compliance) to recommend piloting. Plugins with a `defer` status warrant extra care — review the record and understand what is still outstanding before adopting them in your team's workflow.
 
@@ -98,7 +102,16 @@ Or run without cloning:
 curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node - --scope project --plugin code-apps-preview
 ```
 
-Available plugins: `power-pages`, `model-apps`, `mcp-apps`, `canvas-apps`, `code-apps-preview`
+Available plugins: `power-pages`, `model-apps`, `mcp-apps`, `canvas-apps`, `code-apps-preview`, `mobile-app`, `power-apps-mobile-extension`, `power-automate`
+
+> [!IMPORTANT]
+> **Deferred plugins are never installed implicitly.** Run without `--plugin` and the installer
+> installs only plugins reviewed to `controlled-pilot` or above, and prints which ones it skipped.
+> A `defer` plugin still has unresolved policy, security, or ownership blockers and may activate an
+> unreviewed MCP server, so installing one is an explicit choice: name it with `--plugin <name>`, or
+> pass `--include-deferred` to take the whole marketplace. Statuses come from
+> [docs/equinor-alignment/reviews](docs/equinor-alignment/reviews). If a review record cannot be read,
+> the plugin is treated as not adopted.
 
 ### Claude Code — User-Scoped
 
@@ -126,7 +139,7 @@ The installer automatically:
 
 - Detects available tools (Claude Code, GitHub Copilot CLI)
 - Installs `pac` CLI if not already installed
-- Registers the plugin marketplace and installs all listed plugins
+- Registers the plugin marketplace and installs the adopted plugins (see the note above)
 - Enables auto-update so plugins stay current without manual steps
 
 ### Manual Installation (Claude Code)
@@ -144,8 +157,12 @@ Inside a Claude Code session:
     ```bash
     /plugin install power-pages@power-platform-skills
     /plugin install model-apps@power-platform-skills
-    /plugin install code-apps@power-platform-skills
+    /plugin install mcp-apps@power-platform-skills
+    /plugin install code-apps-preview@power-platform-skills
+    /plugin install mobile-app@power-platform-skills
+    /plugin install power-apps-mobile-extension@power-platform-skills
     /plugin install canvas-apps@power-platform-skills
+    /plugin install power-automate@power-platform-skills
     ```
 
 ### Where Are Things Installed?
@@ -167,8 +184,12 @@ The marketplace registry (Claude Code) is stored at `~/.claude/plugins/known_mar
 # Inside a Claude Code session
 /plugin uninstall power-pages
 /plugin uninstall model-apps
-/plugin uninstall code-apps
+/plugin uninstall mcp-apps
+/plugin uninstall code-apps-preview
+/plugin uninstall mobile-app
+/plugin uninstall power-apps-mobile-extension
 /plugin uninstall canvas-apps
+/plugin uninstall power-automate
 /plugin marketplace remove power-platform-skills
 ```
 
@@ -182,9 +203,19 @@ Create and deploy Power Pages sites using modern development approaches.
 
 ### [Model Apps](plugins/model-apps/README.md) (`plugins/model-apps`)
 
-Build and deploy Power Apps generative pages for model-driven apps.
+Build model-driven Power Apps end to end, and the generative pages that go in them.
 
-**Stack**: React + TypeScript + Fluent, deployed via PAC CLI
+**Skills**: `/app-builder` (**Preview**) builds and edits a whole app — tables, relationships, forms,
+views, charts, security roles, app + sitemap — from a natural-language intent; `/genpage` builds
+generative pages for an app that already exists. Use either independently — neither requires the other
+
+**Stack**: React + TypeScript + Fluent, deployed via PAC CLI and the headless `cds-maker-sdk`
+
+### [MCP Apps](plugins/mcp-apps/README.md) (`plugins/mcp-apps`)
+
+Generate interactive MCP App widgets for MCP tools.
+
+**Stack**: HTML widgets using the MCP Apps protocol
 
 ### [Code Apps](plugins/code-apps/AGENTS.md) (`plugins/code-apps`)
 
@@ -192,11 +223,30 @@ Build and deploy Power Apps code apps connected to Power Platform via connectors
 
 **Stack**: React + Vite + TypeScript, deployed via PAC CLI
 
+### [Mobile Apps](plugins/mobile-apps/README.md) (`plugins/mobile-apps`)
+
+Build and deploy Power Apps code apps for mobile with native device capabilities.
+
+**Stack**: Expo + React Native + TypeScript, deployed via Power Apps Wrap
+
+### [Power Apps Mobile Extension](plugins/power-apps-mobile-extension/README.md) (`plugins/power-apps-mobile-extension`)
+
+Build third-party native controls for wrapped Canvas apps and package them as verified
+`.ppmplugin` bundles with matching dispatcher PCF controls.
+
+**Stack**: Kotlin + Objective-C, Power Apps component framework, and Power Apps Wrap
+
 ### [Canvas Apps](plugins/canvas-apps/AGENTS.md) (`plugins/canvas-apps`)
 
 Author Power Apps Canvas Apps using the Canvas Authoring MCP server.
 
 **Stack**: PA YAML (`.pa.yaml`) authored via `CanvasAuthoringMcpServer`, requires .NET 10 SDK
+
+### [Power Automate](plugins/power-automate/README.md) (`plugins/power-automate`)
+
+Build, edit, run, and debug Power Automate cloud flows via the FlowAgent MCP server.
+
+**Stack**: Node.js 18+, Azure CLI (`az login`), self-contained MCP bundle
 
 ## Local Development
 
@@ -208,8 +258,12 @@ To develop and test plugins locally, follow these steps:
     ```bash
     claude --plugin-dir /path/to/power-platform-skills/plugins/power-pages
     claude --plugin-dir /path/to/power-platform-skills/plugins/model-apps
+    claude --plugin-dir /path/to/power-platform-skills/plugins/mcp-apps
     claude --plugin-dir /path/to/power-platform-skills/plugins/code-apps
+    claude --plugin-dir /path/to/power-platform-skills/plugins/mobile-apps
+    claude --plugin-dir /path/to/power-platform-skills/plugins/power-apps-mobile-extension
     claude --plugin-dir /path/to/power-platform-skills/plugins/canvas-apps
+    claude --plugin-dir /path/to/power-platform-skills/plugins/power-automate
     ```
 
 ## Running Without Interruption
@@ -278,31 +332,70 @@ See the [Copilot CLI docs][gh_copilot_cli_docs] for the full reference.
 
 ```text
 power-platform-skills/
+├── marketplace.json          # Open Plugins marketplace manifest (lists all plugins)
 ├── .claude-plugin/
-│   └── marketplace.json      # Marketplace manifest (lists all plugins)
+│   └── marketplace.json      # Legacy marketplace mirror for existing subscriptions
 ├── .claude/
 │   └── settings.json         # Auto-allowed tools (pac, node, dotnet, etc.)
 ├── plugins/
 │   ├── power-pages/          # Power Pages plugin
+│   │   ├── .plugin/
+│   │   │   └── plugin.json
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
 │   │   ├── commands/
 │   │   ├── shared/
 │   │   └── skills/
 │   ├── model-apps/           # Model Apps plugin
+│   |   ├── .plugin/
+│   │   └── plugin.json
 │   |   ├── .claude-plugin/
 │   │   └── plugin.json
 │   |   ├── commands/
 │   |   ├── skills/
 │   |   ├── shared/           # Shared references + samples
 │   |   └── github/           # GitHub Copilot instructions
+│   ├── mcp-apps/             # MCP Apps widget generator plugin
+│   │   ├── .plugin/
+│   │   │   └── plugin.json
+│   │   ├── references/
+│   │   ├── samples/
+│   │   └── skills/
 │   ├── code-apps/            # Code Apps plugin
+│   │   ├── .plugin/
+│   │   │   └── plugin.json
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
 │   │   ├── agents/
 │   │   ├── skills/
 │   │   └── shared/           # Shared instructions + references
+│   ├── mobile-apps/          # Mobile Apps plugin
+│   │   ├── .plugin/
+│   │   │   └── plugin.json
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── agents/
+│   │   ├── skills/
+│   │   ├── shared/           # Shared instructions + references
+│   │   └── template/         # Bundled Expo app template
+│   ├── power-apps-mobile-extension/ # Native controls for wrapped Canvas apps
+│   │   ├── .plugin/
+│   │   │   └── plugin.json
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── shared/
+│   │   └── skills/
+│   ├── power-automate/       # Power Automate cloud flows plugin
+│   │   ├── .plugin/
+│   │   │   └── plugin.json
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── references/
+│   │   ├── server/           # Self-contained FlowAgent MCP bundle
+│   │   └── skills/
 │   └── canvas-apps/          # Canvas Apps plugin
+│       ├── .plugin/
+│       │   └── plugin.json
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── references/       # Technical + design guides
@@ -310,6 +403,8 @@ power-platform-skills/
 ├── AGENTS.md                 # Development guidelines
 └── README.md
 ```
+
+The `.claude-plugin` files are compatibility mirrors for users who subscribed before the Open Plugins migration. The shared marketplace keeps marketplace-level `owner` and `metadata`, while each plugin entry is intentionally just `name` plus repository-root-relative `source`.
 
 ## Documentation
 
