@@ -22,6 +22,13 @@ Only steps with this marker directly below the heading emit checkpoint telemetry
 **Telemetry checkpoint: `<static_snake_case_name>`**
 ```
 
+> [!IMPORTANT]
+> **Equinor fork: these markers are inert. Do not run any emitter.**
+> `scripts/emit-telemetry-checkpoint.js` is part of the upstream telemetry stack, which this fork
+> excludes pending a separate governance and privacy review. The markers are retained only so the
+> workflows stay diffable against upstream. Treat a `Telemetry checkpoint:` line as a no-op and move
+> on to the step's actual work. The rest of this section describes the upstream behaviour.
+
 Run from the app directory using the invoked top-level skill's frontmatter `name` and the exact checkpoint marker. `${PLUGIN_ROOT}` is the installed plugin directory.
 
 ```bash

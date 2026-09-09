@@ -146,6 +146,7 @@
   },
   "blockers": [
     "Internal owner and support channel are not assigned.",
+    "The `.mcp.json` bootstrap falls back to `process.cwd()` when neither PLUGIN_ROOT nor CLAUDE_PLUGIN_ROOT is set, so opening an untrusted workspace that contains `server/mcp.mjs` causes that file to be imported and executed as the FlowAgent server. It performs none of the absolute-path, realpath, or path-escape checks upstream added to the power-pages launcher. This must fail closed before the plugin is piloted, and should be reported upstream.",
     "The plugin ships a 2.6 MB pre-bundled MCP server (`server/mcp.mjs`) whose source is not in this repository; it cannot be meaningfully code-reviewed in its bundled form and needs a supply-chain assessment plus a documented rebuild path.",
     "The bundled MSAL library references `mobile.events.data.microsoft.com`; whether that telemetry path is reachable in normal operation has not been determined.",
     "Skills allow creating, updating, deleting, and running flows in any environment the signed-in identity can reach, so production-system interaction is possible by default.",
@@ -160,7 +161,7 @@
     {
       "type": "file",
       "reference": "plugins/power-automate/.mcp.json",
-      "summary": "Launches the bundled `server/mcp.mjs` through a PLUGIN_ROOT-anchored Node bootstrap and registers the hosted Microsoft Learn HTTP server."
+      "summary": "Launches the bundled `server/mcp.mjs` through a Node bootstrap that prefers PLUGIN_ROOT / CLAUDE_PLUGIN_ROOT but **falls back to `process.cwd()`** when neither is set, so a `server/mcp.mjs` in an untrusted working directory would be imported and executed. Unlike power-pages, this bootstrap performs no absolute-path, realpath, or path-escape validation. Also registers the hosted Microsoft Learn HTTP server."
     },
     {
       "type": "file",

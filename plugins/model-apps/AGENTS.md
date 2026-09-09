@@ -5,7 +5,8 @@ This file provides guidance to AI Agents when working with the **model-apps** pl
 ## What This Plugin Is
 
 A plugin for building Power Apps for **model-driven apps**. Two **authoring** skills do the work
-(plus `/report-issue` and `/telemetry` — four user-invocable skills in total):
+(plus `/report-issue` — three user-invocable skills in total; upstream also ships `/telemetry`,
+which this fork excludes):
 
 - **`/genpage`** — build and deploy standalone **generative pages** (genux): React 17 + TypeScript +
   Fluent UI V9 single-file components, deployed via PAC CLI. Orchestrates specialist agents (planner,
@@ -555,7 +556,6 @@ scripts/
     projection.js              ← changed-only: pure post-apply verifiers (form placement / sitemap / page dual-hash)
     detect-browser.js          ← System Chromium/Edge/Chrome detection (used by the launcher)
     modelapps-hook-utils.js    ← Tracked-skill discovery + validator lookup for the hooks
-    telemetry/                 ← Bundled 1DS telemetry: ikey.json (this plugin's config) + lib/ (copy of shared/telemetry/lib)
   vendor/cds-maker-sdk.cjs     ← headless vendored SDK bundle (rebuilt via _vendor-build/)
   _vendor-build/               ← esbuild vendoring tooling (build.js + pinned deps)
   tests/                       ← node --test coverage for the scripts + hooks
@@ -563,8 +563,6 @@ hooks/                         ← Lifecycle hooks (registered in hooks/hooks.js
   run-skill-posttool-validation.js ← Runs a skill's validate*.js after the Skill tool returns
   validate-icon-imports.js     ← PostToolUse: blocks unverified @fluentui/react-icons in generated .tsx
   validate-write-safety.js     ← PreToolUse: flags (non-blocking) out-of-cwd writes in model-apps sessions
-  run-skill-pretool-telemetry.js   ← PreToolUse(Skill): emits skill_started (ships disabled)
-  run-user-prompt-telemetry.js ← UserPromptSubmit: emits skill_started for /model-apps:<skill>
 skills/
   app-builder/
     SKILL.md                   ← intent → model-driven app (create + edit); **Preview**
@@ -573,7 +571,6 @@ skills/
     edit-flow.md               ← Edit flow steps (loaded only on edit path)
     verify-flow.md             ← Playwright browser verification (loaded only when user opts in)
   report-issue/                ← Bug-report skill (bundled shared workflow)
-  telemetry/                   ← /model-apps:telemetry on|off|status control skill
 ```
 
 ## Skills
@@ -583,7 +580,6 @@ skills/
 | `/genpage` | Build and deploy generative pages for a model-driven Power App |
 | `/app-builder` | **(Preview)** Build and edit a whole model-driven app — tables, columns, relationships, adaptive forms, views, Choice-column charts, generative pages, app + sitemap, sample data, and admin-gated AI features — from a natural-language intent, via the vendored `cds-maker-sdk` |
 | `/report-issue` | File a bug/issue about the model-apps plugin to the GitHub repository |
-| `/telemetry` | Enable, disable, or check usage telemetry (`on \| off \| status`) |
 
 ## Agents
 
@@ -749,7 +745,7 @@ non-blocking by design (exit 1), so hook bugs do not break `/genpage` or
   positive only warns; it never blocks and is a clean no-op in unrelated projects.
   Silence with `MODEL_APPS_SKIP_WRITE_GUARD=1`.
 - **Master kill-switch** — `MODEL_APPS_DISABLE_HOOKS=1` (or `true`) disables **all**
-  model-apps hooks (validators + telemetry emit); checked before any stdin/work.
+  model-apps hooks (validators); checked before any stdin/work.
   Both escape hatches are documented in `README.md`.
 
 ## Telemetry

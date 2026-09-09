@@ -62,7 +62,7 @@ Current review status for each plugin. A review record reaching `controlled-pilo
 
 | Plugin | Status | Review record |
 | --- | --- | --- |
-| `code-apps-preview` | defer | [reviews/code-apps-preview.json](docs/equinor-alignment/reviews/code-apps-preview.json) |
+| `code-apps-preview` | controlled-pilot | [reviews/code-apps-preview.json](docs/equinor-alignment/reviews/code-apps-preview.json) |
 | `power-pages` | defer | [reviews/power-pages.json](docs/equinor-alignment/reviews/power-pages.json) |
 | `model-apps` | defer | [reviews/model-apps.json](docs/equinor-alignment/reviews/model-apps.json) |
 | `canvas-apps` | defer | [reviews/canvas-apps.json](docs/equinor-alignment/reviews/canvas-apps.json) |
