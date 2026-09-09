@@ -13,10 +13,10 @@ Read this before reviewing, and calibrate depth accordingly.
 
 `docs/equinor-alignment/reviews/<plugin>.json` is the source of truth. Check `publicationStatus` for the plugin a file belongs to. Do not rely on the list below if it disagrees with the records.
 
-| `publicationStatus` | Meaning | Review depth |
-| --- | --- | --- |
-| `controlled-pilot`, `ready-for-internal-pilot`, `published` | Adopted. People use it. | **Full depth.** Correctness, security, and Equinor alignment all in scope. |
-| `defer`, `not-reviewed` | Synced but **not adopted**. Not recommended for use, not evaluated. | **Sync correctness only.** See below. |
+| `publicationStatus`                                         | Meaning                                                             | Review depth                                                               |
+| ----------------------------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `controlled-pilot`, `ready-for-internal-pilot`, `published` | Adopted. People use it.                                             | **Full depth.** Correctness, security, and Equinor alignment all in scope. |
+| `defer`, `not-reviewed`                                     | Synced but **not adopted**. Not recommended for use, not evaluated. | **Sync correctness only.** See below.                                      |
 
 At the time of writing, `code-apps-preview` is the only plugin at `controlled-pilot`. Every other plugin is `defer`.
 
