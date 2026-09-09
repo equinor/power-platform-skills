@@ -4,7 +4,7 @@
 
 This project uses GitHub Issues to track bugs and feature requests. Search the [existing issues][gh_issues] before filing a new one to avoid duplicates.
 
-Every plugin also ships a `/report-issue` skill that collects the relevant version, environment, and error context and drafts the issue for you. Use it when you can. It produces a far more actionable report than a blank template.
+Most plugins also ship a `/report-issue` skill that collects the relevant version, environment, and error context and drafts the issue for you. Use it when available. It produces a far more actionable report than a blank template.
 
 > [!IMPORTANT]
 > Issues in this repository are public and classified `EQUINOR-INTERNAL` at most. Do not include credentials, tokens, tenant or environment identifiers, internal URLs, or business data.
