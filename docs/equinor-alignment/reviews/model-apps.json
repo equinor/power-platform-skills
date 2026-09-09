@@ -148,7 +148,8 @@
     "Production-system interaction is possible by default through Dataverse schema creation, app creation, deployment, and browser verification workflows.",
     "Data classification ceiling is not documented.",
     "EDS position is unresolved because generated UI currently uses Fluent UI V9.",
-    "Technology Radar status is unknown for Fluent UI and Playwright."
+    "Technology Radar status is unknown for Fluent UI and Playwright.",
+    "CodeQL: `scripts/lib/app-spec-doc.js` escapes `|` for Markdown table cells without escaping backslash first, so a value containing a backslash before a pipe corrupts the generated design document. Recorded for upstream fix rather than patched in the fork."
   ],
   "evidence": [
     {

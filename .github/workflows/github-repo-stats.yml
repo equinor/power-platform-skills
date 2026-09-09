@@ -7,6 +7,10 @@ on:
         - cron: "0 23 * * *"
     workflow_dispatch: # Allow for running this manually.
 
+# The action pushes to the data branch with its own PAT, so GITHUB_TOKEN needs no write scope.
+permissions:
+    contents: read
+
 jobs:
     j1:
         name: github-repo-stats

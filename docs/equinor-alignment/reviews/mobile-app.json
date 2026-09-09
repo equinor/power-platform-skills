@@ -150,7 +150,9 @@
     "Technology Radar status is unknown for React Native, Expo, and Tamagui.",
     "No Equinor Design System mapping exists for the generated React Native UI.",
     "The upstream template is materialized with `degit` from `microsoft/power-platform-skills/plugins/mobile-apps/template#main` rather than from this fork; the provenance of the template used at runtime needs an owner decision.",
-    "Power Apps Wrap distribution has not been assessed against Equinor mobile application management requirements."
+    "Power Apps Wrap distribution has not been assessed against Equinor mobile application management requirements.",
+    "CodeQL: `scripts/lib/sanitize-external-content.js` strips HTML with a single-pass `/<[^>]*>/g`, which leaves an unclosed tag such as `<img src=x onerror=...` intact. The sanitized brand notes can reach generated preview HTML, so this needs an upstream fix before the plugin is piloted.",
+    "CodeQL: `scripts/render-dataverse-planning-evidence.js` escapes `|` for Markdown table cells without escaping backslash first, so a value containing a backslash before a pipe corrupts the generated evidence table. Cosmetic, but it is generated-document integrity."
   ],
   "evidence": [
     {
@@ -172,6 +174,11 @@
       "type": "command",
       "reference": "cd plugins/mobile-apps && node --test scripts/tests/*.test.js",
       "summary": "162 passing, 1 skipped after removing telemetry-dependent tests and the dead `mobileapp-hook-utils` helper."
+    },
+    {
+      "type": "external-source",
+      "reference": "https://github.com/equinor/power-platform-skills/security/code-scanning",
+      "summary": "CodeQL raised two findings in unmodified upstream code shipped by this plugin: incomplete multi-character HTML sanitization in `scripts/lib/sanitize-external-content.js` and incomplete Markdown cell escaping in `scripts/render-dataverse-planning-evidence.js`. Both are recorded as blockers here rather than patched in the fork, so the fix lands upstream and future syncs do not conflict."
     }
   ],
   "notes": "Initial review record only. Publication is deferred until detailed review evidence exists. The telemetry checkpoint calls that remain in the skill workflow prose are inert in this fork because `scripts/emit-telemetry-checkpoint.js` is not shipped; app.json `expo.extra.telemetry.cluster` is likewise never populated because the region resolver is part of the excluded stack."

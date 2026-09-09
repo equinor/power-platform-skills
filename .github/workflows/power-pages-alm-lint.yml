@@ -13,6 +13,9 @@ on:
         paths:
             - "plugins/power-pages/**"
 
+permissions:
+    contents: read
+
 jobs:
     alm-lint:
         name: alm-lint

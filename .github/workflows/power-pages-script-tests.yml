@@ -12,6 +12,9 @@ on:
         paths:
             - "plugins/power-pages/**"
 
+permissions:
+    contents: read
+
 jobs:
     test-power-pages-scripts:
         name: test-power-pages-scripts (${{ matrix.os }})

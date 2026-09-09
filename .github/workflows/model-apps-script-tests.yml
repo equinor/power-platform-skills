@@ -23,6 +23,9 @@ on:
             - "evals/model-apps/**"
             - ".github/workflows/model-apps-script-tests.yml"
 
+permissions:
+    contents: read
+
 jobs:
     test-model-apps-scripts:
         name: test-model-apps-scripts (${{ matrix.os }}, node ${{ matrix.node }})
