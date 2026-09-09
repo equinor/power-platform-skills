@@ -37,6 +37,7 @@ Open Claude Code or GitHub Copilot in any folder and run the following commands:
 | `/add-teams`        | Add Teams messaging connector                                |
 | `/add-office365`    | Add Office 365 Outlook connector (calendar, email, contacts) |
 | `/add-azuredevops`  | Add Azure DevOps connector                                   |
+| `/add-workiq`       | Add Work IQ (M365 Copilot Search) connector                  |
 | `/add-connector`    | Add any other Power Platform connector                       |
 | `/add-datasource`   | Ask your copilot to recommend the right data source          |
 

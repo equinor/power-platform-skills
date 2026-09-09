@@ -61,6 +61,8 @@ skills/
     SKILL.md                      <- Add Office 365 Outlook connector
   add-mcscopilot/
     SKILL.md                      <- Add Copilot Studio agent connector
+  add-workiq/
+    SKILL.md                      <- Add Work IQ (M365 Copilot Search) connector
 ```
 
 ## Skills
@@ -79,6 +81,7 @@ skills/
 | `/add-onedrive` | Add OneDrive for Business connector |
 | `/add-office365` | Add Office 365 Outlook connector |
 | `/add-mcscopilot` | Add Copilot Studio agent connector |
+| `/add-workiq` | Add Work IQ (M365 Copilot Search) connector — reaches M365 documents, emails, chats, sites and files |
 | `/add-connector` | Add any other Power Platform connector |
 
 ## Key Concepts

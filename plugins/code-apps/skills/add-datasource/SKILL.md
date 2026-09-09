@@ -40,6 +40,7 @@ Map the user's goal to the appropriate skill:
 | Work with SharePoint lists or document libraries | SharePoint Online connector | `/add-sharepoint` |
 | Send emails, read inbox, manage calendar events | Office 365 Outlook connector | `/add-office365` |
 | Invoke an AI agent or copilot built in Copilot Studio | Copilot Studio connector | `/add-mcscopilot` |
+| Search Microsoft 365 content or get AI-grounded answers over it | Work IQ Copilot MCP connector. Reaches documents, emails, chats, sites and files across the organization, so prefer a workload-specific connector when the workload is known | `/add-workiq` |
 | Something else or not sure | Generic connector (we'll figure it out) | `/add-connector` |
 
 **Important routing rules:**
