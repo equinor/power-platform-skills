@@ -104,6 +104,15 @@ curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/
 
 Available plugins: `power-pages`, `model-apps`, `mcp-apps`, `canvas-apps`, `code-apps-preview`, `mobile-app`, `power-apps-mobile-extension`, `power-automate`
 
+> [!IMPORTANT]
+> **Deferred plugins are never installed implicitly.** Run without `--plugin` and the installer
+> installs only plugins reviewed to `controlled-pilot` or above, and prints which ones it skipped.
+> A `defer` plugin still has unresolved policy, security, or ownership blockers and may activate an
+> unreviewed MCP server, so installing one is an explicit choice: name it with `--plugin <name>`, or
+> pass `--include-deferred` to take the whole marketplace. Statuses come from
+> [docs/equinor-alignment/reviews](docs/equinor-alignment/reviews). If a review record cannot be read,
+> the plugin is treated as not adopted.
+
 ### Claude Code — User-Scoped
 
 For Claude Code users, the installer registers the marketplace and installs plugins at user level:
@@ -130,7 +139,7 @@ The installer automatically:
 
 - Detects available tools (Claude Code, GitHub Copilot CLI)
 - Installs `pac` CLI if not already installed
-- Registers the plugin marketplace and installs all listed plugins
+- Registers the plugin marketplace and installs the adopted plugins (see the note above)
 - Enables auto-update so plugins stay current without manual steps
 
 ### Manual Installation (Claude Code)

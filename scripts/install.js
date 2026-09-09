@@ -23,13 +23,27 @@ const MARKETPLACE_NAME = "power-platform-skills";
 const GITHUB_RAW = `https://raw.githubusercontent.com/${REPO}/main`;
 const HOME = os.homedir();
 
+// Equinor adoption gate. A plugin is only adopted for internal use once its review record in
+// docs/equinor-alignment/reviews/<name>.json reaches controlled-pilot; `defer` means it still has
+// unresolved policy/security/ownership blockers and may activate unreviewed MCP servers or scripts.
+// See docs/equinor-alignment/plugin-review-checklist.md for the status definitions.
+const REVIEWS_DIR = path.join("docs", "equinor-alignment", "reviews");
+const ADOPTED_STATUSES = new Set([
+  "controlled-pilot",
+  "ready-for-internal-pilot",
+  "published",
+]);
+
 // ── CLI arguments ─────────────────────────────────────────────
 // --scope user    Install for the current user via Claude Code CLI (~/.claude/plugins/)
 // --scope project Install into the current project's .github/ directory
 //                 (GitHub Copilot convention: agents/, instructions/, skills/)
 // --plugin <name> Install only the specified plugin(s). Can be repeated or comma-separated.
-//                 If omitted, installs all plugins from the marketplace.
+//                 Naming a deferred plugin here is the explicit opt-in for that plugin.
+// --include-deferred  Opt in to every marketplace plugin, including deferred ones.
+//                 Without it, an unfiltered install covers adopted plugins only.
 const args = process.argv.slice(2);
+const INCLUDE_DEFERRED = args.includes("--include-deferred");
 const scopeIdx = args.indexOf("--scope");
 const SCOPE =
   scopeIdx !== -1 && args[scopeIdx + 1] ? args[scopeIdx + 1] : "user";
@@ -67,14 +81,23 @@ Options:
                     Location: .github/agents/, .github/instructions/, .github/skills/
                     Convention: https://docs.github.com/en/copilot/customizing-copilot
   --plugin <name>   Install only the specified plugin(s). Can be used multiple times
-                    or comma-separated: --plugin code-apps,power-pages
-                    If omitted, installs ALL plugins (not recommended for --scope project).
+                    or comma-separated: --plugin code-apps-preview,power-pages
+                    Naming a deferred plugin is the explicit opt-in for that plugin.
+  --include-deferred
+                    Install every marketplace plugin, including deferred ones.
   --help, -h        Show this help message
 
+Equinor adoption gate:
+  Without --plugin or --include-deferred, only plugins reviewed to 'controlled-pilot'
+  or above are installed. Deferred plugins have unresolved policy, security, or
+  ownership blockers and may activate unreviewed MCP servers, so they are never
+  installed implicitly. Statuses live in docs/equinor-alignment/reviews/.
+
 Examples:
-  node scripts/install.js --scope project --plugin code-apps
+  node scripts/install.js --scope project
+  node scripts/install.js --scope project --plugin code-apps-preview
   node scripts/install.js --scope project --plugin power-pages,model-apps
-  curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node - --scope project --plugin code-apps
+  curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node - --scope project --plugin code-apps-preview
 
 Docs:
   Claude Code plugins: https://code.claude.com/docs/en/plugins
@@ -237,6 +260,46 @@ async function loadMarketplace() {
   throw new Error(
     `Could not load marketplace manifest. Tried: ${errors.join("; ")}`,
   );
+}
+
+// ── Equinor adoption status ───────────────────────────────────
+// Resolve each marketplace plugin's publicationStatus from its review record. The record file is
+// named after the marketplace plugin name (e.g. code-apps-preview.json), not the source directory.
+// Fails closed: a missing, unreadable, or unfetchable record is reported as null, and callers must
+// treat null as "not adopted" so a lookup failure can never silently widen the default install.
+async function loadPublicationStatuses(repoRoot, pluginNames) {
+  const statuses = {};
+  for (const name of pluginNames) {
+    statuses[name] = null;
+
+    if (repoRoot) {
+      try {
+        const raw = fs.readFileSync(
+          path.join(repoRoot, REVIEWS_DIR, `${name}.json`),
+          "utf8",
+        );
+        statuses[name] = JSON.parse(raw).publicationStatus || null;
+      } catch {
+        // No local record (or malformed) — leave null; the caller fails closed.
+      }
+      continue;
+    }
+
+    // Remote install (curl | node): no working tree, so fetch the record over HTTPS.
+    try {
+      const raw = await httpsGet(
+        `${GITHUB_RAW}/${REVIEWS_DIR.split(path.sep).join("/")}/${name}.json`,
+      );
+      statuses[name] = JSON.parse(raw).publicationStatus || null;
+    } catch {
+      // Network or 404 — leave null; the caller fails closed.
+    }
+  }
+  return statuses;
+}
+
+function describeStatus(name, statuses) {
+  return `${name} (${statuses[name] || "no review record"})`;
 }
 
 // ── Claude Code installation ──────────────────────────────────
@@ -675,6 +738,9 @@ async function main() {
   }
 
   // Filter by --plugin flag if specified
+  const statuses = await loadPublicationStatuses(repoRoot, allPlugins);
+  const adopted = allPlugins.filter((p) => ADOPTED_STATUSES.has(statuses[p]));
+
   let plugins;
   if (SELECTED_PLUGINS.length > 0) {
     const unknown = SELECTED_PLUGINS.filter((p) => !allPlugins.includes(p));
@@ -684,12 +750,40 @@ async function main() {
       process.exit(1);
     }
     plugins = SELECTED_PLUGINS;
-  } else {
+    // Naming a plugin explicitly IS the opt-in, so this warns rather than blocks.
+    const deferred = plugins.filter((p) => !ADOPTED_STATUSES.has(statuses[p]));
+    if (deferred.length > 0) {
+      warn(
+        `Installing plugin(s) not adopted for Equinor internal use: ${deferred
+          .map((p) => describeStatus(p, statuses))
+          .join(", ")}`,
+      );
+      info(
+        "These have unresolved policy, security, or ownership blockers and may activate",
+      );
+      info(
+        "unreviewed MCP servers. Review docs/equinor-alignment/reviews/ before relying on them.",
+      );
+    }
+  } else if (INCLUDE_DEFERRED) {
     plugins = allPlugins;
-    if (SCOPE === "project" && plugins.length > 1) {
-      warn("No --plugin specified — installing ALL plugins.");
-      info("Tip: use --plugin <name> to install only what you need.");
-      info(`Available: ${allPlugins.join(", ")}`);
+    warn("--include-deferred set — installing every marketplace plugin.");
+    info(
+      `Not adopted: ${allPlugins
+        .filter((p) => !ADOPTED_STATUSES.has(statuses[p]))
+        .map((p) => describeStatus(p, statuses))
+        .join(", ") || "(none)"}`,
+    );
+  } else {
+    // Default: adopted plugins only. Deferred plugins are never installed implicitly.
+    plugins = adopted;
+    const skipped = allPlugins.filter((p) => !adopted.includes(p));
+    if (skipped.length > 0) {
+      info(
+        `Skipping ${skipped.length} plugin(s) not adopted for Equinor internal use:`,
+      );
+      for (const p of skipped) info(`  - ${describeStatus(p, statuses)}`);
+      info("Opt in with --plugin <name>, or --include-deferred for all.");
     }
   }
 
@@ -698,6 +792,12 @@ async function main() {
 
   if (plugins.length === 0) {
     warn("No plugins to install.");
+    info(
+      "No marketplace plugin is currently adopted for Equinor internal use, or the review",
+    );
+    info(
+      "records could not be read. Install a specific plugin with --plugin <name>.",
+    );
     process.exit(0);
   }
 
