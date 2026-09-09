@@ -9,10 +9,11 @@ body:
       description: Which plugin is this feature request for?
       options:
         - canvas-apps
-        - code-apps
+        - code-apps-preview
         - mcp-apps
         - mobile-app
         - model-apps
+        - power-apps-mobile-extension
         - power-automate
         - power-pages
     validations:

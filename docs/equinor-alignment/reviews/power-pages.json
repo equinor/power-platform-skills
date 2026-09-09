@@ -190,7 +190,7 @@
     {
       "type": "external-source",
       "reference": "https://github.com/microsoft/power-platform-skills/compare/0188a8b..d7b0e96",
-      "summary": "Re-reviewed after upstream sync 2026-09-09 (power-pages v2.6.6). Adds the `/migrate-bootstrap` Bootstrap 3→5 migration skill and engine, `/migrate-webapi-selectall` to replace deprecated Web API wildcard field settings with explicit columns, and a batch of security hardening taken from upstream: shell and URL handling, export-solution ZIP validation, Key Vault temp-file handling, XSS prevention in generated reports, and a PLUGIN_ROOT-anchored, path-escape-checked Playwright MCP bootstrap. The hardened bootstrap was adopted into the fork's flat `.mcp.json` shape. The telemetry stack remains excluded. 1354 plugin tests pass. Status remains `defer`."
+      "summary": "Re-reviewed after upstream sync 2026-09-09 (power-pages v2.6.6). Adds the `/migrate-bootstrap` Bootstrap 3→5 migration skill and engine, `/migrate-webapi-selectall` to replace deprecated Web API wildcard field settings with explicit columns, and a batch of security hardening taken from upstream: shell and URL handling, export-solution ZIP validation, Key Vault temp-file handling, XSS prevention in generated reports, and a PLUGIN_ROOT-anchored, path-escape-checked Playwright MCP bootstrap. The hardened bootstrap was adopted together with upstream's `mcpServers` envelope, replacing the fork's stale flat `.mcp.json` shape. The telemetry stack remains excluded. 1354 plugin tests pass. Status remains `defer`."
     },
     {
       "type": "external-source",

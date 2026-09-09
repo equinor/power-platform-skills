@@ -130,7 +130,7 @@
     {
       "type": "external-source",
       "reference": "https://github.com/microsoft/power-platform-skills/compare/0188a8b..d7b0e96",
-      "summary": "Re-reviewed after upstream sync 2026-09-09 (canvas-apps v3.0.3). The canvas app generation workflow was reworked, `generate-canvas-app` and `references/TechnicalGuide.md` were removed, and lifecycle hooks (`hooks/hooks.json`, `hooks.json`, `hooks/inject-sync-reminder.cs`) were added — the hook runs `dotnet run` on a bundled C# file and needs review. `.mcp.json` no longer passes `--prerelease` or an explicit NuGet source, which clears the prerelease blocker; the package is still unpinned. The fork keeps its flat `.mcp.json` shape. Status remains `defer`."
+      "summary": "Re-reviewed after upstream sync 2026-09-09 (canvas-apps v3.0.3). The canvas app generation workflow was reworked, `generate-canvas-app` and `references/TechnicalGuide.md` were removed, and lifecycle hooks (`hooks/hooks.json`, `hooks.json`, `hooks/inject-sync-reminder.cs`) were added — the hook runs `dotnet run` on a bundled C# file and needs review. `.mcp.json` no longer passes `--prerelease` or an explicit NuGet source, which clears the prerelease blocker; the package is still unpinned. The fork's stale flat `.mcp.json` shape was replaced with upstream's `mcpServers` envelope — the flat form predates upstream's own move to the standard MCP shape and was never an Equinor decision. Status remains `defer`."
     },
     {
       "type": "external-source",

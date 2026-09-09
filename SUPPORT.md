@@ -1,25 +1,29 @@
-# TODO: The maintainer of this repo has not yet edited this file
-
-**REPO OWNER**: Do you want Customer Service & Support (CSS) support for this product/project?
-
-- **No CSS support:** Fill out this template with information about how to file issues and get help.
-- **Yes CSS support:** Fill out an intake form at [aka.ms/onboardsupport](https://aka.ms/onboardsupport). CSS will work with/help you to determine next steps.
-- **Not sure?** Fill out an intake as though the answer were "Yes". CSS will help you decide.
-
-*Then remove this first heading from this SUPPORT.MD file before publishing your repo.*
-
 # Support
 
-## How to file issues and get help  
+## How to file issues and get help
 
-This project uses GitHub Issues to track bugs and feature requests. Please search the existing 
-issues before filing new issues to avoid duplicates.  For new issues, file your bug or 
-feature request as a new Issue.
+This project uses GitHub Issues to track bugs and feature requests. Search the [existing issues][gh_issues] before filing a new one to avoid duplicates.
 
-For help and questions about using this project, please **REPO MAINTAINER: INSERT INSTRUCTIONS HERE 
-FOR HOW TO ENGAGE REPO OWNERS OR COMMUNITY FOR HELP. COULD BE A STACK OVERFLOW TAG OR OTHER
-CHANNEL. WHERE WILL YOU HELP PEOPLE?**.
+Every plugin also ships a `/report-issue` skill that collects the relevant version, environment, and error context and drafts the issue for you. Use it when you can. It produces a far more actionable report than a blank template.
 
-## Microsoft Support Policy  
+> [!IMPORTANT]
+> Issues in this repository are public and classified `EQUINOR-INTERNAL` at most. Do not include credentials, tokens, tenant or environment identifiers, internal URLs, or business data.
 
-Support for this **PROJECT or PRODUCT** is limited to the resources listed above.
+## Questions and discussion
+
+For questions about using these plugins, ask in [#powerplatform on Slack][slack_powerplatform].
+
+For questions about whether a plugin may be used internally, start with [the Equinor alignment overview](docs/equinor-alignment/README.md) and the per-plugin [review records](docs/equinor-alignment/reviews/).
+
+## Support policy
+
+This repository is maintained by `@equinor/dcs-power-platform-team` on a best-effort basis. It is not covered by an Equinor service level agreement.
+
+Microsoft Support does not support these plugins. It does support the underlying Power Platform products and features they build on, so raise those through the normal Microsoft Support channel.
+
+For security vulnerabilities, follow [SECURITY.md](SECURITY.md) instead of filing an issue.
+
+<!-- references -->
+
+[gh_issues]: https://github.com/equinor/power-platform-skills/issues
+[slack_powerplatform]: https://equinor.enterprise.slack.com/archives/C01BDAML708
