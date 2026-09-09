@@ -67,6 +67,9 @@ Current review status for each plugin. A review record reaching `controlled-pilo
 | `model-apps` | defer | [reviews/model-apps.json](docs/equinor-alignment/reviews/model-apps.json) |
 | `canvas-apps` | defer | [reviews/canvas-apps.json](docs/equinor-alignment/reviews/canvas-apps.json) |
 | `mcp-apps` | defer | [reviews/mcp-apps.json](docs/equinor-alignment/reviews/mcp-apps.json) |
+| `mobile-app` | defer | [reviews/mobile-app.json](docs/equinor-alignment/reviews/mobile-app.json) |
+| `power-apps-mobile-extension` | defer | [reviews/power-apps-mobile-extension.json](docs/equinor-alignment/reviews/power-apps-mobile-extension.json) |
+| `power-automate` | defer | [reviews/power-automate.json](docs/equinor-alignment/reviews/power-automate.json) |
 
 `defer` means the plugin has an initial review record but lacks sufficient evidence (owner confirmation, <abbr title="Data Loss Prevention Policy">DLP</abbr> mapping, Tech Radar positioning, or EDS compliance) to recommend piloting. Plugins with a `defer` status warrant extra care — review the record and understand what is still outstanding before adopting them in your team's workflow.
 
@@ -99,7 +102,7 @@ Or run without cloning:
 curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node - --scope project --plugin code-apps-preview
 ```
 
-Available plugins: `power-pages`, `model-apps`, `mcp-apps`, `canvas-apps`, `code-apps-preview`
+Available plugins: `power-pages`, `model-apps`, `mcp-apps`, `canvas-apps`, `code-apps-preview`, `mobile-app`, `power-apps-mobile-extension`, `power-automate`
 
 ### Claude Code — User-Scoped
 
@@ -147,7 +150,10 @@ Inside a Claude Code session:
     /plugin install model-apps@power-platform-skills
     /plugin install mcp-apps@power-platform-skills
     /plugin install code-apps-preview@power-platform-skills
+    /plugin install mobile-app@power-platform-skills
+    /plugin install power-apps-mobile-extension@power-platform-skills
     /plugin install canvas-apps@power-platform-skills
+    /plugin install power-automate@power-platform-skills
     ```
 
 ### Where Are Things Installed?
@@ -171,7 +177,10 @@ The marketplace registry (Claude Code) is stored at `~/.claude/plugins/known_mar
 /plugin uninstall model-apps
 /plugin uninstall mcp-apps
 /plugin uninstall code-apps-preview
+/plugin uninstall mobile-app
+/plugin uninstall power-apps-mobile-extension
 /plugin uninstall canvas-apps
+/plugin uninstall power-automate
 /plugin marketplace remove power-platform-skills
 ```
 
@@ -185,9 +194,13 @@ Create and deploy Power Pages sites using modern development approaches.
 
 ### [Model Apps](plugins/model-apps/README.md) (`plugins/model-apps`)
 
-Build and deploy Power Apps generative pages for model-driven apps.
+Build model-driven Power Apps end to end, and the generative pages that go in them.
 
-**Stack**: React + TypeScript + Fluent, deployed via PAC CLI
+**Skills**: `/app-builder` (**Preview**) builds and edits a whole app — tables, relationships, forms,
+views, charts, security roles, app + sitemap — from a natural-language intent; `/genpage` builds
+generative pages for an app that already exists. Use either independently — neither requires the other
+
+**Stack**: React + TypeScript + Fluent, deployed via PAC CLI and the headless `cds-maker-sdk`
 
 ### [MCP Apps](plugins/mcp-apps/README.md) (`plugins/mcp-apps`)
 
@@ -201,11 +214,30 @@ Build and deploy Power Apps code apps connected to Power Platform via connectors
 
 **Stack**: React + Vite + TypeScript, deployed via PAC CLI
 
+### [Mobile Apps](plugins/mobile-apps/README.md) (`plugins/mobile-apps`)
+
+Build and deploy Power Apps code apps for mobile with native device capabilities.
+
+**Stack**: Expo + React Native + TypeScript, deployed via Power Apps Wrap
+
+### [Power Apps Mobile Extension](plugins/power-apps-mobile-extension/README.md) (`plugins/power-apps-mobile-extension`)
+
+Build third-party native controls for wrapped Canvas apps and package them as verified
+`.ppmplugin` bundles with matching dispatcher PCF controls.
+
+**Stack**: Kotlin + Objective-C, Power Apps component framework, and Power Apps Wrap
+
 ### [Canvas Apps](plugins/canvas-apps/AGENTS.md) (`plugins/canvas-apps`)
 
 Author Power Apps Canvas Apps using the Canvas Authoring MCP server.
 
 **Stack**: PA YAML (`.pa.yaml`) authored via `CanvasAuthoringMcpServer`, requires .NET 10 SDK
+
+### [Power Automate](plugins/power-automate/README.md) (`plugins/power-automate`)
+
+Build, edit, run, and debug Power Automate cloud flows via the FlowAgent MCP server.
+
+**Stack**: Node.js 18+, Azure CLI (`az login`), self-contained MCP bundle
 
 ## Local Development
 
@@ -219,7 +251,10 @@ To develop and test plugins locally, follow these steps:
     claude --plugin-dir /path/to/power-platform-skills/plugins/model-apps
     claude --plugin-dir /path/to/power-platform-skills/plugins/mcp-apps
     claude --plugin-dir /path/to/power-platform-skills/plugins/code-apps
+    claude --plugin-dir /path/to/power-platform-skills/plugins/mobile-apps
+    claude --plugin-dir /path/to/power-platform-skills/plugins/power-apps-mobile-extension
     claude --plugin-dir /path/to/power-platform-skills/plugins/canvas-apps
+    claude --plugin-dir /path/to/power-platform-skills/plugins/power-automate
     ```
 
 ## Running Without Interruption
@@ -325,6 +360,30 @@ power-platform-skills/
 │   │   ├── agents/
 │   │   ├── skills/
 │   │   └── shared/           # Shared instructions + references
+│   ├── mobile-apps/          # Mobile Apps plugin
+│   │   ├── .plugin/
+│   │   │   └── plugin.json
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── agents/
+│   │   ├── skills/
+│   │   ├── shared/           # Shared instructions + references
+│   │   └── template/         # Bundled Expo app template
+│   ├── power-apps-mobile-extension/ # Native controls for wrapped Canvas apps
+│   │   ├── .plugin/
+│   │   │   └── plugin.json
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── shared/
+│   │   └── skills/
+│   ├── power-automate/       # Power Automate cloud flows plugin
+│   │   ├── .plugin/
+│   │   │   └── plugin.json
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── references/
+│   │   ├── server/           # Self-contained FlowAgent MCP bundle
+│   │   └── skills/
 │   └── canvas-apps/          # Canvas Apps plugin
 │       ├── .plugin/
 │       │   └── plugin.json

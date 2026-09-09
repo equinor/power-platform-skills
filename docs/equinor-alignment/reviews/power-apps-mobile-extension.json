@@ -1,0 +1,139 @@
+{
+  "pluginName": "power-apps-mobile-extension",
+  "reviewDate": "2026-09-09",
+  "reviewer": "GitHub Copilot",
+  "publicationStatus": "defer",
+  "ownership": {
+    "owner": "not assigned",
+    "supportChannel": "not assigned",
+    "upstreamSource": "microsoft/power-platform-skills/plugins/power-apps-mobile-extension",
+    "upstreamVersion": "0.1.0"
+  },
+  "scope": {
+    "summary": "Designs and builds third-party native controls for wrapped Canvas apps, producing a prebuilt `.ppmplugin` bundle (Android DEX plus flat iOS framework and manifest) together with a matching dispatcher PCF control.",
+    "createsOrModifiesAssets": true,
+    "deploysAssets": false,
+    "deletesAssets": false,
+    "productionInteractionDefault": false
+  },
+  "skillAndScriptSafety": {
+    "skillsReviewed": false,
+    "agentsReviewed": false,
+    "hooksReviewed": false,
+    "scriptsReviewed": false,
+    "bundledScripts": [],
+    "secretsEmbedded": false,
+    "externalNetworkCalls": [
+      "Gradle and Maven artifact resolution during Android builds",
+      "Xcode and Swift/CocoaPods dependency resolution during iOS builds",
+      "npm registry for the Power Apps component framework toolchain"
+    ]
+  },
+  "mcp": {
+    "required": false,
+    "servers": [],
+    "versionsPinned": false,
+    "approvedAccessRequired": false,
+    "productionInteractionBlocked": true
+  },
+  "powerPlatformGovernance": {
+    "assumedZone": "red",
+    "intendedUsers": [
+      "professional-it-developer"
+    ],
+    "dataClassificationCeiling": "not-assessed",
+    "confidentialDataSupported": false,
+    "dependencies": [
+      {
+        "name": "Android build toolchain",
+        "category": "developer-prerequisite",
+        "description": "Producing the Android DEX half of a `.ppmplugin` bundle requires a local Android SDK and Gradle installation.",
+        "blocking": true
+      },
+      {
+        "name": "macOS with Xcode",
+        "category": "developer-prerequisite",
+        "description": "Producing the iOS `.framework` half of a `.ppmplugin` bundle requires macOS and Xcode.",
+        "blocking": true
+      },
+      {
+        "name": "Power Apps Wrap",
+        "category": "platform-feature",
+        "description": "The generated control only runs inside a wrapped Canvas app, so Wrap must be available and approved for the tenant.",
+        "blocking": true
+      },
+      {
+        "name": "Power Apps component framework",
+        "category": "platform-feature",
+        "description": "The dispatcher control is a PCF control and requires PCF to be enabled in the target environment.",
+        "blocking": true
+      }
+    ],
+    "architectureContractRequired": true,
+    "ciRequired": true
+  },
+  "technologyRadar": {
+    "technologies": [
+      {
+        "name": "Kotlin",
+        "radarState": "unknown",
+        "usedFor": "Android side of the native control.",
+        "source": "not checked"
+      },
+      {
+        "name": "Objective-C",
+        "radarState": "unknown",
+        "usedFor": "iOS side of the native control.",
+        "source": "not checked"
+      },
+      {
+        "name": "Power Apps component framework",
+        "radarState": "unknown",
+        "usedFor": "Dispatcher control that bridges the Canvas app to the native module.",
+        "source": "not checked"
+      }
+    ],
+    "hasHoldTechnology": false,
+    "hasAssessTechnology": false,
+    "hasUnknownTechnology": true
+  },
+  "designSystem": {
+    "generatesFrontend": true,
+    "edsRequired": false,
+    "edsPackages": [],
+    "exceptions": [
+      "The generated UI is native Android/iOS code rendered inside a wrapped Canvas app. EDS publishes no native mobile component library, so EDS applies only as accessibility and design guidance."
+    ]
+  },
+  "publication": {
+    "targetRepository": "equinor/powerplatform recommended, not confirmed",
+    "copilotManifest": true,
+    "claudeManifest": true,
+    "versionsSynchronized": true,
+    "variaCatalogRequired": true,
+    "techDocsRequired": true,
+    "architectureContractLinkRequired": true,
+    "installTested": false,
+    "rollbackDocumented": false
+  },
+  "blockers": [
+    "Internal owner and support channel are not assigned.",
+    "Skills and bundled build guidance are not reviewed against Equinor guidance.",
+    "Producing a `.ppmplugin` bundle requires local Android and Apple build toolchains that are not covered by an Equinor developer baseline.",
+    "Shipping a signed native binary into a wrapped Canvas app has not been assessed against Equinor mobile application management and code-signing requirements.",
+    "Technology Radar status is unknown for Kotlin, Objective-C, and the Power Apps component framework in this context."
+  ],
+  "evidence": [
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/0188a8b..d7b0e96",
+      "summary": "Initial review after the plugin arrived in the fork through upstream sync 2026-09-09 (power-apps-mobile-extension v0.1.0). No MCP server, no hooks, and no bundled runtime scripts; the plugin is skill and reference documentation only."
+    },
+    {
+      "type": "file",
+      "reference": "plugins/power-apps-mobile-extension/README.md",
+      "summary": "Documents the design and build skills, the `.ppmplugin` bundle format, and the wrap runtime prerequisites."
+    }
+  ],
+  "notes": "Initial review record only. Publication is deferred until detailed review evidence exists. The plugin performs no Power Platform writes itself, but the artefact it produces is a native binary loaded into a wrapped Canvas app, which is the part that needs an owner and security assessment."
+}

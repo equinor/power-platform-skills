@@ -1,13 +1,13 @@
 {
   "pluginName": "model-apps",
-  "reviewDate": "2026-06-30",
+  "reviewDate": "2026-09-09",
   "reviewer": "GitHub Copilot",
   "publicationStatus": "defer",
   "ownership": {
     "owner": "not assigned",
     "supportChannel": "not assigned",
     "upstreamSource": "microsoft/power-platform-skills/plugins/model-apps",
-    "upstreamVersion": "2.2.0"
+    "upstreamVersion": "2.6.0"
   },
   "scope": {
     "summary": "Builds and deploys Power Apps model-driven app generative pages, creates Dataverse entities when needed, creates model-driven apps, generates React and Fluent UI code, deploys via PAC CLI, and verifies in browser.",
@@ -153,6 +153,11 @@
   "evidence": [
     {
       "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/0188a8b..d7b0e96",
+      "summary": "Re-reviewed after upstream sync 2026-09-09 (model-apps v2.6.0). Major surface expansion: the new `/app-builder` skill authors whole model-driven apps (tables, relationships, forms, views, charts, security roles, sitemap) plus Business Process Flows, driven by a vendored headless `cds-maker-sdk`. Six standalone Dataverse write scripts (create-table, add-column, create-relationship, create-record, create-solution, add-to-solution) were replaced by that SDK. `hooks/hooks.json` was added — the fork wires only write-safety, skill-validator, and icon-import hooks; upstream's telemetry hooks are excluded. A `feature-flags.json` gates preview capabilities (`custom-api`, `custom-telemetry`) default-OFF. Production write scope grew materially; status remains `defer`."
+    },
+    {
+      "type": "external-source",
       "reference": "https://github.com/microsoft/power-platform-skills/compare/9258fd9..0188a8b",
       "summary": "Re-reviewed after upstream sync 2026-06-30 (model-apps v2.2.0). Added Open Plugins metadata (.plugin/plugin.json + marketplace entry), bundled report-issue workflow content, and PLUGIN_ROOT-aligned helper text in local-dev/eval helpers. No new production interaction beyond the 2026-06-09 review. Copilot manifest blocker cleared; remaining blockers unchanged."
     },
@@ -177,5 +182,5 @@
       "summary": "Contains Node.js scripts that require security and behavior review before publication."
     }
   ],
-  "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists. Upstream v2.2.0 synced 2026-06-09 adds an automated eval suite, two new local-dev scripts (capture-fixture.js, generate-page-manifest.js), supported-dependencies guidance, and dialog/overlay confinement rules. The new scripts are local dev/eval tooling with no new production interaction, but enlarge the script surface that still requires formal review before publication. Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content; the Copilot manifest blocker is now cleared."
+  "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists. Upstream v2.2.0 synced 2026-06-09 adds an automated eval suite, two new local-dev scripts (capture-fixture.js, generate-page-manifest.js), supported-dependencies guidance, and dialog/overlay confinement rules. The new scripts are local dev/eval tooling with no new production interaction, but enlarge the script surface that still requires formal review before publication. Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content; the Copilot manifest blocker is now cleared. Upstream sync 2026-09-09 raises the plugin to v2.6.0 and adds the `/app-builder` whole-app authoring workflow backed by a vendored `cds-maker-sdk`; this is the largest increase in Dataverse write scope so far and should be the focus of the next detailed review. The telemetry stack shipped upstream for this plugin is excluded in the fork."
 }

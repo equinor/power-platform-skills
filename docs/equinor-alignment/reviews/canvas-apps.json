@@ -1,13 +1,13 @@
 {
   "pluginName": "canvas-apps",
-  "reviewDate": "2026-06-30",
+  "reviewDate": "2026-09-09",
   "reviewer": "GitHub Copilot",
   "publicationStatus": "defer",
   "ownership": {
     "owner": "not assigned",
     "supportChannel": "not assigned",
     "upstreamSource": "microsoft/power-platform-skills/plugins/canvas-apps",
-    "upstreamVersion": "2.1.0"
+    "upstreamVersion": "3.0.3"
   },
   "scope": {
     "summary": "Creates and edits Power Apps Canvas Apps through the Canvas Authoring MCP server, including app YAML validation, control discovery, API and connector discovery, data source schema discovery, and live coauthoring sync.",
@@ -35,7 +35,7 @@
       {
         "name": "canvas-authoring",
         "transport": "stdio",
-        "version": "prerelease, not pinned in .mcp.json",
+        "version": "released package, not pinned in .mcp.json",
         "purpose": "Power Apps Canvas Authoring MCP server for app creation and coauthoring."
       }
     ],
@@ -121,12 +121,17 @@
   "blockers": [
     "Internal owner and support channel are not assigned.",
     "Skills, agents, and MCP configuration are not reviewed against Equinor guidance.",
-    "MCP server is installed through dnx with prerelease package use and no explicit version pinning.",
+    "MCP server is installed through dnx with no explicit version pinning.",
     "Production-system interaction is possible by default through live coauthoring and authoring service access.",
     "Dependencies and environment prerequisites are not fully documented.",
     "Technology Radar status is unknown for .NET in this context."
   ],
   "evidence": [
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/0188a8b..d7b0e96",
+      "summary": "Re-reviewed after upstream sync 2026-09-09 (canvas-apps v3.0.3). The canvas app generation workflow was reworked, `generate-canvas-app` and `references/TechnicalGuide.md` were removed, and lifecycle hooks (`hooks/hooks.json`, `hooks.json`, `hooks/inject-sync-reminder.cs`) were added — the hook runs `dotnet run` on a bundled C# file and needs review. `.mcp.json` no longer passes `--prerelease` or an explicit NuGet source, which clears the prerelease blocker; the package is still unpinned. The fork keeps its flat `.mcp.json` shape. Status remains `defer`."
+    },
     {
       "type": "external-source",
       "reference": "https://github.com/microsoft/power-platform-skills/compare/9258fd9..0188a8b",
@@ -148,5 +153,5 @@
       "summary": "Registers Canvas Authoring MCP through dnx, prerelease package, and NuGet source."
     }
   ],
-  "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists. Upstream sync 2026-06-09 added optional auth_flow/login_hint parameters to the Canvas Authoring MCP connect tool (configure-canvas-mcp v2.1.0); broker remains the default and browser sign-in is opt-in, so MCP governance posture is unchanged. Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content with no new runtime behavior."
+  "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists. Upstream sync 2026-06-09 added optional auth_flow/login_hint parameters to the Canvas Authoring MCP connect tool (configure-canvas-mcp v2.1.0); broker remains the default and browser sign-in is opt-in, so MCP governance posture is unchanged. Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content with no new runtime behavior. Upstream sync 2026-09-09 (v3.0.3) reworked the generation workflow, dropped the prerelease NuGet flags, and introduced the first executable hook in this plugin."
 }

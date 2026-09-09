@@ -1,13 +1,13 @@
 {
   "pluginName": "code-apps-preview",
-  "reviewDate": "2026-06-30",
+  "reviewDate": "2026-09-09",
   "reviewer": "GitHub Copilot",
   "publicationStatus": "controlled-pilot",
   "ownership": {
     "owner": "@equinor/dcs-power-platform-team",
     "supportChannel": "#powerplatform — https://equinor.enterprise.slack.com/archives/C01BDAML708",
     "upstreamSource": "microsoft/power-platform-skills/plugins/code-apps",
-    "upstreamVersion": "1.0.0"
+    "upstreamVersion": "1.1.0"
   },
   "scope": {
     "summary": "Builds and deploys Power Apps code apps with React and Vite and adds Power Platform connectors such as Dataverse, SharePoint, Excel, OneDrive, Teams, Office 365 Outlook, Azure DevOps, and custom connectors.",
@@ -127,6 +127,11 @@
   },
   "blockers": [],
   "evidence": [
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/0188a8b..d7b0e96",
+      "summary": "Re-reviewed after upstream sync 2026-09-09 (code-apps-preview v1.1.0). Upstream renamed the CLI surface from flat `npx power-apps <verb>` to grouped `pa <group> <verb>` and added `shared/cli-binary.md` with a binary-resolution contract that requires `npx --no-install`. A new `/add-workiq` skill adds a Work IQ (M365 search / AI answers) data source — that connector's DLP position needs confirmation before use. Equinor EDS guardrails were re-applied on top of the upstream text rather than dropped. No new bundled scripts or hooks; deploy still requires explicit confirmation."
+    },
     {
       "type": "external-source",
       "reference": "https://github.com/microsoft/power-platform-skills/compare/9258fd9..0188a8b",
