@@ -55,7 +55,7 @@
       {
         "name": "Canvas Authoring MCP server (.NET runtime)",
         "category": "developer-prerequisite",
-        "description": "Requires .NET runtime and dnx to install the prerelease Canvas Authoring MCP package.",
+        "description": "Requires .NET runtime and dnx to install the Canvas Authoring MCP package. The package is a released build resolved from the default NuGet feed, but no version is pinned, so each launch can pull a different build.",
         "blocking": true
       },
       {
@@ -150,7 +150,7 @@
     {
       "type": "file",
       "reference": "plugins/canvas-apps/.mcp.json",
-      "summary": "Registers Canvas Authoring MCP through dnx, prerelease package, and NuGet source."
+      "summary": "Registers Canvas Authoring MCP through dnx from the default NuGet feed. No `--prerelease` flag and no explicit source; the released package is not version-pinned."
     }
   ],
   "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists. Upstream sync 2026-06-09 added optional auth_flow/login_hint parameters to the Canvas Authoring MCP connect tool (configure-canvas-mcp v2.1.0); broker remains the default and browser sign-in is opt-in, so MCP governance posture is unchanged. Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content with no new runtime behavior. Upstream sync 2026-09-09 (v3.0.3) reworked the generation workflow, dropped the prerelease NuGet flags, and introduced the first executable hook in this plugin."

@@ -44,14 +44,14 @@ Then ask via `AskUserQuestion`:
 
 ### Step 2 — Detect project context
 
-Read-only checks:
+Read-only checks. Issues are filed on a **public** repository, so collect status and version
+signals only — never resolve or print environment URLs, environment IDs, tenant IDs, or
+environment display names:
 
 ```bash
 test -f power.config.json && echo "in_project=true" || echo "in_project=false"
-pwd
 node --version
 npm --version
-node scripts/resolve-environment.js "$(node -e \"console.log(require('./power.config.json').environmentId)\")" 2>/dev/null || true
 az --version 2>/dev/null | head -1
 npx expo --version 2>/dev/null
 uname -srm
@@ -61,7 +61,6 @@ If in a project:
 
 ```bash
 node -e "console.log(require('./package.json').name, require('./package.json').version)" 2>/dev/null
-node -e "console.log(JSON.stringify({env: require('./power.config.json').environmentId, name: require('./power.config.json').displayName}))"
 test -f memory-bank.md && echo "memory_bank=present"
 test -f native-app-plan.md && echo "plan=present"
 ls src/generated/services/ 2>/dev/null | head -10
@@ -73,7 +72,7 @@ For native-build issues also capture:
 [ "$(uname)" = "Darwin" ] && xcode-select -p
 [ "$(uname)" = "Darwin" ] && pod --version 2>/dev/null
 java -version 2>&1 | head -1
-echo "ANDROID_HOME=$ANDROID_HOME"
+[ -n "$ANDROID_HOME" ] && echo "ANDROID_HOME=set" || echo "ANDROID_HOME=unset"
 ```
 
 ### Step 3 — Collect diagnostics
@@ -91,7 +90,10 @@ If the user pasted an error, capture verbatim. Otherwise look for recent failure
 **Do NOT capture:**
 - Contents of `src/playerConfig.ts` (contains tenantId / clientId — sensitive)
 - Contents of `.env` or any file matching `.env*`
-- Connection IDs unless the user explicitly opted in (PII / can map to tenant)
+- Power Platform environment IDs, environment URLs, environment display names, tenant IDs, or
+  Dataverse org names — `SUPPORT.md` prohibits these in this public repository's issues
+- Connection IDs (PII / can map to a tenant)
+- Absolute filesystem paths, which can carry usernames and internal project names
 - Anything under `node_modules/`
 
 ### Step 4 — Render issue body
@@ -132,7 +134,6 @@ Print this block — user copies into a new issue:
 
 <if in project>
 - Project: `<name>` v`<version>`
-- Power Platform env: `<env-id>`
 - Memory bank present: <yes/no>
 - Plan present: <yes/no>
 - Connectors registered: <list from src/generated/services>
@@ -177,7 +178,9 @@ Tell the user:
 >
 > <https://github.com/equinor/power-platform-skills/issues/new?labels=plugin%3Amobile-app>
 >
-> Paste the block above into the body. Review for any sensitive values before submitting.
+> Paste the block above into the body. This repository is **public** — review the block and remove
+> any credentials, tenant or environment identifiers, internal URLs, or business data before
+> submitting.
 
 If the user wants to open it, suggest `open <url>` (macOS) / `xdg-open <url>` (Linux) / `start <url>` (Windows). Do not auto-open without confirmation.
 

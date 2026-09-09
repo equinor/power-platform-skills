@@ -59,7 +59,7 @@
         "purpose": "Hosted Microsoft Learn documentation lookups."
       }
     ],
-    "versionsPinned": true,
+    "versionsPinned": false,
     "approvedAccessRequired": true,
     "productionInteractionBlocked": false
   },
