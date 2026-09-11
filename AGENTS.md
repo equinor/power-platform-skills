@@ -6,11 +6,16 @@ This file provides guidance to AI Agents when working with code in this reposito
 
 A **plugin marketplace** for Power Platform development by Microsoft. The Open Plugins marketplace manifest (`marketplace.json`) references individual plugins in `plugins/`. Each plugin has its own `AGENTS.md` with plugin-specific guidance.
 
-## This Repo Is PUBLIC — keep internal detail out of it
+## This Repo Is PUBLIC — its classification is `OPEN`
 
 Everything here — code, docs, commit messages, PR descriptions, and branch names — is world-readable.
-Write for a reader outside Microsoft or Equinor who cannot see any internal system. Nothing above the
-`EQUINOR-INTERNAL` classification belongs in this repository or in its issues.
+Write for a reader outside Microsoft or Equinor who cannot see any internal system. Under WR0158 that
+makes every file in this repository, and every issue filed against it, `OPEN`: disclosure must have no
+consequence for Equinor. Nothing classified `EQUINOR INTERNAL` or above belongs here.
+
+Do not confuse the repository with what it builds. The plugins produce Equinor solutions that may
+themselves handle classified data; that ceiling is recorded per plugin as `dataClassificationCeiling`
+in `docs/equinor-alignment/reviews/` and says nothing about what may be committed here.
 
 **Do not commit:**
 

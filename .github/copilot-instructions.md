@@ -128,7 +128,7 @@ Never duplicate logic or content across files. Each plugin has shared utilities 
 
 ## Security
 
-- **Classification**: `EQUINOR-INTERNAL` -- no higher classifications allowed in this repository or in issues
+- **Classification**: this repository is public, so its content and issues are `OPEN` -- nothing classified `EQUINOR INTERNAL` or above may be committed or filed here. The per-plugin `dataClassificationCeiling` in the review records describes the solutions a plugin builds, not this repository's content
 - Do not store credentials, tokens, connection IDs, or environment URLs in committed files
 - Secrets referenced in skill workflows must use environment variables or secure vaults
 

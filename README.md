@@ -37,6 +37,7 @@ The upstream Microsoft plugins are designed for general Power Platform use acros
 | MCP security | MCP-dependent workflows must be explicitly evaluated, documented, and opted into — they are not enabled by default |
 | Production safety | Skills must not interact with production systems during development by default |
 | Secret hygiene | No credentials, tokens, connection IDs, or environment URLs may be committed to this repository |
+| Classification | This repository is public, so everything in it is `OPEN`. The classification ceiling for the solutions a plugin *builds* is recorded separately in its review record |
 | Discovery | Internal plugins are published through Varia and TechDocs, not the public Microsoft marketplace |
 
 ### What's changed from upstream

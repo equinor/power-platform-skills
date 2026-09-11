@@ -71,7 +71,7 @@ Judge a sync pull request on the `FORK-DIFF` and `NOT-UPSTREAM` buckets. A findi
 
 Regardless of plugin status:
 
-- Credentials, tokens, connection IDs, real environment or tenant identifiers, internal hosts, and anything above the `EQUINOR-INTERNAL` classification. This repository is public.
+- Credentials, tokens, connection IDs, real environment or tenant identifiers, internal hosts, and anything not classified `OPEN`. This repository is public, so its content and issues are `OPEN`; `EQUINOR INTERNAL` or above does not belong here.
 - Repository-level policy and metadata: `CODEOWNERS`, `SECURITY.md`, `SUPPORT.md`, `CODE_OF_CONDUCT.md`, `marketplace.json` and its legacy mirror, `.github/workflows/**`, `.claude/settings.json`, `scripts/**`.
 - Equinor-specific content being lost: `docs/equinor-alignment/**`, EDS guidance in `plugins/code-apps/**`, and the deliberate exclusion of the upstream telemetry stack.
 

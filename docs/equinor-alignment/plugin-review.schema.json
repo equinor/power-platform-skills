@@ -208,6 +208,7 @@
         },
         "dataClassificationCeiling": {
           "type": "string",
+          "description": "Highest WR0158 information classification the solutions produced with this plugin may handle. It does not describe the plugin's own content, which is OPEN because this repository is public.",
           "enum": [
             "open",
             "equinor-internal",

@@ -51,8 +51,9 @@ Assign exactly one status:
 
 - What is the assumed zone? Default to Red since GitHub Copilot users are developers operating in the red zone.
 - Which user persona is intended: personal maker, certified citizen developer, certified citizen agent creator, professional IT developer, platform team, or other?
-- What is the maximum supported information classification?
-- Does any workflow handle, store, generate, export, or publish `EQUINOR-CONFIDENTIAL` data? If yes, block publication unless explicit approval and platform support exist.
+- What is the maximum supported information classification for the solutions the plugin produces?
+- Is all plugin content itself `OPEN`? This repository is public, so skills, scripts, docs, and review evidence must carry nothing classified `EQUINOR INTERNAL` or above.
+- Does any workflow handle, store, generate, export, or publish `EQUINOR CONFIDENTIAL` data? If yes, block publication unless explicit approval and platform support exist.
 - Does the generated solution require Architecture Contract or CI updates?
 
 ### Dependencies
@@ -103,7 +104,7 @@ Use these minimum rules when setting `publicationStatus`:
 | Unreviewed bundled scripts | `defer` |
 | Production-system interaction by default | `defer` |
 | `Hold` technology without deviation permit | `defer` |
-| `EQUINOR-CONFIDENTIAL` handling without explicit approval and support | `defer` |
+| `EQUINOR CONFIDENTIAL` handling without explicit approval and support | `defer` |
 | MCP dependency without access and security review | `controlled-pilot` at most |
 | App generation with blocking dependencies unsatisfied | `controlled-pilot` at most until dependencies documented |
 | External-facing Power Pages generation | `controlled-pilot` at most until Red Zone and external exposure handling are documented |

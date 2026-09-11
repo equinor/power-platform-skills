@@ -15,6 +15,17 @@ Apply this baseline to:
 
 Do not use this baseline as a substitute for Architecture Contract approval, data owner accountability, security review, or a documented deviation permit when a technology or data handling pattern requires one.
 
+## Security Classification
+
+WR0158 classifies information by the consequence of it reaching unauthorized persons: `OPEN` (no consequence), `EQUINOR INTERNAL` (negligible), `EQUINOR RESTRICTED` (minor, moderate, or serious), and `EQUINOR CONFIDENTIAL` (severe, major, or catastrophic).
+
+Two distinct classifications apply to this work, and conflating them is the common mistake:
+
+- **This repository is public, so its content is `OPEN`.** Plugin source, skills, governance docs, review records, commit messages, and issues must be free of anything classified `EQUINOR INTERNAL` or above. "Aligned for Equinor internal use" states who the plugins are built for; it is not a classification of the files that implement them.
+- **The solutions a plugin produces carry their own classification.** That ceiling is recorded per plugin as `dataClassificationCeiling` in [reviews/](reviews/) and is bounded by what the Power Platform position supports — see [Power Platform Governance](#power-platform-governance).
+
+Internal material a review depends on — gated standards, internal repositories, environment and tenant identifiers — stays in Equinor-internal systems and is referenced here only by its public identifier.
+
 ## Core Decisions
 
 | Topic | Baseline decision |
@@ -72,7 +83,7 @@ Required implications for this repository:
 
 - Assume Red zone for all plugins unless the plugin explicitly targets citizen makers in Green or Yellow zones.
 - State the intended user persona, such as personal maker, certified citizen developer, certified citizen agent creator, or professional IT developer.
-- State the data classification ceiling. The platform does not support `EQUINOR-CONFIDENTIAL` information in the current documented position.
+- State the data classification ceiling. The platform does not support `EQUINOR CONFIDENTIAL` information in the current documented position.
 - Make solution owners and creators accountable for data classification, sharing, and compliance decisions.
 - Document dependencies that affect plugin usability: environment settings, DLP policies, developer prerequisites, platform features, licenses, and access roles. DLP and connector availability are situational — they depend on the target environment, not the plugin itself.
 - For each dependency, state whether it is a hard blocker (plugin cannot function) or a soft constraint (only some skills are affected).
@@ -129,7 +140,7 @@ Required implications for this repository:
 - Add Varia catalog metadata when the internal publication repository is chosen.
 - Include TechDocs annotations when documentation should be browsable in Varia.
 - Include Architecture Contract links for components where Varia Soundcheck expects them.
-- Treat catalog metadata and TechDocs as `EQUINOR-INTERNAL` once imported into Varia.
+- Treat catalog metadata and TechDocs as `EQUINOR INTERNAL` once imported into Varia.
 - Do not place restricted details, secrets, or private access group information in Varia-visible metadata or documentation.
 
 ## Publication Readiness
