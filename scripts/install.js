@@ -769,10 +769,12 @@ async function main() {
     plugins = allPlugins;
     warn("--include-deferred set — installing every marketplace plugin.");
     info(
-      `Not adopted: ${allPlugins
-        .filter((p) => !ADOPTED_STATUSES.has(statuses[p]))
-        .map((p) => describeStatus(p, statuses))
-        .join(", ") || "(none)"}`,
+      `Not adopted: ${
+        allPlugins
+          .filter((p) => !ADOPTED_STATUSES.has(statuses[p]))
+          .map((p) => describeStatus(p, statuses))
+          .join(", ") || "(none)"
+      }`,
     );
   } else {
     // Default: adopted plugins only. Deferred plugins are never installed implicitly.

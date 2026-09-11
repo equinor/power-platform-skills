@@ -88,6 +88,7 @@ If the user pasted an error, capture verbatim. Otherwise look for recent failure
 - Output of `npx tsc --noEmit` if relevant
 
 **Do NOT capture:**
+
 - Contents of `src/playerConfig.ts` (contains tenantId / clientId — sensitive)
 - Contents of `.env` or any file matching `.env*`
 - Power Platform environment IDs, environment URLs, environment display names, tenant IDs, or
@@ -117,18 +118,18 @@ Print this block — user copies into a new issue:
 
 ### Environment
 
-| | |
-|---|---|
-| Plugin | mobile-app |
-| Plugin version | <from .plugin/plugin.json, or legacy .claude-plugin/plugin.json fallback, or "unknown"> |
-| OS | <uname output> |
-| Node | <version> |
-| npm | <version> |
-| Power Apps CLI | <version> |
-| Expo CLI | <version> |
-| Xcode | <if macOS> |
-| JDK | <if android> |
-| ANDROID_HOME set | <yes/no> |
+|                  |                                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------- |
+| Plugin           | mobile-app                                                                              |
+| Plugin version   | <from .plugin/plugin.json, or legacy .claude-plugin/plugin.json fallback, or "unknown"> |
+| OS               | <uname output>                                                                          |
+| Node             | <version>                                                                               |
+| npm              | <version>                                                                               |
+| Power Apps CLI   | <version>                                                                               |
+| Expo CLI         | <version>                                                                               |
+| Xcode            | <if macOS>                                                                              |
+| JDK              | <if android>                                                                            |
+| ANDROID_HOME set | <yes/no>                                                                                |
 
 ### Project context
 
@@ -158,9 +159,10 @@ Not run inside a mobile-app project.
 <what happened>
 
 ### Logs / errors
-
 ```
+
 <paste verbatim — sensitive values redacted>
+
 ```
 
 ### Notes
