@@ -27,6 +27,10 @@ const HOME = os.homedir();
 // docs/equinor-alignment/reviews/<name>.json reaches controlled-pilot; `defer` means it still has
 // unresolved policy/security/ownership blockers and may activate unreviewed MCP servers or scripts.
 // See docs/equinor-alignment/plugin-review-checklist.md for the status definitions.
+//
+// This list is duplicated from `adoptedStatuses` in docs/equinor-alignment/sync-policy.json rather
+// than read from it. The installer is documented as runnable via `curl ... | node`, so it has no
+// repository on disk to read a config from and must stay dependency-free. Keep the two in step.
 const REVIEWS_DIR = path.join("docs", "equinor-alignment", "reviews");
 const ADOPTED_STATUSES = new Set([
   "controlled-pilot",

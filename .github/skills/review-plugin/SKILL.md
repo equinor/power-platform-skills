@@ -11,6 +11,18 @@ model: opus
 
 Use this workflow to review one plugin at a time against the Equinor alignment baseline. Start with `code-apps-preview` unless the user names another plugin.
 
+## Pick The Right Mode First
+
+This skill has two modes, and running the wrong one is the most expensive mistake it can make. Check `publicationStatus` in `docs/equinor-alignment/reviews/<plugin>.json` before anything else.
+
+| Trigger                                                                                                            | Plugin tier | Mode                                                                                                                            |
+| ------------------------------------------------------------------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| An adoption decision, a promotion request, or a sync touching an **adopted** plugin (`controlled-pilot` or higher) | Adopted     | **Full review.** Run the whole workflow below.                                                                                  |
+| A sync touching a **tracked** plugin (`defer`, `not-reviewed`)                                                     | Tracked     | **Record refresh only.** Jump to [Tracked Plugin Record Refresh](#tracked-plugin-record-refresh). Do not run the full workflow. |
+| The user explicitly asks to assess a tracked plugin for promotion                                                  | Tracked     | **Full review**, to produce the evidence a promotion needs.                                                                     |
+
+A full review of a tracked plugin outside a promotion request generates findings that cannot be actioned in this fork, because its code is mirrored from upstream and fixing it here forks the file. See [sync-policy.md](../../../docs/equinor-alignment/sync-policy.md).
+
 ## Prerequisites
 
 - **Techradar plugin** — Install the `techradar` plugin from `equinor/techradar` for Tech Radar lookups. If installed, the `techradar-check` skill handles blip resolution automatically via GitHub MCP. If not installed, this skill falls back to direct GitHub MCP calls or a local clone.
@@ -155,3 +167,25 @@ Summarize:
 - Remaining blockers.
 - Validation commands run.
 - Questions for the plugin owner.
+
+## Tracked Plugin Record Refresh
+
+For a **tracked** plugin (`defer`, `not-reviewed`) touched by an upstream sync, the record is updated mechanically. Do not inspect the plugin's skills, scripts, or agents for quality. Their code is mirrored from upstream and is not Equinor's to fix.
+
+Update only:
+
+- `ownership.upstreamVersion` — the plugin's new version from its `.plugin/plugin.json`.
+- `evidence` — one entry naming the synced upstream commit range.
+- `scope` — correct a flag that the sync made factually wrong, for example `deletesAssets` when the sync introduced the plugin's first delete path.
+- `blockers` — add an entry **only** for a materially new risk class: a first destructive code path, a new MCP server, a new external network call, or a new production-interaction default. State the risk. Do not review the implementation.
+- `technologyRadar` — add an entry only when the sync introduced a genuinely new technology, then look it up as in Step 3.
+
+Leave `publicationStatus` unchanged. A sync never promotes a plugin.
+
+Then validate and report:
+
+```bash
+node scripts/validate-plugin-reviews.js
+```
+
+Report the new upstream version, any new blocker with its justification, and nothing else. If the refresh surfaced a real defect in the plugin, report it upstream and record it as a blocker; do not patch it here.

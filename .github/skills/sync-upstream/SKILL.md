@@ -1,6 +1,6 @@
 ---
 name: sync-upstream
-description: "Fetch, compare, and synchronize upstream microsoft/power-platform-skills changes into this Equinor-aligned fork via a pull request. Preserves Equinor content, uses git history for context, and triggers plugin re-reviews."
+description: "Fetch, compare, and synchronize upstream microsoft/power-platform-skills changes into this Equinor-aligned fork via pull requests. Mirrors unadopted plugins verbatim, intelligently merges adopted ones, and keeps the review surface small."
 argument-hint: "plugin, skill, path, or 'all' to sync"
 user-invocable: true
 allowed-tools: Read, Edit, Write, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, AskUserQuestion, EnterPlanMode, ExitPlanMode
@@ -9,11 +9,22 @@ model: opus
 
 # Sync Upstream Microsoft Changes
 
-Synchronize changes from `microsoft/power-platform-skills` into this fork via a **pull request** on a dedicated sync branch. Never merge directly to `main`.
+Synchronize changes from `microsoft/power-platform-skills` into this fork via **pull requests** on dedicated sync branches. Never merge directly to `main`.
 
 **Direction:** This workflow pulls FROM upstream INTO this fork. Never create, push, or submit pull requests TO the upstream `microsoft/power-platform-skills` repository. All PRs target `origin` (the Equinor fork) only.
 
+**Governing policy:** [docs/equinor-alignment/sync-policy.md](../../../docs/equinor-alignment/sync-policy.md). Read it before starting. The steps below implement it; if they ever disagree, the policy wins.
+
 Default to read-only discovery. Do not apply changes until the user approves the sync plan.
+
+## The Rule That Shapes Everything
+
+A plugin is either **adopted** (`publicationStatus` of `controlled-pilot` or higher) or **tracked** (`defer`, `not-reviewed`, or an unreadable record).
+
+- **Adopted** plugins are merged intelligently and reviewed in full.
+- **Tracked** plugins are **mirrored verbatim** from upstream, plus the transforms declared in `docs/equinor-alignment/sync-policy.json`. Never hand-merge, patch, reformat, harden, or add tests to a tracked plugin's tree during a sync. A defect found there is reported upstream and recorded as a blocker, not fixed here.
+
+This is what keeps a sync reviewable. The last sync that ignored it changed 879 files and produced a review loop on plugins nobody has adopted.
 
 ## Inputs
 
@@ -50,29 +61,28 @@ git remote add upstream https://github.com/microsoft/power-platform-skills.git
 git fetch upstream main --tags
 ```
 
-#### 1.4 Create Sync Branch
-
-Create and switch to a sync branch from the current `main`:
+#### 1.4 Stop Early If There Is Nothing To Sync
 
 ```bash
-git checkout main
-git pull origin main
-git checkout -b sync/upstream-$(date +%Y-%m-%d)
+BASE=$(git merge-base HEAD upstream/main)
+git log --oneline --no-merges "$BASE..upstream/main"    # empty => nothing to do
 ```
 
-If `sync/upstream-{date}` already exists (e.g., multiple syncs in one day), append a sequence number: `sync/upstream-2026-05-28-2`.
+Branches are created later, by the phase that needs them.
 
-### Phase 2 — Discover And Analyze Upstream Changes
-
-#### 2.1 Identify The Change Range
-
-Find the last merged upstream commit (look for sync commits or merge-base):
+### Phase 2 — Resolve Tiers Before Reading Any Diff
 
 ```bash
-git merge-base HEAD upstream/main
+node scripts/check-sync-scope.js --report-only
 ```
 
-#### 2.2 Analyze Git Log
+This prints which plugins are adopted and which are tracked, and audits the standing divergence in tracked trees against the last synced upstream baseline. Fix any violation it reports **before** starting the sync; carrying one forward makes the sync diff unreadable.
+
+Record the tier of every plugin the sync touches. Every phase below depends on it.
+
+### Phase 3 — Understand What Upstream Did
+
+#### 3.1 Analyze Git Log
 
 Read the upstream commit history to understand intent, not just diffs:
 
@@ -84,12 +94,12 @@ For richer context on significant changes:
 
 ```bash
 git log --stat --no-merges $(git merge-base HEAD upstream/main)..upstream/main -- plugins/
-git log --stat --no-merges $(git merge-base HEAD upstream/main)..upstream/main -- shared/
+git log --stat --no-merges $(git merge-base HEAD upstream/main)..upstream/main -- shared/ scripts/ .github/workflows/
 ```
 
 Summarize the upstream changes by theme (new plugins, skill updates, bug fixes, documentation, structural changes).
 
-#### 2.3 Diff Files
+#### 3.2 Diff Files
 
 For the full scope:
 
@@ -105,40 +115,85 @@ git diff --name-status $(git merge-base HEAD upstream/main)..upstream/main -- pl
 
 Also inspect shared dependencies: `shared/`, `scripts/`, `.claude-plugin/marketplace.json`.
 
-#### 2.4 Classify Files
+#### 3.3 Classify Files
 
-Classify every changed file into one of these categories:
+Classify every changed file by the tier of the plugin that owns it.
 
-| Category              | Criteria                                                                                                             | Action                           |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| **Direct copy**       | File has no Equinor-specific content and is fully upstream-owned                                                     | Copy from upstream               |
-| **Intelligent merge** | File contains both upstream content and Equinor sections (READMEs, AGENTS.md, shared docs, workflows)                | Merge preserving Equinor content |
-| **Equinor-only**      | File is entirely Equinor-created (`docs/equinor-alignment/**`, review records, `.github/skills/`, `.github/agents/`) | Never overwrite — skip           |
-| **Review required**   | File contains scripts, hooks, `.mcp.json`, or production-interaction patterns                                        | Defer until inspected            |
-| **New file**          | File does not exist locally                                                                                          | Copy from upstream (new content) |
+| Category              | Criteria                                                                                         | Action                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| **Mirror**            | Any path under a **tracked** plugin's `plugins/<dir>/` or `evals/<dir>/`                         | Take upstream verbatim, then re-apply declared transforms |
+| **Intelligent merge** | **Adopted** plugin trees, and shared files carrying Equinor sections                             | Merge preserving Equinor content                          |
+| **Equinor-only**      | `docs/equinor-alignment/**`, `.github/skills/**`, `.github/agents/**`, `.github/instructions/**` | Never overwrite; skip                                     |
+| **Review required**   | Scripts, hooks, `.mcp.json`, workflows, or production-interaction patterns                       | Defer until inspected with the user                       |
+| **New file**          | Does not exist locally                                                                           | Copy from upstream, then classify by the rules above      |
 
-**Protected paths — never direct-copy without explicit approval:**
+**Protected paths — never copy from upstream without explicit approval:**
 
-- `docs/equinor-alignment/**`
-- `docs/equinor-alignment/reviews/**`
+- `docs/equinor-alignment/**`, including `reviews/**`
 - Any file containing `<!-- equinor-start -->` / `<!-- equinor-end -->` markers
-- Any file with Equinor-specific sections (look for: "Equinor", "equinor-alignment", internal URLs, governance references)
+- Any file with Equinor-specific sections (look for: "Equinor", "equinor-alignment", governance references)
 
-#### 2.5 Present Sync Plan
+#### 3.4 Present The Sync Plan
 
-Enter plan mode. Present a table showing each file, its category, and proposed action. Ask user for approval before proceeding.
-
-### Phase 3 — Apply Changes
-
-#### 3.1 Direct Copy Files
-
-For files classified as direct copy or new:
+Enter plan mode. Present the file table, the plugin tiers from Phase 2, and the generated scope block:
 
 ```bash
-git checkout upstream/main -- <path>
+node scripts/check-sync-scope.js --markdown
 ```
 
-#### 3.2 Intelligent Merge
+Ask for approval before applying anything.
+
+### Phase 4 — Mirror Pull Request (Tracked Plugins)
+
+Skip this phase entirely when the sync touches no tracked plugin.
+
+```bash
+git checkout main && git pull origin main
+git checkout -b "sync/upstream-$(date +%Y-%m-%d)-mirror"
+```
+
+#### 4.1 Take Upstream's Tree Wholesale
+
+For each tracked plugin the sync touches. `git checkout` alone leaves behind files upstream deleted, so clear the tree first:
+
+```bash
+git rm -r --quiet --ignore-unmatch plugins/<dir> evals/<dir>
+git checkout upstream/main -- plugins/<dir> evals/<dir>
+```
+
+Do not read these files looking for problems. That is not what this phase is for.
+
+#### 4.2 Re-Apply The Declared Transforms
+
+Only the transforms in `docs/equinor-alignment/sync-policy.json` may be re-applied. Their `paths` lists are the definition of what each one touches.
+
+- `fork-repointing` — replace `microsoft/power-platform-skills` with `equinor/power-platform-skills` in the plugin manifests, README install instructions, and the `report-issue` workflow. Do not repoint references the fork has deliberately left pointing upstream.
+- `telemetry-exclusion` — delete the telemetry stack and remove its hook registrations, requires, and workflow markers.
+- `carried-fix` — closed to new entries. Re-apply the existing ones only.
+
+#### 4.3 Verify, Commit, And Open The Pull Request
+
+```bash
+node scripts/check-sync-scope.js
+git add -A
+git commit -m "sync: mirror upstream tracked plugins $(date +%Y-%m-%d)"
+git push origin "sync/upstream-$(date +%Y-%m-%d)-mirror"
+```
+
+The pull request body must state that the tree is machine-verified against upstream and does not warrant line-by-line review, and must include the output of `node scripts/check-sync-scope.js --markdown`.
+
+Merge this pull request before starting Phase 5.
+
+### Phase 5 — Alignment Pull Request (Everything Else)
+
+```bash
+git checkout main && git pull origin main
+git checkout -b "sync/upstream-$(date +%Y-%m-%d)-alignment"
+```
+
+This branch carries adopted plugins, shared surfaces, repository policy, and review record updates. It should be small enough to review properly.
+
+#### 5.1 Intelligent Merge
 
 For files requiring merge, follow this process:
 
@@ -164,7 +219,19 @@ For files requiring merge, follow this process:
 
 5. **Edit the file** with the merged content.
 
-#### 3.3 Review-Required Files
+#### 5.2 Shared Surface Side Effects
+
+Tier scoping stops at the plugin boundary. When the sync changes anything under `shared/**`, `scripts/**`, `.github/workflows/**`, `.github/instructions/**`, `AGENTS.md`, `CLAUDE.md`, or `marketplace.json`, work out the effect on **every** consuming plugin, tracked ones included:
+
+- **`shared/skills/<skill>/`** — each adopting plugin carries a physical copy at `plugins/<plugin>/skills/<skill>/`. Refresh every copy in the same change. `node scripts/check-sync-scope.js` fails on drift, and reports plugins shipping a self-contained variant that a shared edit will never reach.
+- **`scripts/**`\*\* — a validator change can fail the build on a plugin nobody has adopted. Run the repository validators against the whole tree, not just the adopted plugin.
+- **`.github/workflows/**`\*\* — check path filters, permissions, and whether a new test suite has a workflow that actually runs it.
+- **Agent context files** — check that guidance written for an adopted plugin does not mislead an agent working on a mirrored one.
+- **`marketplace.json`** and its legacy mirror — every entry needs a matching review record, or the installer's adoption gate has nothing to read.
+
+Refreshing a tracked plugin's copy of a shared file belongs in this pull request, not the mirror one.
+
+#### 5.3 Review-Required Files
 
 For scripts, hooks, `.mcp.json`, and production-interaction files:
 
@@ -173,25 +240,19 @@ For scripts, hooks, `.mcp.json`, and production-interaction files:
 3. Flag any security, DLP, or production-interaction concerns.
 4. Apply only after explicit user approval.
 
-### Phase 4 — Re-Review Affected Plugins
+### Phase 6 — Review Records
 
-#### 4.1 Identify Affected Reviewed Plugins
-
-Check which plugins were touched:
+#### 6.1 Identify Affected Plugins
 
 ```bash
-git diff --name-only main..HEAD -- plugins/ | cut -d/ -f2 | sort -u
+git diff --name-only main..HEAD -- plugins/ evals/ | cut -d/ -f2 | sort -u
 ```
 
-For each affected plugin, check if a review record exists:
+Split them by tier using the Phase 2 output. Their records live in `docs/equinor-alignment/reviews/<plugin-name>.json`, keyed by marketplace name rather than directory name.
 
-```bash
-ls docs/equinor-alignment/reviews/<plugin-name>.json 2>/dev/null
-```
+#### 6.2 Adopted Plugins: Full Re-Review
 
-#### 4.2 Trigger Plugin Re-Review
-
-For each previously reviewed plugin that was modified by this sync:
+For each **adopted** plugin the sync modified:
 
 1. Invoke the **review-plugin** skill (`.github/skills/review-plugin/SKILL.md`) against the plugin.
 2. Focus the review on:
@@ -199,95 +260,113 @@ For each previously reviewed plugin that was modified by this sync:
    - Changes to production-interaction patterns.
    - New MCP dependencies.
    - New technology dependencies (check Tech Radar).
-3. Update the review record with:
-   - New `lastReviewedUpstreamCommit` evidence.
-   - Any new blockers discovered.
-   - Updated `radarState` entries if new technologies appeared.
+3. Update the review record with new evidence, any new blockers, and updated `radarState` entries.
 
-#### 4.3 Validate Review Records
+#### 6.3 Tracked Plugins: Mechanical Refresh Only
+
+For each **tracked** plugin the sync modified, do **not** run a full review. That is what produced the unactionable finding volume this policy exists to stop. Update the record mechanically:
+
+- `ownership.upstreamVersion` — the plugin's new version.
+- `evidence` — one entry naming the synced upstream range.
+- `blockers` — add an entry **only** when the sync introduced a materially new risk class, such as a first destructive code path, a new MCP server, or a new external network call. State the risk; do not review the implementation.
+- `technologyRadar` — add an entry only when the sync introduced a genuinely new technology.
+
+Leave `publicationStatus` unchanged. A sync never promotes a plugin.
+
+#### 6.4 Validate
 
 ```bash
 node scripts/validate-plugin-reviews.js
+node scripts/check-sync-scope.js
 ```
 
-### Phase 5 — Commit And Create Pull Request
+### Phase 7 — Commit And Open The Alignment Pull Request
 
-#### 5.1 Stage And Commit
+#### 7.1 Stage And Commit
+
+Split commits by category so the diff reads in order:
+
+- `sync: merge upstream changes preserving Equinor content`
+- `sync: refresh shared skill copies across plugins`
+- `sync: update review records for affected plugins`
+
+#### 7.2 Push Branch
 
 ```bash
-git add -A
-git commit -m "sync: upstream microsoft/power-platform-skills $(date +%Y-%m-%d)
-
-Upstream range: $(git merge-base main upstream/main)..$(git rev-parse upstream/main)
-Affected plugins: <list>
-Merge strategy: direct-copy (<n>), intelligent-merge (<n>), deferred (<n>)"
+git push origin "sync/upstream-$(date +%Y-%m-%d)-alignment"
 ```
 
-If the changeset is large, split into multiple commits by category:
+#### 7.3 Create Pull Request
 
-- `sync: direct-copy upstream files` — for files taken as-is
-- `sync: merge upstream changes preserving Equinor content` — for intelligently merged files
-- `sync: update review records for affected plugins` — for review record updates
-
-#### 5.2 Push Branch
-
-```bash
-git push origin sync/upstream-$(date +%Y-%m-%d)
-```
-
-#### 5.3 Create Pull Request
-
-The PR targets `origin` (the Equinor fork), merging the sync branch into `main`. Never target the upstream Microsoft repository.
+The pull request targets `origin` (the Equinor fork), merging the sync branch into `main`. Never target the upstream Microsoft repository.
 
 ```bash
 gh pr create \
   --base main \
-  --head "sync/upstream-$(date +%Y-%m-%d)" \
-  --title "sync: upstream microsoft/power-platform-skills $(date +%Y-%m-%d)" \
-  --body "$(cat <<'EOF'
-## Upstream Sync
+  --head "sync/upstream-$(date +%Y-%m-%d)-alignment" \
+  --title "sync: upstream alignment $(date +%Y-%m-%d)"
+```
+
+Body:
+
+```markdown
+## Upstream Sync — Alignment
 
 **Upstream range:** `<merge-base>..<upstream-head>`
-**Sync date:** $(date +%Y-%m-%d)
+**Mirror pull request:** #<number>
 
-### Changes Summary
+<output of: node scripts/check-sync-scope.js --markdown>
 
-<table of files with category and action>
+### Adopted plugin re-reviews
 
-### Plugin Re-Reviews
+<findings per adopted plugin>
 
-<summary of re-review findings for affected plugins>
+### Shared surface side effects
 
-### Deferred Items
+<each shared file changed, and the consuming plugins checked>
 
-<files not synced and reason>
+### Tracked plugin record refreshes
+
+<plugin: new upstream version, new blockers if any>
+
+### Defects observed in tracked plugins
+
+<one line each, with the upstream report link and the blocker entry. Not fixed here.>
+
+### Deferred items
+
+<files not synced and why>
 
 ### Validation
 
+- [ ] `node scripts/check-sync-scope.js` passes
 - [ ] `node scripts/validate-plugin-reviews.js` passes
 - [ ] No Equinor-specific content was overwritten
-- [ ] Review records updated for affected plugins
-- [ ] New scripts/hooks inspected for safety
+- [ ] New scripts, hooks, and workflows inspected for safety
 
-### Remaining Owner Decisions
+### Remaining owner decisions
 
-<list of items requiring human decision>
-EOF
-)"
+<items requiring a human decision>
 ```
 
 If `gh` is not authenticated, output the full PR creation command for the user to run manually.
 
-### Phase 6 — Summary Report
+> [!IMPORTANT]
+> Reviewers should apply `.github/skills/code-review/SKILL.md`. Link it from the pull request body whenever the diff is large.
+
+### Phase 8 — Summary Report
 
 Report to the user:
 
-- Sync branch name and PR URL (or creation command).
-- Upstream commit range analyzed.
-- Git log themes (what upstream was working on).
-- Files changed with merge strategy for each.
+- Both branch names and pull request URLs (or the creation commands).
+- Upstream commit range analyzed, and the themes found in its history.
+- File counts per review bucket from `check-sync-scope.js`.
+- Tracked plugins mirrored, and the transforms re-applied to each.
+- Shared surfaces changed, and the consuming plugins checked for side effects.
+- Adopted plugin re-review findings.
+- Tracked plugin record refreshes.
+- Defects observed in tracked plugins, with the upstream report and blocker entry for each.
 - Files intentionally not synced and why.
-- Plugin re-review summaries and updated review records.
 - Validation results.
 - Remaining owner decisions or blockers.
 
@@ -305,11 +384,14 @@ Equinor-specific content here...
 
 This allows the sync workflow to reliably identify and preserve Equinor sections during intelligent merges.
 
+Markers belong in adopted plugins and shared files. A tracked plugin should not need them: if one does, the change is undeclared divergence and the mirror rule was broken.
+
 ## Naming Convention
 
-| Pattern                     | Example                                                     |
-| --------------------------- | ----------------------------------------------------------- |
-| Branch                      | `sync/upstream-2026-05-28`                                  |
-| Branch (same-day duplicate) | `sync/upstream-2026-05-28-2`                                |
-| Commit prefix               | `sync:`                                                     |
-| PR title                    | `sync: upstream microsoft/power-platform-skills 2026-05-28` |
+| Pattern             | Example                                                                                   |
+| ------------------- | ----------------------------------------------------------------------------------------- |
+| Mirror branch       | `sync/upstream-2026-05-28-mirror`                                                         |
+| Alignment branch    | `sync/upstream-2026-05-28-alignment`                                                      |
+| Same-day duplicate  | append `-2`, for example `sync/upstream-2026-05-28-mirror-2`                              |
+| Commit prefix       | `sync:`                                                                                   |
+| Pull request titles | `sync: mirror upstream tracked plugins 2026-05-28`, `sync: upstream alignment 2026-05-28` |

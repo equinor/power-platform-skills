@@ -1,5 +1,5 @@
 ---
-applyTo: 'docs/equinor-alignment/**'
+applyTo: "docs/equinor-alignment/**"
 ---
 
 # Equinor Alignment Documentation Scope
@@ -8,12 +8,14 @@ Files under `docs/equinor-alignment/` are governance documentation for the Equin
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `baseline.md` | Baseline requirements all plugins must meet |
-| `plugin-review-checklist.md` | Step-by-step review checklist (DLP, Tech Radar, EDS, owner, etc.) |
-| `plugin-review.schema.json` | JSON Schema for review record files |
-| `reviews/*.json` | Per-plugin review records |
+| File                         | Purpose                                                                                       |
+| ---------------------------- | --------------------------------------------------------------------------------------------- |
+| `baseline.md`                | Baseline requirements all plugins must meet                                                   |
+| `sync-policy.md`             | Adoption tiers, the mirror rule for unadopted plugins, declared fork transforms, review depth |
+| `sync-policy.json`           | Machine-readable companion to `sync-policy.md`, read by `scripts/check-sync-scope.js`         |
+| `plugin-review-checklist.md` | Step-by-step review checklist (DLP, Tech Radar, EDS, owner, etc.)                             |
+| `plugin-review.schema.json`  | JSON Schema for review record files                                                           |
+| `reviews/*.json`             | Per-plugin review records                                                                     |
 
 ## Review Records
 
@@ -42,6 +44,7 @@ These files are consumed on GitHub. Use GitHub-flavored admonitions only:
 - Keep checklist items actionable and grounded in current Equinor governance requirements.
 - Link to authoritative sources rather than restating content.
 - When adding new criteria to the checklist or schema, update both files together.
+- When changing an entry in `sync-policy.json`, explain it in `sync-policy.md` and in the pull request. Widening the declared transforms widens what this fork may diverge on.
 - Remove or update outdated references quickly to reduce maintenance effort.
 
 ## Audience

@@ -11,49 +11,60 @@ You synchronize this Equinor-aligned fork with the upstream `microsoft/power-pla
 
 ## Core Principles
 
-1. **Equinor content is sacred.** Sections, guardrails, references, and review records added for Equinor alignment must never be silently overwritten. When upstream changes a file that contains Equinor-specific content, merge intelligently — incorporate new upstream information while preserving Equinor additions.
+1. **Adoption tier decides everything.** A plugin at `controlled-pilot` or higher is **adopted**: merge it intelligently and review it in full. Every other plugin is **tracked**: mirror its tree verbatim from upstream plus the transforms declared in `docs/equinor-alignment/sync-policy.json`, and do not review, patch, reformat, or improve it. A defect found in a tracked plugin is reported upstream and recorded as a blocker, never fixed here.
 
-2. **Context from history.** Always inspect `git log` for upstream commits to understand the _intent_ behind changes, not just the diff. Commit messages, PR titles, and change patterns inform how to merge.
+2. **Equinor content is sacred.** Sections, guardrails, references, and review records added for Equinor alignment must never be silently overwritten. When upstream changes an adopted or shared file that contains Equinor-specific content, merge intelligently — incorporate new upstream information while preserving Equinor additions.
 
-3. **PR-based output.** All changes land on a `sync/upstream-YYYY-MM-DD` branch and are submitted as a pull request for human review. Never push directly to `main`.
+3. **Shared surfaces reach every plugin.** Tier scoping stops at the plugin boundary. A change under `shared/`, `scripts/`, `.github/workflows/`, `.github/instructions/`, `AGENTS.md`, `CLAUDE.md`, or `marketplace.json` must be checked against every consuming plugin, tracked ones included. Shared skills are physically copied into each plugin, so a shared edit is half-applied until every copy is refreshed.
 
-4. **Re-review affected plugins.** When a previously reviewed plugin is modified by the sync, trigger the review-plugin workflow against it and include findings in the PR description.
+4. **Context from history.** Always inspect `git log` for upstream commits to understand the _intent_ behind changes, not just the diff. Commit messages, PR titles, and change patterns inform how to merge.
+
+5. **Keep the review surface small.** Split a sync into a **mirror** pull request (tracked plugin trees, machine-verified, not read line by line) and an **alignment** pull request (adopted plugins, shared surfaces, repository policy, review records). One pull request, one review depth. Never push directly to `main`.
+
+6. **Re-review by tier.** An adopted plugin touched by the sync gets a full review-plugin pass. A tracked plugin gets a mechanical record refresh only.
 
 ## Workflow Skills
 
 Use these skills in order:
 
-1. **sync-upstream** (`.github/skills/sync-upstream/SKILL.md`) — The full sync workflow: discover changes, analyze history, branch, merge content intelligently, create PR, and trigger reviews.
+1. **sync-upstream** (`.github/skills/sync-upstream/SKILL.md`) — The full sync workflow: resolve tiers, discover changes, analyze history, mirror tracked plugins, merge adopted ones, create pull requests, and trigger reviews.
 
-2. **review-plugin** (`.github/skills/review-plugin/SKILL.md`) — Called automatically when a sync touches a plugin that has an existing review record in `docs/equinor-alignment/reviews/`.
+2. **review-plugin** (`.github/skills/review-plugin/SKILL.md`) — Called for plugins the sync touched. Full review for adopted plugins; record refresh only for tracked ones.
 
 ## Canonical Sources
 
 Read before starting any sync:
 
+- `docs/equinor-alignment/sync-policy.md` — Adoption tiers, the mirror rule, declared transforms, and pull request shape
+- `docs/equinor-alignment/sync-policy.json` — Machine-readable tiers, shared surfaces, and transforms
 - `docs/equinor-alignment/baseline.md` — Alignment standards
 - `docs/equinor-alignment/plugin-review-checklist.md` — Review criteria
 - `docs/equinor-alignment/plugin-review.schema.json` — Review record schema
-- Review records in `docs/equinor-alignment/reviews/` — Existing plugin reviews
+- Review records in `docs/equinor-alignment/reviews/` — Adoption status per plugin
 
 ## Guardrails
 
 - **Never create, push, or submit pull requests to the upstream `microsoft/power-platform-skills` repository.** All PRs target `origin` (the Equinor fork) only. This workflow is one-way: pull FROM upstream, PR into the fork's `main`.
+- Do not hand-edit a tracked plugin's tree. Take upstream's version and re-apply only the declared transforms.
+- Do not add a new `carried-fix` entry. That transform is closed.
 - Do not overwrite `docs/equinor-alignment/**` with upstream content.
 - Do not remove Equinor-specific sections from READMEs, AGENTS.md, shared docs, or scripts.
 - Do not merge upstream changes that introduce production-system interaction without flagging for owner review.
 - Do not auto-merge changes to `.mcp.json`, hooks, or scripts without explicit inspection and approval.
-- Always run `node scripts/validate-plugin-reviews.js` after updating review records.
+- Always run `node scripts/check-sync-scope.js` and `node scripts/validate-plugin-reviews.js` before opening a pull request.
 - If the sync scope is ambiguous, ask the user before proceeding.
 
 ## Output
 
 When finishing, report:
 
-- Sync branch name and PR URL (or PR creation command if `gh` auth is unavailable).
-- Upstream commit range fetched.
-- Files changed, with merge strategy used for each (direct copy, intelligent merge, deferred).
+- Both sync branch names and pull request URLs (or the PR creation commands if `gh` auth is unavailable).
+- Upstream commit range fetched, and the themes found in its history.
+- File counts per review bucket from `check-sync-scope.js`.
+- Tracked plugins mirrored, and the transforms re-applied to each.
+- Shared surfaces changed, and the consuming plugins checked for side effects.
+- Adopted plugin re-review findings, and tracked plugin record refreshes.
+- Defects observed in tracked plugins, with the upstream report and blocker entry for each.
 - Files intentionally not synced and why.
-- Plugin re-review summaries (if any).
 - Remaining owner decisions or blockers.
 - Validation commands run and their results.

@@ -5,6 +5,7 @@ This directory contains the implementation artifacts for aligning the internal E
 Start here:
 
 - [Alignment baseline](baseline.md): source-of-truth standards and publication decisions gathered from Equinor repositories.
+- [Upstream sync and review scope policy](sync-policy.md): adoption tiers, the mirror rule for unadopted plugins, declared fork transforms, and how deeply each file in a pull request is reviewed.
 - [Plugin review checklist](plugin-review-checklist.md): human review questions and outcome rules for plugin readiness.
 - [Plugin review schema](plugin-review.schema.json): JSON schema for machine-readable plugin review records.
 
@@ -13,13 +14,21 @@ The Wave 0 reviewer workflow lives in `.github/skills/` and `.github/agents/` an
 - `.github/agents/equinor-plugin-reviewer.agent.md`, an agent for plugin review and upstream sync facilitation.
 - `.github/skills/review-plugin/SKILL.md`, a skill for applying this checklist to a target plugin.
 - `.github/skills/sync-upstream/SKILL.md`, a skill for inspecting and selectively synchronizing updates from `microsoft/power-platform-skills`.
+- `.github/skills/code-review/SKILL.md`, a skill defining how deeply to review a pull request in this fork.
 
-Initial review records are stored in [reviews/](reviews/). They are intentionally marked `defer` until detailed plugin owner, script, MCP, DLP, Tech Radar, EDS, and publication evidence exists.
+Review records are stored in [reviews/](reviews/). `publicationStatus` is the single gate: it decides what `scripts/install.js` will install, whether a sync mirrors the plugin or merges it, and how deeply a reviewer reads it.
 
 Validate review records with:
 
 ```bash
 node scripts/validate-plugin-reviews.js
+```
+
+Validate that unadopted plugins still match upstream with:
+
+```bash
+git fetch upstream main
+node scripts/check-sync-scope.js
 ```
 
 ## Current Status

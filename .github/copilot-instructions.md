@@ -1,5 +1,17 @@
 # GitHub Copilot Instructions for Power Platform Skills
 
+> [!IMPORTANT]
+> **Review scope rule.** This repository is a fork. Most files are mirrored from
+> `microsoft/power-platform-skills`, not authored here. Only plugins whose review record
+> reaches `controlled-pilot` or higher are adopted by Equinor; today that is
+> `code-apps-preview` alone. Every other plugin is mirrored verbatim and is **not**
+> reviewed for code quality, style, architecture, missing tests, or latent upstream
+> defects. Those belong upstream. Before commenting on any pull request, run
+> `node scripts/check-sync-scope.js --report-only` and comment only on files outside the
+> mirror bucket. Secrets, real environment or tenant identifiers, and anything that runs
+> in this repository's CI remain in scope everywhere. See
+> [docs/equinor-alignment/sync-policy.md](../docs/equinor-alignment/sync-policy.md).
+
 ## Project Overview
 
 This repository is the **plugin marketplace** for Power Platform development tools, forked from Microsoft's [power-platform-skills](https://github.com/microsoft/power-platform-skills) and aligned for Equinor internal use.
@@ -45,11 +57,11 @@ Skills are defined in `SKILL.md` files with YAML frontmatter (`name`, `descripti
 
 The governance and review workflows are in `.github/skills/` and `.github/agents/`, not in `plugins/`:
 
-- `.github/skills/review-plugin/` — Plugin review workflow against Equinor standards
+- `.github/skills/review-plugin/` — Plugin review workflow against Equinor standards, tier-aware
 - `.github/skills/code-review/` — Scope and depth rules for reviewing pull requests in this fork
 - `.github/skills/sync-upstream/` — PR-based upstream synchronization workflow
 - `.github/agents/equinor-plugin-reviewer.agent.md` — Agent persona for plugin reviews
-- `.github/agents/sync-upstream.agent.md` — Agent persona for upstream sync (PR-based, with auto re-review)
+- `.github/agents/sync-upstream.agent.md` — Agent persona for upstream sync (PR-based, with tier-appropriate re-review)
 
 ### Cross-Plugin Shared Skills
 
@@ -69,6 +81,20 @@ After changing review records in `docs/equinor-alignment/reviews/`:
 node scripts/validate-plugin-reviews.js
 ```
 
+### Validating Sync Scope
+
+After changing anything under `plugins/`, `evals/`, or `shared/`:
+
+```bash
+git fetch upstream main
+node scripts/check-sync-scope.js
+```
+
+This partitions a diff into review buckets and fails when a plugin Equinor has not adopted
+diverges from upstream outside the transforms declared in
+`docs/equinor-alignment/sync-policy.json`, or when a per-plugin copy of a shared skill has
+gone stale.
+
 ### Installing Plugins
 
 ```bash
@@ -87,15 +113,16 @@ git diff --name-status $(git merge-base HEAD upstream/main)..upstream/main -- pl
 
 Use the `sync-upstream` skill or the **Upstream Sync Agent** for guided PR-based synchronization. The workflow is **one-way** (pull FROM upstream, PR into the Equinor fork's `main`). Never create or submit pull requests to the upstream `microsoft/power-platform-skills` repository.
 
-1. Creates a `sync/upstream-YYYY-MM-DD` branch
-2. Analyzes upstream git history for context
-3. Merges changes while preserving Equinor-specific content
-4. Triggers plugin re-reviews for affected reviewed plugins
-5. Opens a pull request on the Equinor fork for human review
+1. Resolves each plugin's adoption tier from its review record
+2. Mirrors unadopted (`defer`) plugin trees verbatim from upstream, plus declared transforms
+3. Intelligently merges adopted plugins and shared surfaces, preserving Equinor content
+4. Checks shared-surface changes against every consuming plugin, including unadopted ones
+5. Refreshes review records: full re-review for adopted plugins, mechanical update for the rest
+6. Opens two pull requests on the Equinor fork — a machine-verified mirror, then a small alignment PR
 
 ## PR and Code Review
 
-When performing a code review, apply the scope and depth rules in `.github/skills/code-review/SKILL.md` before commenting. In short: this repository is a fork, most files are mirrored from upstream rather than authored here, and a plugin's `publicationStatus` in `docs/equinor-alignment/reviews/<plugin>.json` decides how deeply it should be reviewed. Only plugins at `controlled-pilot` or above are adopted; a `defer` plugin is reviewed for sync correctness and secrets only, not for code quality in unmodified upstream source.
+When performing a code review, apply the scope and depth rules in `.github/skills/code-review/SKILL.md` before commenting, and start from `node scripts/check-sync-scope.js`. In short: this repository is a fork, most files are mirrored from upstream rather than authored here, and a plugin's `publicationStatus` in `docs/equinor-alignment/reviews/<plugin>.json` decides how deeply it should be reviewed. Only plugins at `controlled-pilot` or above are adopted; a `defer` plugin is reviewed for sync correctness and secrets only, not for code quality in unmodified upstream source. A real defect in a `defer` plugin is reported upstream and recorded as a blocker, not patched here.
 
 - **Commit format**: Conventional commits (`feat: add skill`, `docs: update review`, `fix: correct frontmatter`)
 - **Plugin changes**: Require peer review before merge
@@ -111,6 +138,7 @@ Before promoting a plugin to `controlled-pilot`, confirm:
 1. Review record exists at `docs/equinor-alignment/reviews/<plugin>.json` and passes schema validation
 2. DLP, Tech Radar, EDS, owner, support channel, zone, MCP, and publication evidence are all documented
 3. `node scripts/validate-plugin-reviews.js` exits without errors
+4. `node scripts/check-sync-scope.js` passes, so the tree's standing divergence from upstream is visible at full review depth
 
 ### Authority Hierarchy
 

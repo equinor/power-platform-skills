@@ -47,7 +47,7 @@ The table below summarises every category of change. The review records in [`doc
 | Category | What was added or changed | Why |
 | --- | --- | --- |
 | **`.github/skills/` and `.github/agents/`** | `equinor-plugin-reviewer` agent + `review-plugin` and `sync-upstream` skills | Automates governance review and upstream synchronisation using the Equinor checklist |
-| **`docs/equinor-alignment/`** | Baseline, checklist, JSON schema, and per-plugin review records | Provides the canonical, reviewable source of truth for internal publication decisions |
+| **`docs/equinor-alignment/`** | Baseline, sync policy, checklist, JSON schema, and per-plugin review records | Provides the canonical, reviewable source of truth for internal publication decisions |
 | **`.github/skills/`** | `review-plugin`, `sync-upstream`, `docs-conventions`, `docs-review`, `copilot-cost`, `update-copilot-pricing` | Installs Equinor-specific agent skills into every project that uses this fork |
 | **`.github/copilot-instructions.md`** | Project-level Copilot instructions | Grounds Copilot in Equinor authority hierarchy (EMS → varia.equinor.com → Tech Radar → Microsoft docs) |
 | **`.github/instructions/`** | Markdown, documentation, and alignment instruction files | Enforces shared Equinor documentation conventions across all AI-assisted authoring |
@@ -55,6 +55,7 @@ The table below summarises every category of change. The review records in [`doc
 | **`plugins/code-apps/`** | <abbr title="Equinor Design System">EDS</abbr> integration guidance, mandatory deploy confirmation, updated development standards | Aligns generated code apps with Equinor Design System and prevents accidental production deploys |
 | **`scripts/install.js`** | Extended to support GitHub Copilot project-scoped installation, Equinor fork URLs, and Open Plugins marketplace resolution | Lets teams install into `.github/` for shared team use while staying compatible with the upstream marketplace layout |
 | **`scripts/validate-plugin-reviews.js`** | New script | CI-validates review records against the JSON schema before any plugin state change merges |
+| **`scripts/check-sync-scope.js`** | New script | Partitions a pull request by review depth and fails when an unadopted plugin diverges from upstream outside the declared transforms |
 | **`SECURITY.md`** | Updated to Equinor responsible disclosure contacts | Replaces Microsoft-only disclosure path with Equinor contacts |
 
 ### Plugin publication status
@@ -73,6 +74,10 @@ Current review status for each plugin. A review record reaching `controlled-pilo
 | `power-automate` | defer | [reviews/power-automate.json](docs/equinor-alignment/reviews/power-automate.json) |
 
 `defer` means the plugin has an initial review record but lacks sufficient evidence (owner confirmation, <abbr title="Data Loss Prevention Policy">DLP</abbr> mapping, Tech Radar positioning, or EDS compliance) to recommend piloting. Plugins with a `defer` status warrant extra care — review the record and understand what is still outstanding before adopting them in your team's workflow.
+
+A `defer` plugin is **mirrored from upstream rather than maintained here**. Its tree stays byte-identical to `microsoft/power-platform-skills` apart from a short list of declared transforms: the fork is repointed so install commands and bug reports come here, and the upstream telemetry stack is removed pending a privacy review. Equinor does not patch defects in a mirrored plugin; they are reported upstream so every consumer gets the fix, and recorded in the plugin's review record so the next adoption decision sees them. See [sync-policy.md](docs/equinor-alignment/sync-policy.md).
+
+That still beats taking the plugin from the public repository: you get it repointed, without telemetry, with a published review record naming the open blockers, and with an installer that refuses to install it unless you ask for it by name. It is not a guarantee of quality. It is a better starting point, and the plugins that clear the review bar become the default.
 
 Regardless of review status, **AI agents are not a substitute for human judgement**. No review process can guarantee that a plugin's output will be correct, compliant, or appropriate for your context. Alignment with Equinor standards is the goal of the review process, and we believe it helps — but responsibility for how these plugins are used always rests with the people using them. Practice responsible AI use: understand what a plugin does before running it, verify generated artefacts before deploying them, and raise concerns through the support channels listed in each review record.
 
