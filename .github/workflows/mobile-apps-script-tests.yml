@@ -11,9 +11,6 @@ on:
             - "plugins/mobile-apps/**"
             - ".github/workflows/mobile-apps-script-tests.yml"
 
-permissions:
-    contents: read
-
 jobs:
     test-mobile-apps-scripts:
         name: test-mobile-apps-scripts (${{ matrix.os }}, node ${{ matrix.node }})
@@ -38,6 +35,10 @@ jobs:
               uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
               with:
                   node-version: ${{ matrix.node }}
+
+            - name: syntax-check-mobile-template
+              shell: bash
+              run: node --check plugins/mobile-apps/template/metro.config.js
 
             - name: run-mobile-apps-script-tests
               shell: bash
@@ -85,6 +86,13 @@ jobs:
                   node - <<'NODE'
                   const fs = require('fs');
                   const files = {
+                    'power.config.json': `${JSON.stringify({
+                      environmentId: '',
+                      appId: '',
+                      appDisplayName: 'Template Quality Probe',
+                      databaseReferences: {},
+                      connectionReferences: {},
+                    }, null, 2)}\n`,
                     'src/components/AliasProbe.ts': 'export const componentAliasProbe = 1;\n',
                     'src/native/aliasProbe.ts': 'export const nativeAliasProbe = 2;\n',
                     'src/generated/services/AliasProbe.ts': 'export const generatedAliasProbe = 3;\n',
@@ -101,7 +109,7 @@ jobs:
                     fs.writeFileSync(file, content);
                   }
                   NODE
-                  npx tsc --noEmit
+                  npm run predev
                   node ../scripts/validate-mobile-files.js \
                     --project-root . \
                     --all-source

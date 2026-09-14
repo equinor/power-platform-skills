@@ -44,14 +44,14 @@ Then ask via `AskUserQuestion`:
 
 ### Step 2 — Detect project context
 
-Read-only checks. Issues are filed on a **public** repository, so collect status and version
-signals only — never resolve or print environment URLs, environment IDs, tenant IDs, or
-environment display names:
+Read-only checks:
 
 ```bash
 test -f power.config.json && echo "in_project=true" || echo "in_project=false"
+pwd
 node --version
 npm --version
+node scripts/resolve-environment.js "$(node -e \"console.log(require('./power.config.json').environmentId)\")" 2>/dev/null || true
 az --version 2>/dev/null | head -1
 npx expo --version 2>/dev/null
 uname -srm
@@ -61,9 +61,28 @@ If in a project:
 
 ```bash
 node -e "console.log(require('./package.json').name, require('./package.json').version)" 2>/dev/null
+node -e "console.log(JSON.stringify({env: require('./power.config.json').environmentId, name: require('./power.config.json').displayName}))"
 test -f memory-bank.md && echo "memory_bank=present"
 test -f native-app-plan.md && echo "plan=present"
 ls src/generated/services/ 2>/dev/null | head -10
+```
+
+If the description names a package matching `@microsoft/power-apps-native-*`, collect its declared and lockfile-resolved versions from `package.json` and `package-lock.json`. Do not read package source or metadata from `node_modules/`.
+
+```bash
+node - <<'NODE'
+const fs = require('node:fs');
+const manifest = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+const lockfile = fs.existsSync('package-lock.json')
+  ? JSON.parse(fs.readFileSync('package-lock.json', 'utf8'))
+  : null;
+const dependencies = { ...manifest.dependencies, ...manifest.devDependencies };
+for (const [name, declared] of Object.entries(dependencies)) {
+  if (!name.startsWith('@microsoft/power-apps-native-')) continue;
+  const resolved = lockfile?.packages?.[`node_modules/${name}`]?.version ?? 'unknown';
+  console.log(`${name}\tdeclared=${declared}\tresolved=${resolved}`);
+}
+NODE
 ```
 
 For native-build issues also capture:
@@ -72,7 +91,7 @@ For native-build issues also capture:
 [ "$(uname)" = "Darwin" ] && xcode-select -p
 [ "$(uname)" = "Darwin" ] && pod --version 2>/dev/null
 java -version 2>&1 | head -1
-[ -n "$ANDROID_HOME" ] && echo "ANDROID_HOME=set" || echo "ANDROID_HOME=unset"
+echo "ANDROID_HOME=$ANDROID_HOME"
 ```
 
 ### Step 3 — Collect diagnostics
@@ -88,14 +107,11 @@ If the user pasted an error, capture verbatim. Otherwise look for recent failure
 - Output of `npx tsc --noEmit` if relevant
 
 **Do NOT capture:**
-
 - Contents of `src/playerConfig.ts` (contains tenantId / clientId — sensitive)
 - Contents of `.env` or any file matching `.env*`
-- Power Platform environment IDs, environment URLs, environment display names, tenant IDs, or
-  Dataverse org names — `SUPPORT.md` prohibits these in this public repository's issues
-- Connection IDs (PII / can map to a tenant)
-- Absolute filesystem paths, which can carry usernames and internal project names
+- Connection IDs unless the user explicitly opted in (PII / can map to tenant)
 - Anything under `node_modules/`
+- Package source excerpts, patched package contents, or proposed fork code
 
 ### Step 4 — Render issue body
 
@@ -118,23 +134,24 @@ Print this block — user copies into a new issue:
 
 ### Environment
 
-|                  |                                                                                         |
-| ---------------- | --------------------------------------------------------------------------------------- |
-| Plugin           | mobile-app                                                                              |
-| Plugin version   | <from .plugin/plugin.json, or legacy .claude-plugin/plugin.json fallback, or "unknown"> |
-| OS               | <uname output>                                                                          |
-| Node             | <version>                                                                               |
-| npm              | <version>                                                                               |
-| Power Apps CLI   | <version>                                                                               |
-| Expo CLI         | <version>                                                                               |
-| Xcode            | <if macOS>                                                                              |
-| JDK              | <if android>                                                                            |
-| ANDROID_HOME set | <yes/no>                                                                                |
+| | |
+|---|---|
+| Plugin | mobile-app |
+| Plugin version | <from .plugin/plugin.json, or legacy .claude-plugin/plugin.json fallback, or "unknown"> |
+| OS | <uname output> |
+| Node | <version> |
+| npm | <version> |
+| Power Apps CLI | <version> |
+| Expo CLI | <version> |
+| Xcode | <if macOS> |
+| JDK | <if android> |
+| ANDROID_HOME set | <yes/no> |
 
 ### Project context
 
 <if in project>
 - Project: `<name>` v`<version>`
+- Power Platform env: `<env-id>`
 - Memory bank present: <yes/no>
 - Plan present: <yes/no>
 - Connectors registered: <list from src/generated/services>
@@ -143,6 +160,15 @@ Print this block — user copies into a new issue:
 <if not in project>
 Not run inside a mobile-app project.
 </if>
+
+### Affected native package
+
+<include only when the issue concerns @microsoft/power-apps-native-*>
+- Package: `<package name>`
+- Declared version: `<package.json range>`
+- Resolved version: `<package-lock.json version or unknown>`
+- Platform: `<iOS / Android>`
+- Ownership evidence: <why the documented caller contract is satisfied and the failure is package-internal>
 
 ### Reproduction steps
 
@@ -159,10 +185,9 @@ Not run inside a mobile-app project.
 <what happened>
 
 ### Logs / errors
+
 ```
-
 <paste verbatim — sensitive values redacted>
-
 ```
 
 ### Notes
@@ -180,9 +205,7 @@ Tell the user:
 >
 > <https://github.com/equinor/power-platform-skills/issues/new?labels=plugin%3Amobile-app>
 >
-> Paste the block above into the body. This repository is **public** — review the block and remove
-> any credentials, tenant or environment identifiers, internal URLs, or business data before
-> submitting.
+> Paste the block above into the body. Review for any sensitive values before submitting.
 
 If the user wants to open it, suggest `open <url>` (macOS) / `xdg-open <url>` (Linux) / `start <url>` (Windows). Do not auto-open without confirmation.
 
