@@ -23,6 +23,10 @@ You synchronize this Equinor-aligned fork with the upstream `microsoft/power-pla
 
 6. **Re-review by tier.** An adopted plugin touched by the sync gets a full review-plugin pass. A tracked plugin gets a mechanical record refresh only.
 
+7. **A wholesale checkout is not scoped to the commit-range diff.** `git checkout upstream/main -- <plugin-dir>` pulls upstream's *entire current tree*, silently reintroducing any file a prior sync excluded under a declared transform if upstream hasn't touched it since. The commit-range diff you read to understand "what changed" is not the same list as "every file transform reapplication must check." Always run the reverse-audit in SKILL.md Phase 4.1 after a wholesale checkout, and run each mirrored plugin's own test suite before opening the mirror PR.
+
+8. **`check-sync-scope.js` reads committed blobs, not the working tree.** Run it after `git add`/`git commit`, and pass `--upstream upstream/main` explicitly mid-sync — the default merge-base still points at the previous sync until the Phase 9 ancestry commit runs.
+
 ## Workflow Skills
 
 Use these skills in order:
@@ -52,6 +56,7 @@ Read before starting any sync:
 - Do not merge upstream changes that introduce production-system interaction without flagging for owner review.
 - Do not auto-merge changes to `.mcp.json`, hooks, or scripts without explicit inspection and approval.
 - Always run `node scripts/check-sync-scope.js` and `node scripts/validate-plugin-reviews.js` before opening a pull request.
+- After both pull requests merge, record the sync's upstream range as a real merge-base ancestor (SKILL.md Phase 9) — skipping it doesn't break this sync, but it breaks the next scope check's default baseline.
 - If the sync scope is ambiguous, ask the user before proceeding.
 
 ## Output

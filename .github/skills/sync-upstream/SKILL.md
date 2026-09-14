@@ -115,6 +115,11 @@ git diff --name-status $(git merge-base HEAD upstream/main)..upstream/main -- pl
 
 Also inspect shared dependencies: `shared/`, `scripts/`, `.claude-plugin/marketplace.json`.
 
+> This commit-range diff tells you what upstream _changed_. It does not tell you the full set of
+> files a tracked plugin's transform reapplication must cover — a wholesale checkout in Phase 4.1
+> pulls in upstream's entire current tree, including files this diff never mentions. See the
+> warning in 4.1 before assuming this list is complete.
+
 #### 3.3 Classify Files
 
 Classify every changed file by the tier of the plugin that owns it.
@@ -163,6 +168,25 @@ git checkout upstream/main -- plugins/<dir> evals/<dir>
 
 Do not read these files looking for problems. That is not what this phase is for.
 
+> [!WARNING]
+> A wholesale checkout takes upstream's **entire current tree**, not just the files that changed
+> in this sync's commit range. If a prior sync excluded a file under a declared transform (a
+> telemetry hook, a bundled library copy, a control skill) and upstream has not touched that file
+> since, it will silently reappear here even though it is absent from the commit-range diff you
+> read in Phase 3. Scoping transform reapplication to "the files `git diff <range>` showed me" has
+> already missed exclusions once. Immediately after checkout, audit the **whole** upstream tree
+> against the pre-sync fork tree for every plugin just checked out:
+>
+> ```bash
+> for f in $(git ls-tree upstream/main -r --name-only -- plugins/<dir> evals/<dir>); do
+>   git cat-file -e main:"$f" 2>/dev/null || echo "MISSING-ON-MAIN: $f"
+> done
+> ```
+>
+> Every `MISSING-ON-MAIN` line is either legitimate new upstream content (keep it) or a file a
+> declared transform previously excluded (delete or edit it again, per 4.2). Do not skip this because
+> the commit-range diff looked clean — this check is a superset of that diff, not a duplicate of it.
+
 #### 4.2 Re-Apply The Declared Transforms
 
 Only the transforms in `docs/equinor-alignment/sync-policy.json` may be re-applied. Their `paths` lists are the definition of what each one touches.
@@ -171,7 +195,25 @@ Only the transforms in `docs/equinor-alignment/sync-policy.json` may be re-appli
 - `telemetry-exclusion` — delete the telemetry stack and remove its hook registrations, requires, and workflow markers.
 - `carried-fix` — closed to new entries. Re-apply the existing ones only.
 
+A transform's `paths` glob decides which files are _allowed_ to diverge under that transform — it is
+a mechanical path match, not a semantic guarantee that every matching file needs editing. A glob
+like `plugins/*/references/*telemetry*` will also match a file that merely has "telemetry" in its
+name for an unrelated reason (for example a generated-page customer telemetry feature, not the
+plugin's own usage telemetry). Before touching a matched file, confirm the transform's rationale
+actually applies to its content; if it doesn't, leave it mirrored verbatim and say so in the PR
+rather than excluding it out of caution.
+
+A plugin-scoped CI workflow (`.github/workflows/<plugin>-script-tests.yml`) that only runs one
+tracked plugin's tests travels with that plugin's **mirror** PR even though `.github/workflows/**`
+is nominally a shared surface — a tracked plugin's own test suite can assert against its own
+workflow file's committed content, and splitting the two across PRs leaves the mirror PR's tests
+failing on their own. Note this in the mirror PR body as a deliberate exception.
+
 #### 4.3 Verify, Commit, And Open The Pull Request
+
+Run each tracked plugin's own test suite before committing (`node --test scripts/tests/*.test.js`
+from the plugin directory). A green scope check does not prove the transforms left the plugin
+functional — only its own tests do.
 
 ```bash
 node scripts/check-sync-scope.js
@@ -179,6 +221,14 @@ git add -A
 git commit -m "sync: mirror upstream tracked plugins $(date +%Y-%m-%d)"
 git push origin "sync/upstream-$(date +%Y-%m-%d)-mirror"
 ```
+
+> [!IMPORTANT]
+> `check-sync-scope.js` compares **committed blobs** (`git diff <base> <head>`), so it is blind to a
+> dirty working tree — run it after `git add`/`git commit`, not before, or every uncommitted change
+> reports as a false violation. Mid-sync, also pass `--upstream upstream/main` explicitly: the
+> default merge-base resolution still points at the _previous_ sync's baseline until the ancestry
+> step in Phase 9 runs, so without the flag every file this sync legitimately updated reports as
+> undeclared divergence.
 
 The pull request body must state that the tree is machine-verified against upstream and does not warrant line-by-line review, and must include the output of `node scripts/check-sync-scope.js --markdown`.
 
@@ -385,6 +435,29 @@ Equinor-specific content here...
 This allows the sync workflow to reliably identify and preserve Equinor sections during intelligent merges.
 
 Markers belong in adopted plugins and shared files. A tracked plugin should not need them: if one does, the change is undeclared divergence and the mirror rule was broken.
+
+### Phase 9 — Record Ancestry (After Both Pull Requests Merge)
+
+`check-sync-scope.js`'s default baseline (no `--upstream` override) is
+`git merge-base HEAD upstream/main`. Mirroring files with `git checkout upstream/main -- <path>`
+never advances that merge-base, because no upstream _commits_ entered this fork's history — only
+cherry-picked file content did. Left alone, every future scope check keeps comparing against the
+sync-before-last, and the fork reports as endlessly behind despite the files being current.
+
+Once both pull requests are merged, record the range this sync actually covered as a real ancestor,
+with the tree unchanged (every conflict already resolved to what is on `main`):
+
+```bash
+git checkout main && git pull origin main
+git merge -s ours --no-commit upstream/main
+git commit -m "chore: record upstream ancestry through <short-sha>"
+git push origin main
+```
+
+Skipping this step is not fatal to the current sync, but it is the reason a future sync's
+`check-sync-scope.js` run needs an explicit `--upstream upstream/main` override instead of trusting
+the default. Do this before closing out the sync; it has no separate review surface since the tree
+does not change.
 
 ## Naming Convention
 
