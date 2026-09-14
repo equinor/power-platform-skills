@@ -1,0 +1,107 @@
+{
+  "$comment": "Machine-readable companion to sync-policy.md. Read by scripts/check-sync-scope.js. Changing a transform changes what this fork is allowed to diverge on, so treat edits here as a governance change and explain them in the pull request.",
+  "adoptedStatuses": [
+    "controlled-pilot",
+    "ready-for-internal-pilot",
+    "published"
+  ],
+  "sharedSurfaces": [
+    {
+      "paths": [
+        "shared/**"
+      ],
+      "reason": "Cross-plugin skill and library sources. Every adopting plugin carries a physical copy, so a change here is only half-applied until each per-plugin copy is refreshed."
+    },
+    {
+      "paths": [
+        "scripts/**"
+      ],
+      "reason": "Repository-wide validators and the installer. They run against every plugin regardless of adoption status."
+    },
+    {
+      "paths": [
+        ".github/workflows/**"
+      ],
+      "reason": "CI. Runs on pull requests that touch plugins nobody has adopted."
+    },
+    {
+      "paths": [
+        ".github/instructions/**",
+        ".github/copilot-instructions.md",
+        "AGENTS.md",
+        "CLAUDE.md"
+      ],
+      "reason": "Agent context loaded for all work in this repository, including work on plugins that are only mirrored."
+    },
+    {
+      "paths": [
+        "marketplace.json",
+        ".claude-plugin/marketplace.json"
+      ],
+      "reason": "Marketplace index. Determines which plugins the installer can resolve and which review record gates them."
+    }
+  ],
+  "equinorOwnedSurfaces": [
+    {
+      "paths": [
+        "docs/equinor-alignment/**",
+        ".github/skills/**",
+        ".github/agents/**"
+      ],
+      "reason": "Authored in this fork and absent upstream. Never overwritten by a sync."
+    }
+  ],
+  "transforms": [
+    {
+      "id": "fork-repointing",
+      "summary": "Upstream repository references replaced with the Equinor fork.",
+      "rationale": "A plugin installed from this fork must send users, marketplace commands, and bug reports here, not to microsoft/power-platform-skills. Applies to every plugin regardless of adoption status because the install and issue paths are identical.",
+      "paths": [
+        "plugins/*/.plugin/plugin.json",
+        "plugins/*/.claude-plugin/plugin.json",
+        "plugins/*/README.md",
+        "plugins/*/template/README.md",
+        "plugins/*/skills/report-issue/**",
+        "plugins/power-automate/skills/setup/SKILL.md",
+        "shared/skills/report-issue/**"
+      ]
+    },
+    {
+      "id": "telemetry-exclusion",
+      "summary": "The upstream 1DS telemetry stack is removed and its hook registrations, requires, and workflow markers are neutralised.",
+      "rationale": "Telemetry is excluded pending a separate governance and privacy review. Upstream ships instrumentation keys enabled, so mirroring the stack verbatim would emit Equinor usage to a Microsoft collector.",
+      "paths": [
+        "shared/telemetry/**",
+        "shared/skills/telemetry/**",
+        "plugins/*/AGENTS.md",
+        "plugins/*/hooks/**",
+        "plugins/*/references/*telemetry*",
+        "plugins/*/skills/telemetry/**",
+        "plugins/*/shared/shared-instructions.md",
+        "plugins/*/scripts/emit-telemetry-checkpoint.js",
+        "plugins/*/scripts/lib/*telemetry*",
+        "plugins/*/scripts/lib/telemetry/**",
+        "plugins/*/scripts/tests/*telemetry*",
+        "plugins/mobile-apps/scripts/lib/mobileapp-hook-utils.js",
+        "plugins/mobile-apps/scripts/resolve-environment.js",
+        "plugins/mobile-apps/scripts/tests/mobileapp-hook-utils.test.js",
+        "plugins/mobile-apps/scripts/tests/resolve-environment.test.js",
+        "plugins/power-pages/scripts/tests/artemis-service.test.js",
+        "plugins/power-pages/scripts/tests/pac-auth.test.js",
+        "plugins/power-pages/scripts/tests/region-cache.test.js",
+        "plugins/power-pages/scripts/tests/region-resolver.test.js",
+        "plugins/power-pages/scripts/tests/resolver.test.js"
+      ]
+    },
+    {
+      "id": "carried-fix",
+      "summary": "Upstream defects patched inside this fork. Closed to new entries.",
+      "rationale": "These predate this policy and were added under review pressure on a sync pull request. Each one conflicts on every future sync and hides the defect from upstream, where all consumers need it fixed. Do not add entries; report the defect upstream and record it in the plugin's review record instead.",
+      "removal": "Drop each entry once the fix lands upstream and a sync brings it back.",
+      "paths": [
+        "plugins/power-pages/skills/audit-permissions/scripts/validate-audit.js",
+        "plugins/power-pages/scripts/tests/validate-audit.test.js"
+      ]
+    }
+  ]
+}

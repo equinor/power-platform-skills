@@ -1,0 +1,51 @@
+name: validate-sync-scope
+
+# Enforces the mirror rule from docs/equinor-alignment/sync-policy.md: a plugin Equinor
+# has not adopted must stay byte-identical to upstream except for the transforms this
+# fork has declared. Catching an undeclared edit here is the point — once it merges it
+# conflicts on every future sync and the upstream defect it papers over never gets
+# reported to the people who can fix it for everyone.
+on:
+    pull_request:
+        branches:
+            - main
+        paths:
+            - "plugins/**"
+            - "evals/**"
+            - "shared/**"
+            - "marketplace.json"
+            - "docs/equinor-alignment/reviews/**"
+            - "docs/equinor-alignment/sync-policy.json"
+            - "scripts/check-sync-scope.js"
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    validate-sync-scope:
+        name: validate-sync-scope
+        runs-on: ubuntu-latest
+        steps:
+            - name: checkout
+              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+              with:
+                  # The check compares against merge-base(HEAD, upstream/main), so the
+                  # default shallow clone is not enough.
+                  fetch-depth: 0
+
+            - name: setup-node
+              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+              with:
+                  node-version: 20
+
+            - name: fetch-upstream
+              run: |
+                  git remote add upstream https://github.com/microsoft/power-platform-skills.git
+                  git fetch --no-tags upstream main
+
+            - name: test-sync-scope-checker
+              run: node --test scripts/tests/check-sync-scope.test.js
+
+            - name: check-sync-scope
+              run: node scripts/check-sync-scope.js --base "origin/${{ github.base_ref }}" --head HEAD
