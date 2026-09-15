@@ -7,7 +7,7 @@
     "owner": "not assigned",
     "supportChannel": "not assigned",
     "upstreamSource": "microsoft/power-platform-skills/plugins/mobile-apps",
-    "upstreamVersion": "0.3.0"
+    "upstreamVersion": "0.3.2"
   },
   "scope": {
     "summary": "Builds and deploys Power Apps code apps for mobile using an Expo / React Native template, including Dataverse data-model planning and provisioning, connector wiring, native device capabilities, Mobile Offline Profiles, screen generation, and deployment through Power Apps Wrap.",
@@ -156,8 +156,11 @@
   ],
   "evidence": [
     {
-      "type": "external-source",
-      "reference": "https://github.com/microsoft/power-platform-skills/compare/0188a8b..d7b0e96",
+      "type": "external-source",      "reference": "https://github.com/microsoft/power-platform-skills/compare/d7b0e96a..433a5fd3",
+      "summary": "Mechanically refreshed after upstream sync 2026-09-14 (mobile-app v0.3.0 -> v0.3.2). Adds native wrap package production and verification to `/deploy`, makes Metro debug logging project-local (`.powernative/metro-logs/`), and fixes scaffold-validation ownership tracking. No new production-interaction surface beyond the already-recorded Power Apps Wrap dependency. A prior sync's `plugins/*/references/*telemetry*` transform had also excluded this plugin's `scripts/resolve-environment.js`/test content unrelated to telemetry (an upstream-unchanged file overwritten by a wholesale checkout); restored, no behavior change. Not a full re-review; `publicationStatus` unchanged."
+    },
+    {
+      "type": "external-source",      "reference": "https://github.com/microsoft/power-platform-skills/compare/0188a8b..d7b0e96",
       "summary": "Initial review after the plugin arrived in the fork through upstream sync 2026-09-09 (mobile-app v0.3.0). The upstream 1DS telemetry stack was excluded, so `scripts/lib/telemetry/`, `scripts/lib/mobile-telemetry*.js`, `hooks/run-telemetry.js`, `scripts/emit-telemetry-checkpoint.js`, `hooks/hooks.json`, and the `/telemetry` skill are not present in this fork."
     },
     {
@@ -181,5 +184,5 @@
       "summary": "CodeQL raised two findings in unmodified upstream code shipped by this plugin: incomplete multi-character HTML sanitization in `scripts/lib/sanitize-external-content.js` and incomplete Markdown cell escaping in `scripts/render-dataverse-planning-evidence.js`. Both are recorded as blockers here rather than patched in the fork, so the fix lands upstream and future syncs do not conflict."
     }
   ],
-  "notes": "Initial review record only. Publication is deferred until detailed review evidence exists. The telemetry checkpoint calls that remain in the skill workflow prose are inert in this fork because `scripts/emit-telemetry-checkpoint.js` is not shipped; app.json `expo.extra.telemetry.cluster` is likewise never populated because the region resolver is part of the excluded stack."
+  "notes": "Initial review record only. Publication is deferred until detailed review evidence exists. The telemetry checkpoint calls that remain in the skill workflow prose are inert in this fork because `scripts/emit-telemetry-checkpoint.js` is not shipped; app.json `expo.extra.telemetry.cluster` is likewise never populated because the region resolver is part of the excluded stack. Upstream sync 2026-09-14 (v0.3.0 -> v0.3.2) added native wrap production/verification to `/deploy` and project-local Metro debug logging; mechanical refresh only."
 }
