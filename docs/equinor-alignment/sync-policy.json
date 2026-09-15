@@ -90,7 +90,10 @@
         "plugins/power-pages/scripts/tests/pac-auth.test.js",
         "plugins/power-pages/scripts/tests/region-cache.test.js",
         "plugins/power-pages/scripts/tests/region-resolver.test.js",
-        "plugins/power-pages/scripts/tests/resolver.test.js"
+        "plugins/power-pages/scripts/tests/resolver.test.js",
+        "scripts/validate-telemetry-ikeys.js",
+        "scripts/tests/validate-telemetry-ikeys.test.js",
+        ".github/workflows/validate-repository-metadata.yml"
       ]
     },
     {

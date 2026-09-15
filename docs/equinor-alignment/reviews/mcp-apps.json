@@ -7,7 +7,7 @@
     "owner": "@equinor/dcs-power-platform-team",
     "supportChannel": "#powerplatform (Slack)",
     "upstreamSource": "microsoft/power-platform-skills/plugins/mcp-apps",
-    "upstreamVersion": "1.0.0"
+    "upstreamVersion": "1.2.0"
   },
   "scope": {
     "summary": "Generates self-contained HTML widgets for MCP Apps protocol hosts, using pasted JSON tool output and optional interactive callServerTool patterns. Widgets are single HTML files that load Fluent UI Web Components and @modelcontextprotocol/ext-apps from CDN. The plugin does not itself require or run an MCP server.",
@@ -108,9 +108,15 @@
     "EDS component equivalence assessment needed: determine whether EDS provides sufficient components to replace Fluent UI Web Components for generated widgets.",
     "Fluent UI Web Components is missing from the Equinor Technology Radar — requires architecture discussion path (may become moot if EDS replaces it).",
     "CDN dependency (unpkg.com, cdn.jsdelivr.net) requires CSP rule updates per environment. Dependency scope may change after EDS assessment.",
-    "Install and rollback not tested."
+    "Install and rollback not tested.",
+    "New in v1.2.0: the `/generate-codeful-mcp-tool` skill's Phase 2 reads a live Dataverse environment's schema (`pac model list-tables`, `pac model genpage generate-types`) when generating a Dataverse-backed tool. This is read-only and opt-in (skipped for non-Dataverse tools), but it is the plugin's first interaction with a live Power Platform environment — previously all external calls were CDN widget loads. Needs assessment before publication: whether this requires the same environment/approval gating as model-apps and mobile-app."
   ],
   "evidence": [
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/d7b0e96a..433a5fd3",
+      "summary": "Mechanically refreshed after upstream sync 2026-09-14 (mcp-apps v1.0.0 -> v1.2.0). Adds the `/generate-codeful-mcp-tool` skill (JavaScript server runtimes + JSON Schema registration metadata for MCP codeful tools, with an opt-in read-only Dataverse schema-verification phase via PAC CLI), a vendored self-contained widget runtime (`assets/self-contained/`, built by `scripts/_vendor-build/`), and CDN-free widget embedding as the default for `generate-mcp-app-ui`. Not a full re-review; see the new blocker for the Dataverse-read addition. `publicationStatus` unchanged."
+    },
     {
       "type": "external-source",
       "reference": "https://github.com/microsoft/power-platform-skills/compare/9258fd9..0188a8b",
@@ -162,5 +168,5 @@
       "summary": "Owner confirmed: @equinor/dcs-power-platform-team owns the plugin; support via #powerplatform Slack. EDS should be preferred — needs assessment whether EDS provides sufficient/equivalent components to replace Fluent UI Web Components. CDN dependency is contingent on EDS outcome; CSP rules need per-environment updates for all referenced CDNs. Copilot CLI and Claude CLI use the same manifest mechanism."
     }
   ],
-  "notes": "Full review completed 2026-05-28. Skills, samples, and references are reviewed and contain no secrets, no production interaction, and include XSS/accessibility protections. Owner assigned 2026-05-28 (@equinor/dcs-power-platform-team, #powerplatform). EDS preferred — assessment needed for component equivalence vs Fluent UI Web Components. CDN dependency requires per-environment CSP updates. Copilot CLI and Claude CLI use the same manifest (copilotManifest set true). Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content with no runtime behavior change. Remaining blockers: EDS assessment, Fluent UI radar status (may become moot), CDN/CSP planning, install test. Plugin eligible for controlled-pilot once EDS assessment is completed and install is tested."
+  "notes": "Full review completed 2026-05-28. Skills, samples, and references are reviewed and contain no secrets, no production interaction, and include XSS/accessibility protections. Owner assigned 2026-05-28 (@equinor/dcs-power-platform-team, #powerplatform). EDS preferred — assessment needed for component equivalence vs Fluent UI Web Components. CDN dependency requires per-environment CSP updates. Copilot CLI and Claude CLI use the same manifest (copilotManifest set true). Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content with no runtime behavior change. Upstream sync 2026-09-14 (v1.0.0 -> v1.2.0) added the `/generate-codeful-mcp-tool` skill, which is the plugin's first interaction with a live Power Platform environment (read-only PAC CLI schema discovery, opt-in for Dataverse-backed tools); mechanical refresh only, not re-reviewed in depth. Remaining blockers: EDS assessment, Fluent UI radar status (may become moot), CDN/CSP planning, install test, and assessment of the new Dataverse-read code path. Plugin eligible for controlled-pilot once EDS assessment is completed, install is tested, and the new Dataverse interaction is reviewed."
 }
