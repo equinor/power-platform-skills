@@ -5,6 +5,8 @@
 // interactive authoring turn before approving it. Pure (no I/O); the CLI is preview-form.js.
 const { compileFormIntent } = require('./artifact-intent.js');
 const { entityByLogical } = require('./_graph.js');
+const { labelText, formLayoutNames, lookupColumnsFor } = require('./app-spec.js');
+const { splitSubgrids, columnItems } = require('./form-subgrid-placement.js');
 
 const INNER = 63; // content width inside the box borders
 
@@ -63,24 +65,62 @@ const BOTTOM = `└${'─'.repeat(INNER + 2)}┘`;
 // Display label for a field logical name. compileFormIntent emits push-ready cells that OMIT the
 // label (the SDK adapter derives it from attribute metadata at push, per T4), so the preview
 // resolves the display name itself from the spec entity (falling back to the logical name).
-function labelFor(entity, fn) {
+//
+// A relationship's lookup is not in entities[].columns, so `lookups` (logical -> label, from
+// lookupColumnsFor — the same rule the build labels the column by) answers for it; without that a
+// lookup field read as its logical name here, which is exactly the label the bug put on the real form.
+function labelFor(entity, fn, lang, lookups) {
   if (!entity) return fn;
-  if (entity.primaryAttribute && entity.primaryAttribute.schemaName.toLowerCase() === fn) return entity.primaryAttribute.displayName || 'Name';
+  if (entity.primaryAttribute && entity.primaryAttribute.schemaName.toLowerCase() === fn) return labelText(entity.primaryAttribute.displayName, lang) || 'Name';
   const c = (entity.columns || []).find((x) => x.schemaName.toLowerCase() === fn);
-  return (c && (c.displayName || c.schemaName)) || fn;
+  return (c && (labelText(c.displayName, lang) || c.schemaName)) || (lookups && lookups.get(fn)) || fn;
 }
 
-// "Label * [widget]" for one field cell.
-function fieldLabel(entity, cell) {
+// The authored, non-default state of one cell, as the suffix that is appended to its label.
+// `compileFormIntent` writes only the NON-default state (see artifact-intent.js): a hidden cell gets
+// `cell.visible = false` and a read-only one `control.isReadOnly = true`; the visible/editable
+// defaults are never emitted. So presence of the flag is the signal, and `isReadOnly: false` never
+// appears to be mistaken for an authored read-write intent.
+//
+// Shared with the row renderer, which needs the tag's WIDTH to decide whether a row must be stacked
+// — deriving it twice is how the two would drift apart.
+function stateTag(cell) {
+  const state = [];
+  if (cell.visible === false) state.push('hidden');
+  if (cell.control && cell.control.isReadOnly) state.push('read-only');
+  return state.length ? ` (${state.join(', ')})` : '';
+}
+
+// "Label * (state)  [widget]" for one field cell.
+//
+// State is placed BEFORE the widget deliberately, and `avail` (the cell's rendered width) lets this
+// protect the state further. Cells are clipped to the column width and `clip()` truncates the END,
+// so an annotation appended after the widget is exactly what gets cut. Ordering alone is still not
+// enough: with a long display name the annotation itself is what gets cut, producing "(read-o…" — a
+// half-printed state flag, which is the silent-state failure this annotation exists to prevent. A
+// truncated LABEL stays recognisable; a truncated state does not. So the decorative widget hint is
+// surrendered first, the name is truncated after that, and the state is never truncated.
+//
+// When even that is not enough — the tag alone is wider than the column — the ROW renderer stacks
+// the cells at full width instead of calling this with an impossible `avail`.
+function fieldLabel(entity, cell, lang, avail, lookups) {
   const fn = cell.control.fieldName;
   const req = cell.control.isRequired ? ' *' : '';
   const widget = WIDGET[fieldType(entity, fn)] || WIDGET.Text;
-  return `${cell.control.label || labelFor(entity, fn)}${req}  ${widget}`;
+  const tag = stateTag(cell);
+  const name = cell.control.label || labelFor(entity, fn, lang, lookups);
+  const full = `${name}${req}${tag}  ${widget}`;
+  if (!tag || !avail || vwidth(full) <= avail) return full;
+  const noWidget = `${name}${req}${tag}`;
+  if (vwidth(noWidget) <= avail) return noWidget;
+  return `${clip(name, Math.max(1, avail - vwidth(`${req}${tag}`)))}${req}${tag}`;
 }
 
 // Render one form to an ASCII wireframe string.
 function renderFormWireframe(spec, f) {
   const entity = entityByLogical(spec, f.entity || '');
+  // logical -> label for the table's relationship lookups, which are not in entities[].columns.
+  const lookups = new Map(lookupColumnsFor(spec, f.entity || '').map((l) => [l.logical, l.displayName]));
   // compileFormIntent is the single source of form topology (new SDK shape
   // tabs[].columns[].sections[]). notesClassId is irrelevant to the preview (it keys the notes
   // section by name, not classId), so a placeholder is fine.
@@ -89,6 +129,11 @@ function renderFormWireframe(spec, f) {
   const typeTag = def.formType && def.formType !== 'Main' ? ` [${def.formType}]` : '';
   lines.push(topBorder(`${def.name || f.entity}${typeTag}`));
 
+  // A sub-grid that says where it goes (`tab` / `column` / `after` / `before`) is drawn there, among the sections;
+  // the others stay in the block after the last tab, where the build leaves them too (lib/form-subgrid-placement.js).
+  const layout = formLayoutNames(f);
+  const { placed, unplaced } = splitSubgrids(layout, f.subgrids);
+
   const tabLabels = def.tabs.map((t) => t.label || 'General');
   if (tabLabels.length > 1) {
     lines.push(row(`Tabs:  ${tabLabels.map((t, i) => (i === 0 ? `‹${t}›` : t)).join('   ')}`));
@@ -96,32 +141,73 @@ function renderFormWireframe(spec, f) {
   }
 
   for (const tab of def.tabs) {
-    if (tabLabels.length > 1) lines.push(row(`▾ ${tab.label || 'General'}`));
+    const ti = def.tabs.indexOf(tab);
+    // The banner carries the tab's authored STATE, so it must render whenever that state is not the
+    // default — not only when there are several tabs to tell apart. A single tab that is collapsed or
+    // hidden would otherwise preview as an ordinary open tab, and the wireframe IS the approval gate:
+    // silently dropping "(collapsed)" or "(hidden)" has the maker approve a different form.
+    const annotated = tab.expanded === false || tab.visible === false;
+    if (tabLabels.length > 1 || annotated) lines.push(row(`${tab.expanded === false ? '▸' : '▾'} ${tab.label || 'General'}${tab.visible === false ? '   (hidden)' : ''}${tab.expanded === false ? '   (collapsed)' : ''}`));
     // New topology inserts a FormColumn layer between tab and section.
-    for (const col of tab.columns || []) {
-      for (const sec of col.sections || []) {
-        if (sec.name === 'section_notes') {
+    const cols = tab.columns || [];
+    for (let ci = 0; ci < cols.length; ci++) {
+      const col = cols[ci];
+      // Name the form-column when a tab has more than one, so a two-column tab is visibly two
+      // columns rather than sections stacked in sequence. Rendering them truly side by side would
+      // need column-aware wrapping of every section; naming the split keeps the preview honest
+      // about the structure without pretending to be a pixel layout.
+      if (cols.length > 1) lines.push(row(`  ╷ column ${ci + 1} of ${cols.length}${col.width ? `  (${col.width})` : ''}`));
+      for (const item of columnItems(layout, ti, ci, col.sections, placed)) {
+        if (item.subgrid) {
+          lines.push(rule(`▦ ${item.subgrid.label || item.subgrid.childEntity}`));
+          lines.push(row(`   (sub-grid  →  ${item.subgrid.childEntity})`));
+          continue;
+        }
+        const sec = item.section;
+        // The Notes section is the one the compiler added: a layout may declare a section named `section_notes` too,
+        // and that one is drawn with its fields like any other (columnItems says which is which, by place).
+        if (item.engine && sec.name === 'section_notes') {
           lines.push(rule('▤ Notes / Timeline'));
           lines.push(row('   (activity timeline + notes — type to add a note)'));
           continue;
         }
-        lines.push(rule(sec.label || 'Details'));
+        // `showLabel: false` means Dataverse renders NO section heading, so showing one here would
+        // have the approval preview promise a heading the deployed form does not have.
+        lines.push(rule(`${sec.showLabel === false ? '(no heading)' : (sec.label || 'Details')}${sec.visible === false ? '  (hidden)' : ''}`));
         for (const r of sec.rows || []) {
           // A bound field cell has control.fieldName; the notes control has none.
           const cells = (r.cells || []).filter((c) => c.control && c.control.fieldName);
           if (!cells.length) continue;
           const colW = Math.floor((INNER - 3) / Math.max(1, cells.length));
-          const parts = cells.map((c) => vpad(clip(`  ${fieldLabel(entity, c)}`, colW), colW));
+          // STACK rather than truncate a state tag. Adversarial review caught the width-priority
+          // ordering in fieldLabel() being necessary but not sufficient: once the tag ALONE is wider
+          // than the column, reserving "at least one name character" still leaves the tag itself to
+          // be eaten by clip(). ` (hidden, read-only)` needs 20 columns; a three-column row gives 18
+          // and a four-column row 13, so the approval gate went back to showing `(hidden, read-o…`.
+          //
+          // When that happens the row is rendered one cell per line at full width, which keeps the
+          // state intact at the cost of the side-by-side depiction. The wireframe exists to report
+          // what will deploy, so a less pretty row beats a row that misreports state.
+          const needed = (c) => vwidth(`  ${stateTag(c)}`) + 1; // + 1 char of name
+          const mustStack = cells.length > 1 && cells.some((c) => stateTag(c) && needed(c) > colW);
+          if (mustStack) {
+            for (const c of cells) {
+              lines.push(row(clip(`  ${fieldLabel(entity, c, spec && spec.languageCode, INNER - 2, lookups)}`, INNER)));
+            }
+            continue;
+          }
+          // `colW - 2` is the room left after the two-space cell indent below, and is what
+          // fieldLabel needs in order to protect the state annotation from being clipped.
+          const parts = cells.map((c) => vpad(clip(`  ${fieldLabel(entity, c, spec && spec.languageCode, colW - 2, lookups)}`, colW), colW));
           lines.push(row(parts.join('')));
         }
       }
     }
   }
 
-  const subgrids = f.subgrids || [];
-  if (subgrids.length) {
+  if (unplaced.length) {
     lines.push(rule('▦ Sub-grids'));
-    for (const sg of subgrids) lines.push(row(`   • ${sg.label || sg.childEntity}  →  ${sg.childEntity}`));
+    for (const sg of unplaced) lines.push(row(`   • ${sg.label || sg.childEntity}  →  ${sg.childEntity}`));
   }
   const events = f.events || [];
   if (events.length) {

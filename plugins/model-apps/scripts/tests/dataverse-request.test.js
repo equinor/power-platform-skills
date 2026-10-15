@@ -32,6 +32,7 @@ function runCli(args, { errorMessage = null } = {}) {
       if (resolved === authPath) {
         return {
           parseArgs: realAuth.parseArgs,
+          validateFlags: realAuth.validateFlags,
           readJsonArg: realAuth.readJsonArg,
           dataverseRequest: async (envUrl, method, apiPath, body, opts) => {
             if (${JSON.stringify(errorMessage)} !== null) throw new Error(${JSON.stringify(errorMessage)});
@@ -101,7 +102,7 @@ test('--timeout without a value is rejected before the Dataverse request is invo
   const res = runCli(['https://org.crm.dynamics.com', 'GET', 'accounts', '--timeout']);
 
   assert.equal(res.status, 1);
-  assert.match(res.stderr, /--timeout must include a positive millisecond value/);
+  assert.match(res.stderr, /--timeout requires a value — a positive millisecond value/);
   assert.equal(res.stdout, '');
 });
 
@@ -121,4 +122,17 @@ test('Dataverse request failures are written to stderr and exit 1', () => {
   assert.equal(res.status, 1);
   assert.equal(res.stdout, '');
   assert.match(res.stderr, /^token unavailable\r?\n$/);
+});
+
+test('the real script refuses a path that leaves the Web API root, with no Azure CLI on PATH', () => {
+  // No stub: the shipped library runs. An empty PATH means a token read would fail with a different
+  // message, so the assertion also proves the path was refused before any token was asked for.
+  const res = spawnSync(process.execPath, [scriptPath, 'https://contoso.crm.dynamics.com', 'GET', '../../../XRMServices/2011/Organization.svc/web'], {
+    encoding: 'utf8',
+    env: { ...process.env, PATH: mkdirTemp(), Path: undefined },
+  });
+
+  assert.equal(res.status, 1);
+  assert.equal(res.stdout, '');
+  assert.match(res.stderr, /leaves the Dataverse Web API root \/api\/data\/v9\.2\/ \(it resolves to '\/XRMServices\/2011\/Organization\.svc\/web'\)/);
 });

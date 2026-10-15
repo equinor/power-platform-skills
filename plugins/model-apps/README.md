@@ -14,6 +14,8 @@ Build and deploy generative pages (genux) for Power Apps model-driven apps. This
 ### From a local clone
 
 ```bash
+copilot --plugin-dir /path/to/power-platform-skills/plugins/model-apps
+# or
 claude --plugin-dir /path/to/power-platform-skills/plugins/model-apps
 ```
 
@@ -25,7 +27,18 @@ claude --plugin-dir /path/to/power-platform-skills/plugins/model-apps
 | [PAC CLI](https://learn.microsoft.com/en-us/power-platform/developer/cli/introduction) > 2.10.0 | Schema generation, app creation, table listing, deployment | `dotnet tool install -g Microsoft.PowerApps.CLI.Tool` |
 | [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) (`az`) | Dataverse Web API auth for entity creation | `winget install Microsoft.AzureCLI` |
 
-After installing `az`, run `az login` with the same identity as your active `pac auth list` profile. Without `az`, the `/genpage` skill still works for pages over existing entities or mock data — it only fails when entity creation is needed.
+After installing `az`, run `az login` with the same identity as your active `pac auth list` profile. Without `az`, the `/genpage` skill still works for pages over existing entities or mock data — it only fails when entity creation is needed. (Detecting the environment's languages uses `az` when it is signed in and falls back to `pac model list-languages --environment '<envUrl>'` when it is not.)
+
+Each Azure CLI call (a token, `az account show`) may take up to **60 seconds** — a busy machine can
+take most of that just to start `az`. A call that runs out of time is reported as a timeout (the
+pre-flight's `az_timeout`), never as a missing or signed-out CLI. To allow longer, set
+`POWER_PLATFORM_SKILLS_AZ_TIMEOUT_MS` in milliseconds (1000–900000), for example `120000`.
+
+Each `pac` call for generative pages is time-bounded too: **3 minutes** to list or download pages, **10 minutes** to
+upload one. A call that runs out of time is stopped together with everything it started, and the message says what to
+do; a page create whose outcome is unknown is never sent again. To allow longer, set
+`POWER_PLATFORM_SKILLS_PAC_TIMEOUT_MS` in milliseconds (1000–3600000); it applies to every `pac model genpage` call (list,
+download and upload).
 
 ## Feature flags (experimental & in-progress)
 
@@ -37,7 +50,10 @@ status) in `scripts/lib/feature-flags.js`; their on/off value lives in
 
 | Flag | Status | Enables | Depends on |
 |---|---|---|---|
-| `connectors` | in-progress | GenPage connector authoring (SharePoint, weather, Office 365, SQL, custom REST) + ALM packaging of connection references | pac CLI connector verbs, the GenUX authoring control, and the maker/admin ECS setting — all live in PROD |
+| `custom-api` | in-progress | Calling a Dataverse Custom API Action or Function from a generated page (`executeAction` / `executeFunction` / `listBoundActions`) | the AIBuilder action prompt, the shared action runtime, the UCI and Controls host runtimes, a pac CLI `model genpage upload --actions` verb, and the `GenUxPluginActionAllowList` setting — all live in PROD |
+| `custom-telemetry` | in-progress | A generated page reporting its own events, metrics, traces and exceptions to your Application Insights resource via `props.appInsights` | the page telemetry facade in the UCI host runtime, the GenUX authoring control, the AIBuilder telemetry prompt, and the `GenUxEnableCustomTelemetry` setting — all live in PROD |
+
+Connector authoring is in **public preview** and no longer has a feature flag. Connector discovery, binding, deploy, and ALM packaging are always available when the required PAC and host capabilities are present.
 
 **See the current state** (status, whether each flag is on, and why):
 
@@ -49,26 +65,30 @@ node scripts/lib/feature-flags.js --list
 
 ```powershell
 # Windows (PowerShell)
-$env:GENPAGE_ENABLE_CONNECTORS = "1"
+$env:GENPAGE_ENABLE_CUSTOM_API = "1"
 ```
 
 ```bash
 # macOS / Linux (bash)
-export GENPAGE_ENABLE_CONNECTORS=1
+export GENPAGE_ENABLE_CUSTOM_API=1
 ```
 
 **Enable it persistently** by flipping the value in `feature-flags.json`:
 
 ```json
-{ "connectors": true }
+{ "custom-api": true }
 ```
 
 Precedence is **env var → `feature-flags.json` → default OFF** (fail-closed). Only
 turn a flag on once its "Depends on" items are actually available in your
 environment — otherwise the feature's commands will fail with a clear "disabled" or
-capability error. The env var name is always `GENPAGE_ENABLE_<FLAG>` (uppercased).
+capability error. The env var name is always `GENPAGE_ENABLE_` plus the flag name in upper case, with
+`-` turned into `_` (`custom-api` → `GENPAGE_ENABLE_CUSTOM_API`), and unknown flags stay disabled even if
+a matching env var is set.
 
 ## Skills
+
+PCF code components ship in the separate preview [pcf plugin](../pcf/README.md).
 
 The plugin provides two authoring skills: `/app-builder` builds a whole model-driven app, and
 `/genpage` builds standalone generative pages for an existing app. **They are independent — you can
@@ -76,7 +96,7 @@ use either on its own, and neither requires the other.**
 
 | Skill | Status | Use it when |
 |---|---|---|
-| [`/app-builder`](#app-builder) | **Preview** | You want a whole app — tables, relationships, forms, views, charts, security roles, app + sitemap |
+| [`/app-builder`](#app-builder) | Stable | You want a whole app — tables, relationships, forms, views, charts, security roles, app + sitemap |
 | [`/genpage`](#genpage) | Stable | You want one or more generative pages added to an app that already exists |
 
 Already have an app and just want to add a page? Use `/genpage` — you never need to run
@@ -85,10 +105,9 @@ of the build, so you don't need to run `/genpage` afterwards.
 
 ### `/app-builder`
 
-> **Preview.** This skill is under active development: its App Spec schema and CLI flags may change
-> between releases, and `--changed-only` (partial apply) is Preview within it. Prefer a scratch/dev
-> environment, review the dry-run plan before approving, and use `teardown-model-app.js --apply` to
-> clean up probes. Report issues with `/report-issue`.
+> Review the dry-run plan before approving, and use `teardown-model-app.js --apply` to clean up
+> probes. `--changed-only` (partial apply) is still experimental and off by default. Report issues
+> with `/report-issue`.
 
 Builds and edits a whole model-driven Power App from a natural-language intent, via the headless
 vendored `cds-maker-sdk`. It runs an interactive, multi-turn authoring flow and a narrated build:
@@ -136,6 +155,22 @@ Creates, updates, and deploys generative pages for model-driven Power Apps. Hand
 ## Running Without Interruption
 
 The plugin invokes multiple tools during a session. To reduce approval prompts:
+
+### GitHub Copilot CLI
+
+**Option 1 — Allow specific tools (recommended)**
+
+```bash
+copilot --allow-tool 'write' --allow-tool 'shell(pac *)' --allow-tool 'shell(node *)' --allow-tool 'shell(powershell *)' --allow-tool 'shell(az *)'
+```
+
+**Option 2 — Allow all tools**
+
+```bash
+copilot --allow-all-tools
+```
+
+### Claude Code
 
 **Option 1 — Permission mode (recommended)**
 
@@ -211,6 +246,7 @@ mirror.
 
 ## Documentation
 
+- [Build Model-Driven Apps with External Tools](https://learn.microsoft.com/en-us/power-apps/maker/model-driven-apps/model-driven-app-external-tools)
 - [Generative Pages with External Tools](https://learn.microsoft.com/en-us/power-apps/maker/model-driven-apps/generative-page-external-tools)
 - [Generative Pages Overview](https://learn.microsoft.com/en-us/power-apps/maker/model-driven-apps/generative-pages)
 - [Power Apps Model-Driven Apps](https://learn.microsoft.com/en-us/power-apps/maker/model-driven-apps/model-driven-app-overview)

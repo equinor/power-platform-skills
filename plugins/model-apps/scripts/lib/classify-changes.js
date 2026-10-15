@@ -17,7 +17,7 @@
 //                 layout:'auto' forms don't even carry placement), so form edits are conservatively
 //                 full-build + debt-candidate; the build-time verifier clears the debt iff it converged.
 //   #3 view     — pure APPEND of columns (prior columns are a prefix of current; nothing else changed).
-//   #4 app-shell— structural sitemap change only (app.name/description/icon unchanged).
+//   #4 app-shell— structural sitemap change only (the whole app object unchanged).
 //
 // PURE + I/O-free. Consumes the ANNOTATED specs (caller runs annotateContentHashes first).
 
@@ -137,16 +137,17 @@ function classifyViews(cur, prior) {
   return out;
 }
 
-// #4 app-shell: fast ONLY when the SITEMAP structure (appShell) changed but the app object (name /
-// description / icon) is byte-identical. An app-icon/description/name change is not a sitemap-only edit.
+// #4 app-shell: fast ONLY when the SITEMAP structure (appShell) changed but the app object is
+// byte-identical. The object is compared WHOLE, so a change to any app field — name, description,
+// routing description, icon — is not a sitemap-only edit.
 function classifyAppShell(cur, prior) {
   const out = { fast: [], full: [], debt: [] };
   const appSame = stableStringify(cur.app || null) === stableStringify(prior.app || null);
   const shellSame = stableStringify(cur.appShell || null) === stableStringify(prior.appShell || null);
   if (appSame && !shellSame) {
-    out.fast.push({ shape: 'app-shell', phase: 'app-shell', identity: 'sitemap', detail: 'sitemap structure changed (app icon/description unchanged)' });
+    out.fast.push({ shape: 'app-shell', phase: 'app-shell', identity: 'sitemap', detail: 'sitemap structure changed (app object unchanged)' });
   } else if (!appSame) {
-    out.full.push('app-shell: the app object (name/description/icon) changed — not a sitemap-only edit');
+    out.full.push('app-shell: the app object changed — not a sitemap-only edit');
   }
   return out;
 }
@@ -168,8 +169,11 @@ function classifyAdditive(cur, prior, phase, type, arrKey, opts = {}) {
   for (const c of common) {
     if (stableStringify(c.cur) !== stableStringify(c.prior)) {
       const onlyConverged = convergedKeys.length && equalExcept(c.cur, c.prior, convergedKeys);
+      // Name only the keys that actually differ. "status/securityRoles changed" when just one did is
+      // the kind of small inaccuracy that makes a reader stop trusting the whole report.
+      const changed = convergedKeys.filter((k) => stableStringify(c.cur && c.cur[k]) !== stableStringify(c.prior && c.prior[k]));
       out.full.push(onlyConverged
-        ? `${phase}: ${type} '${c.id}' ${convergedKeys.join('/')} changed — reconciled by a full build`
+        ? `${phase}: ${type} '${c.id}' ${(changed.length ? changed : convergedKeys).join('/')} changed — reconciled by a full build`
         : `${phase}: ${type} '${c.id}' edited — the additive build engine skips edits to an existing ${type}`);
       if (!onlyConverged) out.debt.push({ artifactType: type, identity: c.id, reason: `${type}-edit-not-convergent` });
     }
@@ -231,7 +235,12 @@ function classifyChanges(current, prior) {
       // is real debt. The ONE exception is `status`: both reuse branches converge statecode in both
       // directions, so a status-only change is applied by a rebuild and is not debt.
       case 'business-rules': merge(classifyAdditive(cur, prior, 'business-rules', 'businessRule', 'businessRules', { convergedKeys: ['status'] })); break;
-      case 'business-process-flows': merge(classifyAdditive(cur, prior, 'business-process-flows', 'businessProcessFlow', 'businessProcessFlows', { convergedKeys: ['status'] })); break;
+      // `securityRoles` converges too, and for a stronger reason than `status`: a BPF grant always
+      // targets a PERSONA role, which the security phase applies with `ReplacePrivilegesRole` — so a
+      // rebuild both ADDS a newly-declared persona and REMOVES one that was dropped. Filing it as
+      // permanent debt disabled every later fast apply over a divergence that a full build erases.
+      // (`roleGrants[]` would NOT qualify: it is additive and cannot revoke.)
+      case 'business-process-flows': merge(classifyAdditive(cur, prior, 'business-process-flows', 'businessProcessFlow', 'businessProcessFlows', { convergedKeys: ['status', 'securityRoles'] })); break;
       default:
         // An unrecognized changed phase must never silently pass as fast (fail-closed).
         fullReasons.push(`${phase}: changed — no fast-path shape recognized`);
