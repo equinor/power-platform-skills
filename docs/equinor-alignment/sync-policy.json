@@ -64,6 +64,7 @@
         "plugins/*/template/README.md",
         "plugins/*/skills/report-issue/**",
         "plugins/power-automate/skills/setup/SKILL.md",
+        "plugins/process-intelligence/tests/packaging.test.mjs",
         "shared/skills/report-issue/**"
       ]
     },

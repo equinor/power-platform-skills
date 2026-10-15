@@ -33,7 +33,7 @@ test('marketplace entries are minimal and Process Intelligence manifests match',
     await readFile(path.join(root, '.claude-plugin', 'plugin.json'), 'utf8'));
   assert.equal(plugin.license, 'MIT');
   assert.deepEqual(plugin.author, { name: 'Microsoft', url: 'https://www.microsoft.com' });
-  assert.equal(plugin.homepage, 'https://github.com/microsoft/power-platform-skills/');
+  assert.equal(plugin.homepage, 'https://github.com/equinor/power-platform-skills/');
   assert.equal(plugin.repository, plugin.homepage);
   for (const key of ['description', 'homepage', 'repository']) assert.ok(plugin[key]);
   assert.ok(plugin.author.name);
