@@ -72,6 +72,9 @@ Current review status for each plugin. A review record reaching `controlled-pilo
 | `mobile-app` | defer | [reviews/mobile-app.json](docs/equinor-alignment/reviews/mobile-app.json) |
 | `power-apps-mobile-extension` | defer | [reviews/power-apps-mobile-extension.json](docs/equinor-alignment/reviews/power-apps-mobile-extension.json) |
 | `power-automate` | defer | [reviews/power-automate.json](docs/equinor-alignment/reviews/power-automate.json) |
+| `pcf` | defer | [reviews/pcf.json](docs/equinor-alignment/reviews/pcf.json) |
+| `process-intelligence` | defer | [reviews/process-intelligence.json](docs/equinor-alignment/reviews/process-intelligence.json) |
+| `dataverse` | not-reviewed, not listed | [reviews/dataverse.json](docs/equinor-alignment/reviews/dataverse.json) |
 
 `defer` means the plugin has an initial review record but lacks sufficient evidence (owner confirmation, <abbr title="Data Loss Prevention Policy">DLP</abbr> mapping, Tech Radar positioning, or EDS compliance) to recommend piloting. Plugins with a `defer` status warrant extra care — review the record and understand what is still outstanding before adopting them in your team's workflow.
 
@@ -108,7 +111,7 @@ Or run without cloning:
 curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node - --scope project --plugin code-apps-preview
 ```
 
-Available plugins: `power-pages`, `model-apps`, `mcp-apps`, `canvas-apps`, `code-apps-preview`, `mobile-app`, `power-apps-mobile-extension`, `power-automate`
+Available plugins: `power-pages`, `model-apps`, `pcf`, `mcp-apps`, `canvas-apps`, `code-apps-preview`, `mobile-app`, `power-apps-mobile-extension`, `power-automate`, `process-intelligence`
 
 > [!IMPORTANT]
 > **Deferred plugins are never installed implicitly.** Run without `--plugin` and the installer
@@ -163,12 +166,14 @@ Inside a Claude Code session:
     ```bash
     /plugin install power-pages@power-platform-skills
     /plugin install model-apps@power-platform-skills
+    /plugin install pcf@power-platform-skills
     /plugin install mcp-apps@power-platform-skills
     /plugin install code-apps-preview@power-platform-skills
     /plugin install mobile-app@power-platform-skills
     /plugin install power-apps-mobile-extension@power-platform-skills
     /plugin install canvas-apps@power-platform-skills
     /plugin install power-automate@power-platform-skills
+    /plugin install process-intelligence@power-platform-skills
     ```
 
 ### Where Are Things Installed?
@@ -190,12 +195,14 @@ The marketplace registry (Claude Code) is stored at `~/.claude/plugins/known_mar
 # Inside a Claude Code session
 /plugin uninstall power-pages
 /plugin uninstall model-apps
+/plugin uninstall pcf
 /plugin uninstall mcp-apps
 /plugin uninstall code-apps-preview
 /plugin uninstall mobile-app
 /plugin uninstall power-apps-mobile-extension
 /plugin uninstall canvas-apps
 /plugin uninstall power-automate
+/plugin uninstall process-intelligence
 /plugin marketplace remove power-platform-skills
 ```
 
@@ -217,11 +224,29 @@ generative pages for an app that already exists. Use either independently — ne
 
 **Stack**: React + TypeScript + Fluent, deployed via PAC CLI and the headless `cds-maker-sdk`
 
+### [PCF](plugins/pcf/README.md) (`plugins/pcf`)
+
+Build, test, diagnose, upgrade, deploy, verify and inventory Power Apps component framework (PCF) code components for model-driven apps, with guided setup for Power Pages field controls and canvas apps. Canvas apps need an admin to turn on **Power Apps component framework for canvas apps** in each environment.
+
+**Skills**: `/pcf:pcf` scaffolds Microsoft-maintained PCF templates and recipes, runs gates, deploys with PAC, and verifies registration and bindings.
+
+**Status**: Preview — see [capabilities](plugins/pcf/docs/pcf-capabilities.md)
+
+**Stack**: Node.js 20+, Power Apps component framework, PAC CLI, .NET SDK, and Azure CLI for verification/inventory
+
 ### [MCP Apps](plugins/mcp-apps/README.md) (`plugins/mcp-apps`)
 
-Generate interactive MCP App widgets for MCP tools.
+Generate self-contained JavaScript server runtimes, JSON Schema registration metadata,
+and interactive single-file MCP App widgets for codeful MCP tools.
 
-**Stack**: HTML widgets using the MCP Apps protocol
+**Skills**: `/generate-codeful-mcp-tool` creates a named `runTool` server entry point plus
+its description, MCP behavior annotations, input schema, and structured output schema,
+with verified Dataverse access; `/generate-mcp-app-ui` creates an HTML widget that embeds
+its runtime by default for hosts that block public URLs, while retaining an opt-in CDN
+mode. It can consume model-visible content, structured output, and widget-private
+metadata.
+
+**Stack**: JavaScript codeful tools + HTML widgets using the MCP Apps protocol
 
 ### [Code Apps](plugins/code-apps/AGENTS.md) (`plugins/code-apps`)
 
@@ -254,6 +279,26 @@ Build, edit, run, and debug Power Automate cloud flows via the FlowAgent MCP ser
 
 **Stack**: Node.js 18+, Azure CLI (`az login`), self-contained MCP bundle
 
+### [Process Intelligence](plugins/process-intelligence/README.md) (`plugins/process-intelligence`)
+
+Analyze Power Automate Process Mining data, including bottlenecks, variants,
+cohorts, rework and object-centric executions through guided MCP workflows.
+
+**Skills**: `/analytics` and `/investigate-process` guide analysis;
+`/analyze-performance`, `/analyze-variants`, `/analyze-drivers`, `/compare-cohorts`,
+`/derive-metric` and `/analyze-objects` answer focused questions.
+`/setup` and `/report-issue` handle connection setup and support drafts.
+See the [skill catalog](plugins/process-intelligence/README.md#skills).
+
+**Stack**: Node.js 22 or 24 LTS, Azure CLI, self-contained MCP bundle
+
+GCC, GCC High, DoD and Mooncake are not supported yet.
+
+> [!NOTE]
+> Upstream also lists a `dataverse` plugin installed straight from `microsoft/Dataverse-skills`.
+> This fork does not list it: an external source would bypass the sync policy and its declared
+> transforms. See [reviews/dataverse.json](docs/equinor-alignment/reviews/dataverse.json).
+
 ## Local Development
 
 To develop and test plugins locally, follow these steps:
@@ -264,12 +309,14 @@ To develop and test plugins locally, follow these steps:
     ```bash
     claude --plugin-dir /path/to/power-platform-skills/plugins/power-pages
     claude --plugin-dir /path/to/power-platform-skills/plugins/model-apps
+    claude --plugin-dir /path/to/power-platform-skills/plugins/pcf
     claude --plugin-dir /path/to/power-platform-skills/plugins/mcp-apps
     claude --plugin-dir /path/to/power-platform-skills/plugins/code-apps
     claude --plugin-dir /path/to/power-platform-skills/plugins/mobile-apps
     claude --plugin-dir /path/to/power-platform-skills/plugins/power-apps-mobile-extension
     claude --plugin-dir /path/to/power-platform-skills/plugins/canvas-apps
     claude --plugin-dir /path/to/power-platform-skills/plugins/power-automate
+    claude --plugin-dir /path/to/power-platform-skills/plugins/process-intelligence
     ```
 
 ## Running Without Interruption
@@ -420,6 +467,13 @@ The `.claude-plugin` files are compatibility mirrors for users who subscribed be
 - [Generative Pages with External Tools][msdocs_generative_pages]
 - [Power Apps Code Apps][msdocs_code_apps]
 - [PAC CLI Reference][msdocs_pac_cli]
+
+## Telemetry
+
+This fork does not ship the upstream 1DS usage telemetry stack. It is excluded from every plugin
+pending a separate governance and privacy review, so no plugin installed from this repository
+transmits usage telemetry. See the `telemetry-exclusion` transform in
+[sync-policy.md](docs/equinor-alignment/sync-policy.md).
 
 ## Contributing
 

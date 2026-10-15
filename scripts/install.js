@@ -216,8 +216,11 @@ function enableAutoUpdate(configFile, getMarketplaces) {
 
 // ── Marketplace loader ────────────────────────────────────────
 async function loadMarketplace() {
-  const scriptDir = process.argv[1]
-    ? path.dirname(path.resolve(process.argv[1]))
+  // `node -` (piped with arguments) sets argv[1] to "-", which is not a script path.
+  const scriptPath =
+    process.argv[1] && process.argv[1] !== "-" ? process.argv[1] : null;
+  const scriptDir = scriptPath
+    ? path.dirname(path.resolve(scriptPath))
     : process.cwd();
   // Script lives in scripts/, so the repo root is one level up
   const repoRoot = path.resolve(scriptDir, "..");
