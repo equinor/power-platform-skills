@@ -1,0 +1,141 @@
+{
+  "pluginName": "process-intelligence",
+  "reviewDate": "2026-10-15",
+  "reviewer": "GitHub Copilot",
+  "publicationStatus": "defer",
+  "ownership": {
+    "owner": "not assigned",
+    "supportChannel": "not assigned",
+    "upstreamSource": "microsoft/power-platform-skills/plugins/process-intelligence",
+    "upstreamVersion": "0.7.0"
+  },
+  "scope": {
+    "summary": "Analyzes Power Automate Process Mining processes, bottlenecks, variants, cohorts, and object-centric executions through a bundled local MCP server. Upstream states the plugin does not create views, visualizations, saved metrics, or business rules.",
+    "createsOrModifiesAssets": false,
+    "deploysAssets": false,
+    "deletesAssets": false,
+    "productionInteractionDefault": true
+  },
+  "skillAndScriptSafety": {
+    "skillsReviewed": false,
+    "agentsReviewed": false,
+    "hooksReviewed": false,
+    "scriptsReviewed": false,
+    "bundledScripts": [
+      {
+        "path": "plugins/process-intelligence/server/mcp.mjs",
+        "purpose": "Pre-bundled Process Intelligence MCP server launched over stdio by the plugin's .mcp.json.",
+        "reviewed": false,
+        "externalCommands": [
+          "az"
+        ],
+        "networkAccess": true,
+        "secretAccess": true
+      }
+    ],
+    "secretsEmbedded": false,
+    "externalNetworkCalls": [
+      "Power Automate Process Mining service endpoints (process, metric, and object-centric queries)"
+    ]
+  },
+  "mcp": {
+    "required": true,
+    "servers": [
+      {
+        "name": "process-intelligence",
+        "transport": "stdio",
+        "version": "0.7.0, bundled in plugins/process-intelligence/server/mcp.mjs",
+        "purpose": "Exposes Process Mining analysis tools to the agent."
+      }
+    ],
+    "versionsPinned": true,
+    "approvedAccessRequired": true,
+    "productionInteractionBlocked": false
+  },
+  "powerPlatformGovernance": {
+    "assumedZone": "red",
+    "intendedUsers": [
+      "not-assessed"
+    ],
+    "dataClassificationCeiling": "not-assessed",
+    "confidentialDataSupported": false,
+    "dependencies": [
+      {
+        "name": "Power Automate Process Mining",
+        "category": "platform-feature",
+        "description": "Analysis depends on processes and features enabled in the connected Process Mining service.",
+        "blocking": true
+      },
+      {
+        "name": "Azure CLI (az) sign-in",
+        "category": "developer-prerequisite",
+        "description": "The bundled MCP server authenticates through the Azure CLI.",
+        "blocking": true
+      },
+      {
+        "name": "Node.js 22 or later",
+        "category": "developer-prerequisite",
+        "description": "The bundled MCP server and its build require Node.js 22 or 24.",
+        "blocking": true
+      }
+    ],
+    "architectureContractRequired": true,
+    "ciRequired": true
+  },
+  "technologyRadar": {
+    "technologies": [
+      {
+        "name": "Power Automate Process Mining",
+        "radarState": "unknown",
+        "usedFor": "Data source for all analysis.",
+        "source": "not checked"
+      },
+      {
+        "name": "Model Context Protocol",
+        "radarState": "Adopt",
+        "usedFor": "Bundled local stdio MCP server.",
+        "source": "equinor/techradar"
+      }
+    ],
+    "hasHoldTechnology": false,
+    "hasAssessTechnology": false,
+    "hasUnknownTechnology": true
+  },
+  "designSystem": {
+    "generatesFrontend": false,
+    "edsRequired": false,
+    "edsPackages": [],
+    "exceptions": []
+  },
+  "publication": {
+    "targetRepository": "equinor/powerplatform recommended, not confirmed",
+    "copilotManifest": true,
+    "claudeManifest": true,
+    "versionsSynchronized": true,
+    "variaCatalogRequired": true,
+    "techDocsRequired": true,
+    "architectureContractLinkRequired": true,
+    "installTested": false,
+    "rollbackDocumented": false
+  },
+  "blockers": [
+    "Internal owner and support channel are not assigned.",
+    "Skills and the bundled MCP server are not reviewed against Equinor guidance.",
+    "Process Mining data may carry business-sensitive case attributes; the data classification ceiling has not been assessed.",
+    "Technology Radar status is unknown for Power Automate Process Mining.",
+    "CodeQL: improper code sanitization in the bundled `server/mcp.mjs` (1 alert). Not assessed; report upstream."
+  ],
+  "evidence": [
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/d7b0e96a..1a967074",
+      "summary": "Initial record after the plugin arrived in the fork through upstream sync 2026-10-15 (process-intelligence v0.7.0). Upstream does not adopt the shared telemetry stack for this plugin."
+    },
+    {
+      "type": "command",
+      "reference": "cd plugins/process-intelligence && npm ci && npm test",
+      "summary": "All tests pass once the repository wiring (marketplace entry, root README entry, issue template selectors, plugin workflow) from the alignment change is present."
+    }
+  ],
+  "notes": "Initial tracked-tier record only. Publication is deferred until a detailed review exists."
+}

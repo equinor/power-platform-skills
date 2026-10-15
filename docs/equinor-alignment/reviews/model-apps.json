@@ -7,7 +7,7 @@
     "owner": "not assigned",
     "supportChannel": "not assigned",
     "upstreamSource": "microsoft/power-platform-skills/plugins/model-apps",
-    "upstreamVersion": "2.6.0"
+    "upstreamVersion": "2.14.0"
   },
   "scope": {
     "summary": "Builds and deploys Power Apps model-driven app generative pages, creates Dataverse entities when needed, creates model-driven apps, generates React and Fluent UI code, deploys via PAC CLI, and verifies in browser. The `/app-builder` skill also ships a teardown path that deletes the Dataverse artifacts an App Spec declares — the app, security roles, dashboards, command bars, forms, charts, views, relationships, tables, web resources, global choices, and the solution.",
@@ -150,7 +150,8 @@
     "Data classification ceiling is not documented.",
     "EDS position is unresolved because generated UI currently uses Fluent UI V9.",
     "Technology Radar status is unknown for Fluent UI and Playwright.",
-    "CodeQL: `scripts/lib/app-spec-doc.js` escapes `|` for Markdown table cells without escaping backslash first, so a value containing a backslash before a pipe corrupts the generated design document. Recorded for upstream fix rather than patched in the fork."
+    "CodeQL: `scripts/lib/app-spec-doc.js` escapes `|` for Markdown table cells without escaping backslash first, so a value containing a backslash before a pipe corrupts the generated design document. Recorded for upstream fix rather than patched in the fork.",
+    "CodeQL, new in 2026-10-15 sync: incomplete sanitization or escaping in `scripts/lib/sitemap-pages.js`, `scripts/lib/verify-spec.js`, and `scripts/lib/source-literals.js` (4 production alerts, plus 27 in tests and evals). Not assessed; report upstream."
   ],
   "evidence": [
     {
@@ -187,6 +188,11 @@
       "type": "file",
       "reference": "plugins/model-apps/scripts/",
       "summary": "Contains Node.js scripts that require security and behavior review before publication."
+    },
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/d7b0e96a..1a967074",
+      "summary": "Mechanical refresh for upstream sync 2026-10-15 (v2.6.0 -> v2.14.0). Tree mirrored from upstream with declared transforms only; not re-reviewed. Publication status unchanged."
     }
   ],
   "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists. Upstream v2.2.0 synced 2026-06-09 adds an automated eval suite, two new local-dev scripts (capture-fixture.js, generate-page-manifest.js), supported-dependencies guidance, and dialog/overlay confinement rules. The new scripts are local dev/eval tooling with no new production interaction, but enlarge the script surface that still requires formal review before publication. Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content; the Copilot manifest blocker is now cleared. Upstream sync 2026-09-09 raises the plugin to v2.6.0 and adds the `/app-builder` whole-app authoring workflow backed by a vendored `cds-maker-sdk`; this is the largest increase in Dataverse write scope so far and should be the focus of the next detailed review. The telemetry stack shipped upstream for this plugin is excluded in the fork."

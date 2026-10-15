@@ -15,6 +15,8 @@ Equinor staff can ask in the **#powerplatform** channel on Equinor's internal Sl
 
 For questions about whether a plugin may be used internally, start with [the Equinor alignment overview](docs/equinor-alignment/README.md) and the per-plugin [review records](docs/equinor-alignment/reviews/).
 
+For questions about the Power Platform products themselves, see the [Power Platform documentation](https://learn.microsoft.com/power-platform/).
+
 ## Support policy
 
 This repository is maintained by `@equinor/dcs-power-platform-team` on a best-effort basis. It is not covered by an Equinor service level agreement.

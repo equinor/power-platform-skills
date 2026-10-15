@@ -1,0 +1,85 @@
+{
+  "pluginName": "dataverse",
+  "reviewDate": "2026-10-15",
+  "reviewer": "GitHub Copilot",
+  "publicationStatus": "not-reviewed",
+  "ownership": {
+    "owner": "not assigned",
+    "supportChannel": "not assigned",
+    "upstreamSource": "microsoft/Dataverse-skills/.github/plugins/dataverse",
+    "upstreamVersion": "not pinned"
+  },
+  "scope": {
+    "summary": "Upstream lists this plugin in its marketplace with an external git source (microsoft/Dataverse-skills). It is not listed in this fork's marketplace: an external source would install unmirrored upstream content directly, bypassing this fork's sync policy, declared transforms, and telemetry exclusion.",
+    "createsOrModifiesAssets": true,
+    "deploysAssets": false,
+    "deletesAssets": false,
+    "productionInteractionDefault": true
+  },
+  "skillAndScriptSafety": {
+    "skillsReviewed": false,
+    "agentsReviewed": false,
+    "hooksReviewed": false,
+    "scriptsReviewed": false,
+    "bundledScripts": [],
+    "secretsEmbedded": false,
+    "externalNetworkCalls": [
+      "not assessed"
+    ]
+  },
+  "mcp": {
+    "required": false,
+    "servers": [],
+    "versionsPinned": false,
+    "approvedAccessRequired": true,
+    "productionInteractionBlocked": false
+  },
+  "powerPlatformGovernance": {
+    "assumedZone": "red",
+    "intendedUsers": [
+      "not-assessed"
+    ],
+    "dataClassificationCeiling": "not-assessed",
+    "confidentialDataSupported": false,
+    "dependencies": [],
+    "architectureContractRequired": true,
+    "ciRequired": true
+  },
+  "technologyRadar": {
+    "technologies": [],
+    "hasHoldTechnology": false,
+    "hasAssessTechnology": false,
+    "hasUnknownTechnology": true
+  },
+  "designSystem": {
+    "generatesFrontend": false,
+    "edsRequired": false,
+    "edsPackages": [],
+    "exceptions": [
+      "Not assessed."
+    ]
+  },
+  "publication": {
+    "targetRepository": "not decided",
+    "copilotManifest": false,
+    "claudeManifest": false,
+    "versionsSynchronized": false,
+    "variaCatalogRequired": true,
+    "techDocsRequired": true,
+    "architectureContractLinkRequired": true,
+    "installTested": false,
+    "rollbackDocumented": false
+  },
+  "blockers": [
+    "Owner decision required: either mirror microsoft/Dataverse-skills into this fork under the sync policy, or keep the plugin out of the marketplace. Listing the external source as-is would install content this fork never reviews or transforms.",
+    "Internal owner and support channel are not assigned."
+  ],
+  "evidence": [
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/d7b0e96a..1a967074",
+      "summary": "Upstream added a marketplace entry pointing at microsoft/Dataverse-skills in this range. The entry was not carried into this fork's marketplace on the 2026-10-15 sync."
+    }
+  ],
+  "notes": "Placeholder record so the omission is visible. Not installable from this fork."
+}

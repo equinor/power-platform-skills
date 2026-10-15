@@ -7,7 +7,7 @@
     "owner": "not assigned",
     "supportChannel": "not assigned",
     "upstreamSource": "microsoft/power-platform-skills/plugins/power-pages",
-    "upstreamVersion": "2.6.6"
+    "upstreamVersion": "2.9.0"
   },
   "scope": {
     "summary": "Creates, tests, activates, and deploys Power Pages code sites; can create Dataverse data models, sample data, web roles, site settings, table permissions, Web API integrations, server logic, and cloud flow integrations. Includes ALM workflows (plan-alm, setup-solution, setup-pipeline, export-solution, import-solution, deploy-pipeline, ensure-pipelines-host, force-link-environment, configure-env-variables, diagnose-deployment) and security skills (manage-firewall, manage-headers, scan-site, security-review).",
@@ -184,7 +184,9 @@
     "Production-system interaction is possible by default through deploy, activate, Dataverse, Web API, permissions, and cloud flow workflows.",
     "Data classification ceiling is not documented.",
     "EDS guidance is not integrated into generated frontend workflows.",
-    "Technology Radar status is unknown for several framework and testing dependencies."
+    "Technology Radar status is unknown for several framework and testing dependencies.",
+    "New in 2026-10-15 sync: `/add-localization` fetches npm registry metadata and package documentation over the network to validate i18n packages, a new external network call class for this plugin.",
+    "CodeQL, new in 2026-10-15 sync: 11 production alerts. `scripts/serve-static-dir.js` path alerts and the `scripts/lib/pinned-download.js` insecure-download alert were checked and are false positives (traversal, symlink and realpath guards; HTTPS-only with integrity check). Not assessed: HTML filtering regexp in `scripts/lib/audit-report-validation.js`, a backtracking-prone regexp in `scripts/lib/review-navigation.js`, double unescaping in `scripts/validate-i18n-package.js`, and DOM text reinterpreted as HTML in the create-site and add-localization plan templates."
   ],
   "evidence": [
     {
@@ -221,6 +223,11 @@
       "type": "file",
       "reference": "plugins/power-pages/scripts/",
       "summary": "Contains many Node.js scripts that require security and behavior review before publication."
+    },
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/d7b0e96a..1a967074",
+      "summary": "Mechanical refresh for upstream sync 2026-10-15 (v2.6.6 -> v2.9.0). Tree mirrored from upstream with declared transforms only; not re-reviewed. Publication status unchanged."
     }
   ],
   "notes": "Initial review record only. Upstream v2.0.0 synced 2026-05-27 adds significant ALM and security capabilities (10 new ALM skills, 4 security skills, 45 lib helpers, 6 reference docs). The 2026-06-09 sync (commit b4c46e9) expands setup-auth to multi-provider authentication and SPA flows and adds a Dataverse dev-environment solution check and a local auth-report renderer. The 2026-06-30 sync raises upstreamVersion to 2.6.0 and adds AI Web API scaffolding plus further ALM discovery and plan-refresh updates; the upstream telemetry stack was intentionally excluded pending separate governance review. This record intentionally defers publication until detailed review evidence exists. The expanded surface area — especially ALM pipeline management, deployment automation, firewall rules, security scanning, multi-provider auth, and now AI Web API scaffolding — increases the review scope considerably. The 2026-09-09 sync raises upstreamVersion to 2.6.6, adds Bootstrap 3→5 and Web API wildcard migration skills, and pulls in a substantial upstream security-hardening batch; the telemetry stack remains excluded."
