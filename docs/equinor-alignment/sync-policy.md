@@ -53,9 +53,9 @@ These are the only changes the fork may carry into a tracked plugin. Each is dec
 
 | Transform | What it changes | Why it applies to every plugin |
 | --- | --- | --- |
-| `fork-repointing` | Upstream repository references replaced with the Equinor fork, in plugin manifests, README install instructions, and the `report-issue` workflow. | A plugin installed from this fork must send marketplace commands and bug reports here. |
-| `telemetry-exclusion` | The upstream 1DS telemetry stack removed, and its hook registrations, requires, and workflow markers neutralised. | Upstream ships instrumentation keys enabled. Mirroring the stack verbatim would emit Equinor usage to a Microsoft collector before any privacy review. |
-| `carried-fix` | Upstream defects patched locally. **Closed to new entries.** | Predates this policy. Each entry conflicts on every future sync. |
+| `fork-repointing` | Upstream repository references replaced with the Equinor fork, in plugin manifests (including the root-level Agent Plugins `plugin.json`), README install instructions, and the `report-issue` workflow. | A plugin installed from this fork must send marketplace commands and bug reports here. |
+| `telemetry-exclusion` | The upstream 1DS telemetry stack removed: library copies, instrumentation keys, telemetry hooks and their registrations, the `/telemetry` skills, and the `power-automate` engine's detached dispatcher. Files that only call into the stack are kept verbatim when the call already fails open; the few that hard-fail, and tests that assert emission, are edited minimally and listed by path. | Upstream ships instrumentation keys enabled. Mirroring the stack verbatim would emit Equinor usage to a Microsoft collector before any privacy review. |
+| `carried-fix` | Upstream defects patched locally. **Closed to new entries.** Currently empty: the last entry, the `power-pages` audit placeholder check, was fixed upstream and dropped on the 2026-10-15 sync. | Predates this policy. Each entry conflicts on every future sync. |
 
 Adding a transform is a governance change. Justify it in the pull request, and prefer an upstream fix over a new fork-local one.
 
