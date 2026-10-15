@@ -429,9 +429,8 @@ function collect(options) {
   const upstreamBlobs = loadBlobMap(refs.upstreamBase);
 
   const classified = changed.map((file) => {
-    const headBlob = headBlobs.get(file);
-    const upstreamIdentical =
-      Boolean(headBlob) && headBlob === upstreamBlobs.get(file);
+    // Absent on both sides is upstream-identical too: that is how an upstream deletion mirrors.
+    const upstreamIdentical = headBlobs.get(file) === upstreamBlobs.get(file);
     return classify(file, { policy, plugins, upstreamIdentical });
   });
 
