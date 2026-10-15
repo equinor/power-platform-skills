@@ -127,7 +127,8 @@
     "Skills, agents, hooks, and bundled scripts are not reviewed against Equinor guidance.",
     "Upstream marks the plugin as Preview with no recipe runtime-certified.",
     "Deploys solutions and binds components into Dataverse environments, so production-system interaction is possible by default.",
-    "Technology Radar status is unknown for the Power Apps component framework."
+    "Technology Radar status is unknown for the Power Apps component framework.",
+    "CodeQL: incomplete string escaping in `scripts/lib/source-literals.js` (2 alerts). The file is a verified copy of the model-apps module, so the fix must land there upstream."
   ],
   "evidence": [
     {

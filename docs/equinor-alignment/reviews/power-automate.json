@@ -151,7 +151,8 @@
     "The bundled MSAL library references `mobile.events.data.microsoft.com`; whether that telemetry path is reachable in normal operation has not been determined.",
     "Skills allow creating, updating, deleting, and running flows in any environment the signed-in identity can reach, so production-system interaction is possible by default.",
     "Copying flows across environments has not been assessed against Equinor environment-segregation and data-movement requirements.",
-    "New in 2026-10-15 sync: the bundled engine `server/mcp.mjs` embeds production 1DS instrumentation keys and collector URLs. This fork excludes `server/emit-dispatcher.mjs`, so nothing is transmitted, but the engine still writes a local usage mirror to `~/.flowagent/telemetry.jsonl` unless `FLOWAGENT_TELEMETRY=off`. The bundle cannot be patched under the mirror rule."
+    "New in 2026-10-15 sync: the bundled engine `server/mcp.mjs` embeds production 1DS instrumentation keys and collector URLs. This fork excludes `server/emit-dispatcher.mjs`, so nothing is transmitted, but the engine still writes a local usage mirror to `~/.flowagent/telemetry.jsonl` unless `FLOWAGENT_TELEMETRY=off`. The bundle cannot be patched under the mirror rule.",
+    "CodeQL (critical, uncontrolled command line), new in 2026-10-15 sync: `server/mcp.mjs` `openBrowser` runs `cmd /c start \"\" <url>` on Windows with a consent URL taken from an API response, so cmd metacharacters in that URL are interpreted. Mirrored bundle; report upstream. CodeQL also flags prototype pollution and incomplete escaping in the same bundle (5 further alerts)."
   ],
   "evidence": [
     {

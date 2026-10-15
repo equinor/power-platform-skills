@@ -185,7 +185,8 @@
     "Data classification ceiling is not documented.",
     "EDS guidance is not integrated into generated frontend workflows.",
     "Technology Radar status is unknown for several framework and testing dependencies.",
-    "New in 2026-10-15 sync: `/add-localization` fetches npm registry metadata and package documentation over the network to validate i18n packages, a new external network call class for this plugin."
+    "New in 2026-10-15 sync: `/add-localization` fetches npm registry metadata and package documentation over the network to validate i18n packages, a new external network call class for this plugin.",
+    "CodeQL, new in 2026-10-15 sync: 11 production alerts. `scripts/serve-static-dir.js` path alerts and the `scripts/lib/pinned-download.js` insecure-download alert were checked and are false positives (traversal, symlink and realpath guards; HTTPS-only with integrity check). Not assessed: HTML filtering regexp in `scripts/lib/audit-report-validation.js`, a backtracking-prone regexp in `scripts/lib/review-navigation.js`, double unescaping in `scripts/validate-i18n-package.js`, and DOM text reinterpreted as HTML in the create-site and add-localization plan templates."
   ],
   "evidence": [
     {

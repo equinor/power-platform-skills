@@ -150,7 +150,8 @@
     "Data classification ceiling is not documented.",
     "EDS position is unresolved because generated UI currently uses Fluent UI V9.",
     "Technology Radar status is unknown for Fluent UI and Playwright.",
-    "CodeQL: `scripts/lib/app-spec-doc.js` escapes `|` for Markdown table cells without escaping backslash first, so a value containing a backslash before a pipe corrupts the generated design document. Recorded for upstream fix rather than patched in the fork."
+    "CodeQL: `scripts/lib/app-spec-doc.js` escapes `|` for Markdown table cells without escaping backslash first, so a value containing a backslash before a pipe corrupts the generated design document. Recorded for upstream fix rather than patched in the fork.",
+    "CodeQL, new in 2026-10-15 sync: incomplete sanitization or escaping in `scripts/lib/sitemap-pages.js`, `scripts/lib/verify-spec.js`, and `scripts/lib/source-literals.js` (4 production alerts, plus 27 in tests and evals). Not assessed; report upstream."
   ],
   "evidence": [
     {

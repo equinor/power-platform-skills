@@ -122,7 +122,8 @@
     "Internal owner and support channel are not assigned.",
     "Skills and the bundled MCP server are not reviewed against Equinor guidance.",
     "Process Mining data may carry business-sensitive case attributes; the data classification ceiling has not been assessed.",
-    "Technology Radar status is unknown for Power Automate Process Mining."
+    "Technology Radar status is unknown for Power Automate Process Mining.",
+    "CodeQL: improper code sanitization in the bundled `server/mcp.mjs` (1 alert). Not assessed; report upstream."
   ],
   "evidence": [
     {

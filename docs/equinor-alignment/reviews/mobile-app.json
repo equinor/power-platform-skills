@@ -154,7 +154,8 @@
     "CodeQL: `scripts/lib/sanitize-external-content.js` strips HTML with a single-pass `/<[^>]*>/g`, which leaves an unclosed tag such as `<img src=x onerror=...` intact. The sanitized brand notes can reach generated preview HTML, so this needs an upstream fix before the plugin is piloted.",
     "CodeQL: `scripts/render-dataverse-planning-evidence.js` escapes `|` for Markdown table cells without escaping backslash first, so a value containing a backslash before a pipe corrupts the generated evidence table. Cosmetic, but it is generated-document integrity.",
     "New in 2026-10-15 sync: `/setup-app-insights` wires generated apps to send telemetry to a customer-chosen Application Insights resource. That is a new outbound data flow from the built app and needs a data-classification decision.",
-    "New in 2026-10-15 sync: the template README documents exposing the local dev server through an authenticated Microsoft Dev Tunnel. Tunnel use needs assessment against Equinor network policy."
+    "New in 2026-10-15 sync: the template README documents exposing the local dev server through an authenticated Microsoft Dev Tunnel. Tunnel use needs assessment against Equinor network policy.",
+    "CodeQL, new in 2026-10-15 sync: `assets/run-plan.html` reinterprets DOM text as HTML (3 alerts). Not assessed; report upstream."
   ],
   "evidence": [
     {
