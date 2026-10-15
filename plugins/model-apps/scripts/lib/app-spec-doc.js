@@ -16,6 +16,7 @@
 // PURE: no I/O. The CLI wrapper (scripts/write-app-spec-doc.js) owns writing the file.
 
 const lc = (s) => String(s || '').toLowerCase();
+const { labelText, lookupLabelFor } = require('./app-spec.js');
 
 // Every collection read below goes through these. The renderer runs against WORK-IN-PROGRESS specs
 // during authoring — a half-typed `jobs: "x"`, a null entry left by an edit, a `dataSources` written
@@ -37,10 +38,25 @@ const text = (value, fallback = '') => {
   return s || fallback;
 };
 
+// Where a sub-grid says it goes (`tab` / `column` / `after` / `before`), worded for the plan; empty for a grid
+// that says nothing, which is how every grid read before the keys existed. A value of the wrong type is skipped:
+// reporting it is validateAppSpec's job, not the plan's.
+function gridPlacement(sg) {
+  const parts = [];
+  if (typeof sg.tab === 'string' && sg.tab.trim()) parts.push(`tab ${sg.tab.trim()}`);
+  if (Number.isInteger(sg.column)) parts.push(`column ${sg.column}`);
+  if (typeof sg.after === 'string' && sg.after.trim()) parts.push(`after ${sg.after.trim()}`);
+  if (typeof sg.before === 'string' && sg.before.trim()) parts.push(`before ${sg.before.trim()}`);
+  return parts.join(', ');
+}
+
 function overview(spec) {
   const app = spec.app || {};
   const out = [`# ${text(app.name, 'Model-driven app')} — design`, ''];
   if (app.description) out.push(text(app.description), '');
+  // #583: the routing description is reviewed beside the tile text, since the two now say different
+  // things — the tile stays short, and the routing text says who the app is for and what it leaves out.
+  if (app.aiDescription) out.push(`**Routing description:** ${text(app.aiDescription)}`, '');
   out.push(
     'Generated from `app-spec.json` by `scripts/write-app-spec-doc.js`. **Regenerate rather than',
     'hand-edit** — `app-spec.json` is the source of truth, so a manual edit here is lost on the next',
@@ -89,6 +105,19 @@ function jobsSection(spec) {
     }
   }
   out.push('');
+  // Deliberate exclusions, rendered beside the traceability table so scope is REVIEWED rather than
+  // assumed (#583). What an app leaves out is what distinguishes two apps built over the same tables,
+  // and a reviewer cannot approve an omission they were never shown.
+  const excluded = personas
+    .map((p) => ({ persona: p.persona, items: arr(p.excludes).filter((x) => typeof x === 'string' && x.trim()) }))
+    .filter((e) => e.items.length);
+  if (excluded.length) {
+    out.push('**Deliberately out of scope**', '');
+    for (const e of excluded) {
+      for (const x of e.items) out.push(`- ${cell(e.persona)} — ${cell(x)}`);
+    }
+    out.push('');
+  }
   const unmapped = personas.flatMap((p) => objs(p.jobs).filter((j) => !arr(j.surfaces).length).map((j) => `${p.persona} → ${j.name}`));
   if (unmapped.length) {
     out.push(
@@ -106,7 +135,7 @@ function dataModel(spec) {
   if (!entities.length) { out.push('_No tables._', ''); return out; }
   for (const e of entities) {
     const reused = e.existing ? ' _(existing table — reused, not created)_' : '';
-    out.push(`### ${text(e.displayName, e.schemaName)} \`${lc(e.schemaName)}\`${reused}`, '');
+    out.push(`### ${text(labelText(e.displayName, spec && spec.languageCode), e.schemaName)} \`${lc(e.schemaName)}\`${reused}`, '');
     if (e.description) out.push(text(e.description), '');
     // The nav icon is something the user APPROVES, and at plan time the SVG may not exist yet — so
     // show what the glyph will DEPICT, not the web-resource name (which tells a reviewer nothing).
@@ -116,23 +145,28 @@ function dataModel(spec) {
     }
     out.push('| Column | Type | Notes |', '|---|---|---|');
     const pa = e.primaryAttribute && typeof e.primaryAttribute === 'object' ? e.primaryAttribute : null;
-    if (pa) out.push(`| ${cell(pa.displayName || pa.schemaName)} | ${cell(pa.type, 'Text')} | primary name${pa.autoNumberFormat ? `, auto-number \`${cell(pa.autoNumberFormat)}\`` : ''} |`);
+    if (pa) out.push(`| ${cell(labelText(pa.displayName, spec && spec.languageCode) || pa.schemaName)} | ${cell(pa.type, 'Text')} | primary name${pa.autoNumberFormat ? `, auto-number \`${cell(pa.autoNumberFormat)}\`` : ''} |`);
     for (const c of objs(e.columns)) {
       const notes = [];
       if (c.required) notes.push('required');
-      if (c.options) notes.push(`choices: ${arr(c.options).map((o) => cell(o && typeof o === 'object' ? o.label : o)).join(', ')}`);
+      // `o.label` is the legacy object-option shape. A LOCALIZED option is also an object but has no
+      // `label` key, so the legacy branch rendered every one as an empty cell — resolve through
+      // labelText first and only then fall back.
+      if (c.options) notes.push(`choices: ${arr(c.options).map((o) => cell(labelText(o, spec && spec.languageCode) || (o && typeof o === 'object' ? o.label : o))).join(', ')}`);
       if (c.globalChoice) notes.push(`global choice \`${cell(c.globalChoice)}\``);
-      out.push(`| ${cell(c.displayName || c.schemaName)} | ${cell(c.type, 'Text')} | ${notes.join('; ') || '—'} |`);
+      out.push(`| ${cell(labelText(c.displayName, spec && spec.languageCode) || c.schemaName)} | ${cell(c.type, 'Text')} | ${notes.join('; ') || '—'} |`);
     }
     out.push('');
     if (e.hasNotes) out.push('Notes/timeline enabled.', '');
   }
   const rels = objs(spec.relationships);
   if (rels.length) {
-    out.push('### Relationships', '', '| Kind | From | To | Lookup |', '|---|---|---|---|');
+    // `Label` is what the lookup column (and its form field) is called: the author's lookup.displayName, else
+    // the parent table's name — see lookupLabelFor — so the plan reads "Project", not a logical name.
+    out.push('### Relationships', '', '| Kind | From | To | Lookup | Label |', '|---|---|---|---|---|');
     for (const r of rels) {
-      if (r.type === 'ManyToMany') out.push(`| N:N | ${cell(lc(r.entity1))} | ${cell(lc(r.entity2))} | — |`);
-      else out.push(`| 1:N | ${cell(lc(r.referenced))} | ${cell(lc(r.referencing))} | ${cell(r.lookup && r.lookup.schemaName)} |`);
+      if (r.type === 'ManyToMany') out.push(`| N:N | ${cell(lc(r.entity1))} | ${cell(lc(r.entity2))} | — | — |`);
+      else out.push(`| 1:N | ${cell(lc(r.referenced))} | ${cell(lc(r.referencing))} | ${cell(r.lookup && r.lookup.schemaName)} | ${cell(labelText(lookupLabelFor(spec, r).label, spec && spec.languageCode))} |`);
     }
     out.push('');
   }
@@ -174,7 +208,7 @@ function surfaces(spec) {
   else {
     out.push('| Form | Table | Type | Layout | Sub-grids |', '|---|---|---|---|---|');
     for (const f of forms) {
-      const sg = objs(f.subgrids).map((s) => cell(lc(s.childEntity))).join(', ');
+      const sg = objs(f.subgrids).map((s) => { const where = gridPlacement(s); return `${cell(lc(s.childEntity))}${where ? ` (${cell(where)})` : ''}`; }).join(', ');
       // `formType` is the canonical field (Main / QuickCreate / QuickView), defaulting to Main —
       // NOT `type`. Reading the wrong one rendered every QuickCreate/QuickView form as "main",
       // hiding a real difference in what the form does.

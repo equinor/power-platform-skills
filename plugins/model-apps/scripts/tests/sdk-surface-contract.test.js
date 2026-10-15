@@ -33,12 +33,16 @@ const SCRIPTS_DIR = path.resolve(__dirname, '..');
 // this list is the living contract of what a re-vendored bundle MUST keep exposing.
 const SKILL_SDK_SURFACE = [
   'addElement',
+  'addEntityPrivilegesToRole',
   'addSolutionComponent',
   'associateRecords',
   'configureRowSummary',
   'createAlternateKey',
   'createArtifact',
   'createColumn',
+  // A new table's ordinary columns follow the table in ONE atomic change set (entity-provision.js), which needs the
+  // transport's `postRaw` (lib/sdk-http-client.js); a refusal falls back to `createColumn` per column.
+  'createColumns',
   'createCustomerColumn',
   'createGlobalOptionSet',
   'createPersonaRole',
@@ -56,6 +60,9 @@ const SKILL_SDK_SURFACE = [
   'deleteSolution',
   'deleteTable',
   'deleteWebResource',
+  // A reconcile pushes an artifact only when its workspace copy differs from the last-synced snapshot
+  // (unsynced-edits.js). The check fails open: without this method the engine writes as it always did.
+  'diffArtifact',
   'disassociateRecords',
   'enrichDefaultViews',
   'fetchArtifact',
@@ -66,11 +73,27 @@ const SKILL_SDK_SURFACE = [
   'getAiReadiness',
   'getArtifact',
   'getColumnVisualization',
+  'getEntityPrivileges',
+  // `scripts/list-languages.js` reads the environment's languages (the planner's language detection, in place of
+  // `pac model list-languages`): LCIDs only — three GETs, no workspace — and maps them to culture codes itself.
+  'getEnvironmentLanguages',
+  // The dry run's read-only question to the app folder's workspace (workspaceBindingNote in lib/workspace-binding.js): which
+  // environment it belongs to. It reads manifest.json and nothing else — unlike `listArtifacts`, which also parses every
+  // saved copy it lists.
+  'getManifest',
   'getSolution',
   'initWorkspace',
   'insertStatusValue',
+  // The deferred routing-description push reads the app copy's dirty flag, so it never replays an earlier
+  // run's unpushed edits (sdk-build.js).
+  'listArtifacts',
   'moveElement',
   'publishArtifact',
+  // Step 8 publishes the app and every table whose default-view enrichment was saved but not yet
+  // published in ONE PublishXml envelope (one customization lock, one publish job) instead of one
+  // call per artifact. `publishArtifact` stays above: it is the per-target fallback when the batch
+  // is refused or a target in it fails.
+  'publishArtifacts',
   'pushArtifact',
   'queryRecords',
   'removeElement',
@@ -85,6 +108,9 @@ const SKILL_SDK_SURFACE = [
   // `systemformrole` entity — they live inside `formxml` as `<DisplayConditions>`, so this dedicated
   // call is the only way to write them.
   'setFormSecurityRoles',
+  // Reads a form's <DisplayConditions> back — including its `Order`, the form's place in the table's
+  // Main Form Set, which the forms phase sets and keeps (AB#6736948).
+  'getFormSecurityRoles',
   // Written by the app-shell phase for `app.newLook` — the modern shell is a per-app SETTING
   // (`NewLookAlwaysOn`), not an appmodule column.
   'saveSettingValue',
@@ -98,18 +124,18 @@ const SKILL_SDK_SURFACE = [
   'updateRecord',
   'updateTable',
   'updateWebResource',
-  // The business-rule designer's OWN completeness validator. Nothing on the push path runs it, and a
-  // rule the compiler could not understand deploys as an EMPTY rule with HTTP 204 — so losing this
-  // method silently re-opens a trap that has no other detector.
-  'validateBusinessRule',
+  // ⚠ `validateBusinessRule` was REMOVED from this list deliberately. The SDK no longer exposes it:
+  // the designer's completeness validator now runs INTERNALLY on every business-rule save, so an
+  // incomplete rule is refused by `pushArtifact` rather than by an opt-in call. Re-adding it here
+  // would fail this guard against a correct bundle.
 ];
 
 function realSdk() {
-  const { createMakerSdk } = require(BUNDLE);
+  const { createMakerSdk, createNodeWorkspaceStorage } = require(BUNDLE);
   const noop = async () => ({});
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sdk-surface-'));
   const sdk = createMakerSdk({
-    workspacePath: dir,
+    workspaceStorage: createNodeWorkspaceStorage(dir),
     instanceUrl: 'https://example.crm.dynamics.com',
     httpClient: { get: noop, post: noop, patch: noop, delete: noop, put: noop },
   });

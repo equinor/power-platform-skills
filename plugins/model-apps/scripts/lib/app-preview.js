@@ -5,6 +5,7 @@
 // per-form wireframes (reusing form-preview.js), page-INTENTS (purpose/data-sources/navigation), and
 // the page design contract. Pure (no I/O); the CLI wrapper is preview-app.js. See design §12.
 const { renderFormWireframe } = require('./form-preview.js');
+const { labelText, lookupLabelFor } = require('./app-spec.js');
 
 const lc = (s) => String(s || '').toLowerCase();
 const h = (title) => `\n=== ${title} ===`;
@@ -13,13 +14,15 @@ function dataModelSection(spec) {
   const out = [h('Data model')];
   if (!(spec.entities || []).length) { out.push('  (no tables)'); }
   for (const e of spec.entities || []) {
-    out.push(`  • ${e.displayName || e.schemaName} [${lc(e.schemaName)}]${e.hasNotes ? '  (notes/timeline)' : ''}`);
+    out.push(`  • ${labelText(e.displayName, spec && spec.languageCode) || e.schemaName} [${lc(e.schemaName)}]${e.hasNotes ? '  (notes/timeline)' : ''}`);
     out.push(`      primary: ${e.primaryAttribute ? e.primaryAttribute.schemaName : '(none)'}`);
     const cols = (e.columns || []).map((c) => `${c.schemaName} (${c.type || 'Text'})`);
     if (cols.length) out.push(`      columns: ${cols.join(', ')}`);
   }
   for (const r of spec.relationships || []) {
-    if (r.type === 'OneToMany') out.push(`  ↳ 1:N  ${lc(r.referenced)}  →  ${lc(r.referencing)}  (lookup ${r.lookup && r.lookup.schemaName})`);
+    // The lookup's LABEL is shown beside its name: an omitted lookup.displayName defaults to the parent
+    // table's (lookupLabelFor), and that default is what the maker will read on the form.
+    if (r.type === 'OneToMany') out.push(`  ↳ 1:N  ${lc(r.referenced)}  →  ${lc(r.referencing)}  (lookup ${r.lookup && r.lookup.schemaName} — "${labelText(lookupLabelFor(spec, r).label, spec && spec.languageCode)}")`);
     else if (r.type === 'ManyToMany') out.push(`  ↳ N:N  ${lc(r.entity1)}  ↔  ${lc(r.entity2)}`);
   }
   return out;

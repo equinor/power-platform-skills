@@ -1,5 +1,4 @@
 {
-  "_comment": "PreToolUse: write-safety FLAGS (non-blocking, exit 1) Write/Edit/MultiEdit outside the cwd only during an active model-apps authoring session (a genpage-plan.md, app-spec.json, or model-app-plan.md marker at/under cwd — covering both /genpage and /app-builder). PostToolUse: per-skill validator + on every code write validate @fluentui/react-icons imports against references/verified-icons.txt. Run the host from the target project folder (or pass it as cwd). Equinor fork: upstream's skill-pretool and user-prompt telemetry hooks are intentionally not wired here because the telemetry stack is excluded pending a separate governance and privacy review.",
   "hooks": {
     "PreToolUse": [
       {

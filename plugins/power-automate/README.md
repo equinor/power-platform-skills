@@ -1,14 +1,14 @@
 # Power Automate plugin
 
-Build, edit, run, and debug **Power Automate cloud flows** from Claude Code or
-GitHub Copilot CLI, powered by the **FlowAgent** MCP server.
+Build, edit, run, and debug **Power Automate cloud flows** from GitHub Copilot CLI or
+Claude Code, powered by the **FlowAgent** MCP server.
 
 This folder is the marketplace-packaged plugin: skills, MCP wiring, and a
 self-contained MCP engine bundled at `server/mcp.mjs`.
 
 ## Install
 
-From a Claude Code or GitHub Copilot CLI session:
+From a GitHub Copilot CLI or Claude Code session:
 
 ```bash
 /plugin marketplace add equinor/power-platform-skills
@@ -57,4 +57,15 @@ error if the bundle is missing. That file is a single self-contained ESM bundle
 `npx`, no published npm package, no remote host.
 
 Auth uses Azure CLI (`az login`) plus MSAL for connectivity endpoints — see
-`CLAUDE.md` and `references/connection-patterns.md` in this folder.
+`references/connection-patterns.md` in this folder.
+
+## Telemetry logs
+
+This Equinor fork does **not** ship the upstream 1DS telemetry stack. The telemetry
+hooks, the `/telemetry` skill, and the engine's detached dispatcher
+(`server/emit-dispatcher.mjs`) are excluded pending a separate governance and privacy
+review, so this plugin transmits no usage telemetry.
+
+The bundled FlowAgent CLI/MCP engine is mirrored unmodified and still writes a local
+mirror to `~/.flowagent/telemetry.jsonl`. Set `FLOWAGENT_TELEMETRY=off` to stop it,
+or `FLOWAGENT_TELEMETRY_LOG` to change its path.

@@ -17,18 +17,33 @@ const block = (reason) => {
 /**
  * Wraps stdin JSON parsing and try/catch boilerplate.
  * Calls `callback(cwd)` with the parsed working directory.
- * Approves automatically if cwd is missing or on any uncaught error.
+ * Approves automatically if cwd is missing or on an uncaught error unless
+ * failClosed is enabled for a security-critical validator.
  */
-function runValidation(callback) {
+function runValidation(callback, options = {}) {
   let inputData = '';
   process.stdin.on('data', chunk => (inputData += chunk));
   process.stdin.on('end', async () => {
     try {
       const input = JSON.parse(inputData);
       const cwd = input.cwd;
-      if (!cwd) approve();
+      if (!cwd) {
+        if (options.failClosed) {
+          block(
+            options.failureMessage ||
+            'Validation failed unexpectedly and must be reviewed before continuing.'
+          );
+        }
+        approve();
+      }
       await callback(cwd);
     } catch {
+      if (options.failClosed) {
+        block(
+          options.failureMessage ||
+          'Validation failed unexpectedly and must be reviewed before continuing.'
+        );
+      }
       approve();
     }
   });
@@ -307,13 +322,32 @@ function validateBapPollingUrl(location, initiatingUrl, purpose = 'BAP Location 
  * signing in via `az login --allow-no-subscriptions`.
  * @returns {string|null} Access token, or null if unavailable
  */
-function getAuthToken(resourceUrl) {
+function runAzureCli(args, deps = {}) {
+  const execFile = deps.execFile || execFileSync;
+  const platform = deps.platform || process.platform;
+  if (platform === 'win32') {
+    // Azure CLI is exposed as az.cmd on Windows. Route the fixed argument array
+    // through cmd.exe because Node cannot execute .cmd shims directly.
+    // See: https://nodejs.org/api/child_process.html#spawning-bat-and-cmd-files-on-windows
+    return execFile('cmd.exe', ['/d', '/s', '/c', 'az.cmd', ...args], {
+      encoding: 'utf8',
+      timeout: 15000,
+      shell: false,
+    });
+  }
+  return execFile('az', args, {
+    encoding: 'utf8',
+    timeout: 15000,
+    shell: false,
+  });
+}
+
+function getAuthToken(resourceUrl, deps = {}) {
   try {
     const trustedResourceUrl = validateTokenResourceUrl(resourceUrl);
-    return execFileSync(
-      'az',
+    return runAzureCli(
       ['account', 'get-access-token', '--resource', trustedResourceUrl, '--query', 'accessToken', '-o', 'tsv'],
-      { encoding: 'utf8', timeout: 15000, shell: false }
+      deps
     ).trim();
   } catch {
     return null;
@@ -344,10 +378,30 @@ function parseEnvironmentUrl(whoOutput) {
   }
 }
 
+function parseActiveAuthListEnvironmentUrl(authListOutput) {
+  for (const line of String(authListOutput || '').split(/\r?\n/)) {
+    if (!/^\s*\[\d+\]\s+\*/.test(line)) continue;
+    const urls = line.match(/https:\/\/[^\s]+/gi) || [];
+    const environmentUrl = urls[urls.length - 1];
+    if (!environmentUrl) continue;
+    try {
+      return validateDataverseEnvironmentUrl(environmentUrl);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 function getEnvironmentUrl() {
   try {
     const output = execSync('pac env who', { encoding: 'utf8', timeout: 15000 });
-    return parseEnvironmentUrl(output);
+    const envUrl = parseEnvironmentUrl(output);
+    if (envUrl) return envUrl;
+  } catch {}
+
+  try {
+    return parseActiveAuthListEnvironmentUrl(execSync('pac auth list', { encoding: 'utf8', timeout: 15000 }));
   } catch {
     return null;
   }
@@ -513,12 +567,14 @@ module.exports = {
   validateAuthenticatedRequestUrl,
   validateBapUrl,
   validateBapPollingUrl,
+  runAzureCli,
   getAuthToken,
   makeRequest,
   odataGet,
   odataGetAll,
   getEnvironmentUrl,
   parseEnvironmentUrl,
+  parseActiveAuthListEnvironmentUrl,
   getPacAuthInfo,
   CLOUD_TO_API,
   CLOUD_TO_SITE_DOMAIN,

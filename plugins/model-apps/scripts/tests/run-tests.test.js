@@ -4,6 +4,7 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 const { pluginTestFiles, sdkTestSpec, summarize } = require('../run-tests.js');
 
 test('pluginTestFiles discovers every *.test.js as a scripts/tests path, sorted', () => {
@@ -20,6 +21,28 @@ test('pluginTestFiles covers the real tests directory (all 18+ suites)', () => {
   const files = pluginTestFiles(path.join(__dirname));
   assert.ok(files.length >= 18, `expected the full suite, got ${files.length}`);
   assert.ok(files.every((f) => f.endsWith('.test.js')));
+});
+
+// Discovery used to be a FLAT readdir, so a test file in `scripts/tests/<subdir>/` was committed,
+// reviewed, reported green — and never executed. Nothing downstream notices, because the runner
+// reports success over the files it did find. Every suite happens to be top-level today, which is
+// exactly why this needs a test rather than an observation.
+test('pluginTestFiles descends into subdirectories (a nested suite must not be silently skipped)', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'runtests-nested-'));
+  fs.mkdirSync(path.join(dir, 'sub', 'deeper'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'top.test.js'), '');
+  fs.writeFileSync(path.join(dir, 'sub', 'mid.test.js'), '');
+  fs.writeFileSync(path.join(dir, 'sub', 'deeper', 'low.test.js'), '');
+  fs.writeFileSync(path.join(dir, 'sub', 'fixture.js'), '');       // not a test
+  fs.mkdirSync(path.join(dir, 'helpers'));
+  fs.writeFileSync(path.join(dir, 'helpers', 'mock.js'), '');      // helpers hold fixtures, not tests
+  const files = pluginTestFiles(dir);
+  assert.deepStrictEqual(files, [
+    path.join('scripts', 'tests', 'sub', 'deeper', 'low.test.js'),
+    path.join('scripts', 'tests', 'sub', 'mid.test.js'),
+    path.join('scripts', 'tests', 'top.test.js'),
+  ]);
+  fs.rmSync(dir, { recursive: true, force: true });
 });
 
 test('sdkTestSpec resolves the package dir and reports presence', () => {
@@ -54,8 +77,37 @@ test('summarize fails the run when any non-skipped suite failed', () => {
 // failure. This is a text assertion rather than a YAML parse because the repo ships no YAML
 // dependency and the properties that matter are all line-level.
 const WORKFLOW = path.resolve(__dirname, '..', '..', '..', '..', '.github', 'workflows', 'model-apps-script-tests.yml');
+// The one exception: the sources this plugin ships physical copies of. A change to one is NOT
+// unrelated — telemetry-lib-copy.test.js fails when a copy drifts from its source, and it should
+// fail in the PR that edited the source, not in the next model-apps PR, whose author did not cause it.
+// Equinor fork: upstream also lists the shared telemetry library and power-pages' region router;
+// that stack is excluded here.
+const BUNDLED_SHARED_SOURCES = new Set([
+  'shared/skills/**',
+]);
+// pcf ships copies of these model-apps files (scripts/validate-plugin-copies.js is the source of
+// truth). A PR that edits only pcf's copy must still run this plugin's copy-sync test.
+const PCF_COPY_SYNC_PATHS = new Set([
+  'scripts/validate-plugin-copies.js',
+  'plugins/pcf/scripts/lib/process-runner.js',
+  'plugins/pcf/scripts/lib/sdk-http-client.js',
+  'plugins/pcf/scripts/lib/odata.js',
+  'plugins/pcf/scripts/lib/source-literals.js',
+  'plugins/pcf/scripts/lib/interaction-mode.js',
+  'plugins/pcf/scripts/lib/nearest-name.js',
+  'plugins/pcf/scripts/lib/utf8-stream.js',
+  'plugins/pcf/scripts/lib/cli-failure.js',
+  'plugins/pcf/scripts/lib/dataverse-auth.js',
+  'plugins/pcf/scripts/check-auth.js',
+  'plugins/pcf/scripts/resolve-interaction-mode.js',
+  'plugins/pcf/scripts/vendor/cds-maker-sdk.cjs',
+  'plugins/pcf/scripts/vendor/PROVENANCE.json',
+  'plugins/pcf/scripts/vendor/.gitattributes',
+  'plugins/pcf/skills/report-issue/report-issue-workflow.md',
+  'plugins/pcf/skills/report-issue/SKILL.md',
+]);
 
-test('the model-apps CI workflow triggers ONLY on model-apps paths', () => {
+test('the model-apps CI workflow triggers ONLY on model-apps paths and the shared sources it bundles', () => {
   const wf = fs.readFileSync(WORKFLOW, 'utf8');
   // The `paths:` block ends at the first non-list line (the blank line before `jobs:`).
   //   paths:
@@ -73,12 +125,24 @@ test('the model-apps CI workflow triggers ONLY on model-apps paths', () => {
   assert.ok(globs.length > 0, 'the workflow must declare a paths filter, not run on every PR');
   for (const g of globs) {
     assert.ok(
-      g.startsWith('plugins/model-apps/') || g.startsWith('evals/model-apps/') || g.endsWith('model-apps-script-tests.yml'),
+      g.startsWith('plugins/model-apps/') || g.startsWith('evals/model-apps/') || g.endsWith('model-apps-script-tests.yml')
+        || BUNDLED_SHARED_SOURCES.has(g)
+        || PCF_COPY_SYNC_PATHS.has(g),
       `path filter "${g}" is not scoped to model-apps — this workflow must not run for other plugins`
     );
   }
   // And it must not be scoped so tightly that the plugin's own code stops triggering it.
   assert.ok(globs.some((g) => g.startsWith('plugins/model-apps/')), 'the plugin source must trigger the workflow');
+  // Every shared source the plugin copies from must trigger it, and each one must exist: a renamed
+  // or removed source would otherwise leave an allowed glob that matches nothing.
+  for (const source of BUNDLED_SHARED_SOURCES) {
+    assert.ok(globs.includes(source), `a change to ${source} must run the drift test`);
+    assert.ok(fs.existsSync(path.resolve(__dirname, '..', '..', '..', '..', source.replace(/\/\*\*$/, ''))), `${source} names no directory`);
+  }
+  for (const copyPath of PCF_COPY_SYNC_PATHS) {
+    assert.ok(globs.includes(copyPath), `a change to ${copyPath} must run the pcf copy sync test`);
+    assert.ok(fs.existsSync(path.resolve(__dirname, '..', '..', '..', '..', copyPath)), `${copyPath} names no file`);
+  }
 });
 
 test('the model-apps CI workflow opts out of telemetry transmission on every job', () => {
@@ -89,6 +153,60 @@ test('the model-apps CI workflow opts out of telemetry transmission on every job
   const optOuts = (wf.match(/POWER_PLATFORM_SKILLS_TELEMETRY_MODEL_APPS_OPTOUT/g) || []).length;
   assert.ok(jobCount >= 2, `expected at least 2 jobs, found ${jobCount}`);
   assert.strictEqual(optOuts, jobCount, `every job must set the opt-out (${optOuts} set / ${jobCount} jobs)`);
+});
+
+test('the model-apps CI workflow has a read-only token, cancels superseded runs, and bounds every job', () => {
+  const wf = fs.readFileSync(WORKFLOW, 'utf8');
+  // Declared at the top level so no job inherits whatever the repository default grants, and no
+  // job widens it again with a write scope of its own.
+  assert.match(wf, /^permissions:[ \t]*\r?\n[ \t]+contents:[ \t]*read[ \t]*\r?$/m, 'the token must be read-only');
+  assert.doesNotMatch(wf, /^\s+[a-z-]+:[ \t]*write[ \t]*\r?$/m, 'no scope may be write');
+  assert.match(wf, /^concurrency:[ \t]*\r?\n(?:[ \t]+.*\r?\n)*?[ \t]+cancel-in-progress:[ \t]*true\b/m,
+    'a new push must cancel the run it supersedes');
+  // Without a limit a hung test holds its runner for GitHub's six-hour default.
+  const jobCount = (wf.match(/^ {4}[a-z0-9-]+:\s*$/gim) || []).length;
+  const timeouts = (wf.match(/^ {8}timeout-minutes:[ \t]*\d+[ \t]*\r?$/gm) || []).length;
+  assert.strictEqual(timeouts, jobCount, `every job must set timeout-minutes (${timeouts} set / ${jobCount} jobs)`);
+});
+
+// The lexer's oracle tests (every sweep that asks TypeScript or Babel which tokens are data, and the differential
+// against the released lexer) skip themselves where the parsers are not installed, so the suite alone proves
+// nothing about them: one job must install the parsers and run the same suite with them. A text assertion again,
+// for the same reason: what matters is that the versions are exact, that nothing is installed into the plugin,
+// and that the three paths the tests read are set.
+test('the model-apps CI workflow runs the suite once with pinned TypeScript and Babel parsers and the released lexer', () => {
+  const wf = fs.readFileSync(WORKFLOW, 'utf8');
+  const start = wf.search(/^ {4}test-model-apps-lexer-oracles:\s*$/m);
+  assert.ok(start >= 0, 'a job must run the suite with the parsers');
+  const rest = wf.slice(start).split(/\r?\n/).slice(1);
+  const end = rest.findIndex((line) => /^ {4}[a-z0-9-]+:\s*$/i.test(line));
+  const job = (end === -1 ? rest : rest.slice(0, end)).join('\n');
+  // Exact versions: a range would let a new release change what the sweeps judge without a commit.
+  assert.match(job, /typescript@\d+\.\d+\.\d+(?![\w.-])/, 'TypeScript must be pinned to one version');
+  assert.match(job, /@babel\/parser@\d+\.\d+\.\d+(?![\w.-])/, 'Babel must be pinned to one version');
+  assert.doesNotMatch(job, /(?:typescript|@babel\/parser)@(?:latest|next|[\^~<>*])/, 'no range, no tag');
+  // Installed outside the plugin, without install scripts: the plugin ships no dependencies.
+  assert.match(job, /npm install --prefix "\$RUNNER_TEMP\/[^"]+"[^\n]*--ignore-scripts/, 'the parsers are installed under RUNNER_TEMP with --ignore-scripts');
+  assert.doesNotMatch(job, /npm (?:install|ci)(?![^\n]*--prefix)/, 'no install may run in the plugin or the repository');
+  // The three paths the tests read.
+  for (const name of ['TYPESCRIPT_ORACLE_PATH', 'BABEL_ORACLE_PATH', 'BASE_LIB_PATH']) {
+    assert.match(job, new RegExp(`echo "${name}=[^"]+" >> "\\$GITHUB_ENV"`), `${name} must be exported to the later steps`);
+  }
+  // The released lexer comes from the commit that released it, by its hash (a branch or a tag moves), and the suite
+  // is the plugin's own command.
+  const commit = /git fetch --no-tags --depth=1 origin ([0-9a-f]{40})\b/.exec(job);
+  assert.ok(commit, 'the released lexer is fetched by a full commit hash');
+  assert.match(job, /^ {14}run: node scripts\/run-tests\.js[ \t]*$/m, 'the plugin\'s own test command runs');
+  assert.match(job, /^ {14}working-directory: plugins\/model-apps[ \t]*$/m, 'from the plugin\'s directory');
+  // Where the history has that commit, it must be the release: a hash that names another commit would compare
+  // the lexer with the wrong one. (A shallow clone, which is what CI has, does not have it; the job fetches it.)
+  let release = null;
+  try {
+    release = execFileSync('git', ['show', `${commit[1]}:plugins/model-apps/.plugin/plugin.json`], { cwd: path.dirname(WORKFLOW), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch {
+    release = null;
+  }
+  if (release !== null) assert.strictEqual(JSON.parse(release).version, '2.13.0', 'the fetched commit is the 2.13.0 release');
 });
 
 // --- committed lock files must not carry a registry URL ---------------------------------------
