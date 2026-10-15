@@ -41,6 +41,14 @@ git --version    # Optional but recommended
 - **Missing Git**: Report "Recommended but optional." Continue if approved.
 - **All present**: Report versions and proceed.
 
+Check for a dev container (VS Code Dev Containers or Codespaces):
+
+```bash
+[ -n "$REMOTE_CONTAINERS$CODESPACES" ] && echo "dev container"
+```
+
+- **In a dev container**: The `pa` CLI cannot sign in there (no Linux keyring). Use the PAC CLI route in Steps 5, 6 and 9, and sign in with `pac auth create` first. See [troubleshooting.md](./references/troubleshooting.md#dev-containers). Record `pac` in the memory bank's `CLI Binary` row.
+
 
 ### Step 2: Gather Requirements
 
@@ -96,6 +104,15 @@ npm install
 
 Verify: `package.json` exists, `node_modules/` created.
 
+**Add dev container support to `vite.config.ts`** so Local Play works in a dev container. It has no effect outside one:
+
+```ts
+export default defineConfig({
+  plugins: [react(), powerApps()],
+  server: { host: process.env.REMOTE_CONTAINERS ? true : undefined },
+});
+```
+
 **Install EDS packages** (Equinor Design System):
 
 ```bash
@@ -127,6 +144,12 @@ pa app init -n '{user-provided-app-name}' -e <environment-id>
 
 **Authentication:** On first run, a browser window opens for Microsoft sign-in. Complete the login and the command continues. No separate auth setup is needed.
 
+**In a dev container**, initialize with the PAC CLI instead:
+
+```bash
+pac code init --displayName '{user-provided-app-name}' -e <environment-id>
+```
+
 See [preferred-environment.md](${PLUGIN_ROOT}/shared/preferred-environment.md) for environment selection details.
 
 **`pa app init` failure:**
@@ -153,6 +176,12 @@ Verify `dist/` folder created with `index.html` and `assets/`.
 
 ```bash
 pa app push
+```
+
+**In a dev container**, deploy with the PAC CLI instead, here and in Step 9. Take the environment ID from `power.config.json`:
+
+```bash
+pac code push --environment <environment-id>
 ```
 
 **Capture app URL** from output: `https://apps.powerapps.com/play/e/{env-id}/app/{app-id}`

@@ -45,6 +45,12 @@ Ask the user: _"Ready to deploy to [environment name]? This will update the live
 pa app push
 ```
 
+**In a dev container** (`REMOTE_CONTAINERS` or `CODESPACES` is set), `pa` cannot sign in. Deploy with the PAC CLI instead, using the environment ID from `power.config.json`. See the [dev container section of the troubleshooting guide](../create-code-app/references/troubleshooting.md#dev-containers) for `pac` sign-in.
+
+```bash
+pac code push --environment <environment-id>
+```
+
 Capture the app URL from the output if present.
 
 If deploy fails, report the error and stop — do not retry silently. Common fixes:
