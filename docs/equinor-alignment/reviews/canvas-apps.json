@@ -7,7 +7,7 @@
     "owner": "not assigned",
     "supportChannel": "not assigned",
     "upstreamSource": "microsoft/power-platform-skills/plugins/canvas-apps",
-    "upstreamVersion": "3.0.3"
+    "upstreamVersion": "3.1.0"
   },
   "scope": {
     "summary": "Creates and edits Power Apps Canvas Apps through the Canvas Authoring MCP server, including app YAML validation, control discovery, API and connector discovery, data source schema discovery, and live coauthoring sync.",
@@ -151,6 +151,11 @@
       "type": "file",
       "reference": "plugins/canvas-apps/.mcp.json",
       "summary": "Registers Canvas Authoring MCP through dnx from the default NuGet feed. No `--prerelease` flag and no explicit source; the released package is not version-pinned."
+    },
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/d7b0e96a..1a967074",
+      "summary": "Mechanical refresh for upstream sync 2026-10-15 (v3.0.3 -> v3.1.0). Tree mirrored from upstream with declared transforms only; not re-reviewed. Publication status unchanged."
     }
   ],
   "notes": "Initial review record only. This record intentionally defers publication until detailed review evidence exists. Upstream sync 2026-06-09 added optional auth_flow/login_hint parameters to the Canvas Authoring MCP connect tool (configure-canvas-mcp v2.1.0); broker remains the default and browser sign-in is opt-in, so MCP governance posture is unchanged. Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content with no new runtime behavior. Upstream sync 2026-09-09 (v3.0.3) reworked the generation workflow, dropped the prerelease NuGet flags, and introduced the first executable hook in this plugin."

@@ -7,7 +7,7 @@
     "owner": "not assigned",
     "supportChannel": "not assigned",
     "upstreamSource": "microsoft/power-platform-skills/plugins/power-automate",
-    "upstreamVersion": "3.0.5"
+    "upstreamVersion": "3.2.1"
   },
   "scope": {
     "summary": "Builds, edits, runs, and debugs Power Automate cloud flows through the bundled FlowAgent MCP server, including connection lifecycle management, surgical flow edits, copying flows across environments, run management, and expression validation.",
@@ -150,7 +150,8 @@
     "The plugin ships a 2.6 MB pre-bundled MCP server (`server/mcp.mjs`) whose source is not in this repository; it cannot be meaningfully code-reviewed in its bundled form and needs a supply-chain assessment plus a documented rebuild path.",
     "The bundled MSAL library references `mobile.events.data.microsoft.com`; whether that telemetry path is reachable in normal operation has not been determined.",
     "Skills allow creating, updating, deleting, and running flows in any environment the signed-in identity can reach, so production-system interaction is possible by default.",
-    "Copying flows across environments has not been assessed against Equinor environment-segregation and data-movement requirements."
+    "Copying flows across environments has not been assessed against Equinor environment-segregation and data-movement requirements.",
+    "New in 2026-10-15 sync: the bundled engine `server/mcp.mjs` embeds production 1DS instrumentation keys and collector URLs. This fork excludes `server/emit-dispatcher.mjs`, so nothing is transmitted, but the engine still writes a local usage mirror to `~/.flowagent/telemetry.jsonl` unless `FLOWAGENT_TELEMETRY=off`. The bundle cannot be patched under the mirror rule."
   ],
   "evidence": [
     {
@@ -167,6 +168,11 @@
       "type": "file",
       "reference": "plugins/power-automate/server/mcp.mjs",
       "summary": "Single 2.6 MB pre-bundled ES module containing the FlowAgent MCP server and its dependencies, including MSAL."
+    },
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/d7b0e96a..1a967074",
+      "summary": "Mechanical refresh for upstream sync 2026-10-15 (v3.0.5 -> v3.2.1). Tree mirrored from upstream with declared transforms only; not re-reviewed. Publication status unchanged."
     }
   ],
   "notes": "Initial review record only. Publication is deferred until detailed review evidence exists. The pre-bundled MCP server is the dominant risk in this plugin: it is the only committed artefact in the fork whose upstream source is not reviewable here, and it holds delegated tokens for flow and connection management."

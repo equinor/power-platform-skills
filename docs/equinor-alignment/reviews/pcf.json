@@ -1,0 +1,145 @@
+{
+  "pluginName": "pcf",
+  "reviewDate": "2026-10-15",
+  "reviewer": "GitHub Copilot",
+  "publicationStatus": "defer",
+  "ownership": {
+    "owner": "not assigned",
+    "supportChannel": "not assigned",
+    "upstreamSource": "microsoft/power-platform-skills/plugins/pcf",
+    "upstreamVersion": "1.0.0"
+  },
+  "scope": {
+    "summary": "Preview plugin that builds, tests, diagnoses, upgrades, deploys, binds, verifies, and inventories Power Apps component framework (PCF) code components for model-driven apps, with guided setup for Power Pages standard field controls and canvas apps.",
+    "createsOrModifiesAssets": true,
+    "deploysAssets": true,
+    "deletesAssets": false,
+    "productionInteractionDefault": true
+  },
+  "skillAndScriptSafety": {
+    "skillsReviewed": false,
+    "agentsReviewed": false,
+    "hooksReviewed": false,
+    "scriptsReviewed": false,
+    "bundledScripts": [
+      {
+        "path": "plugins/pcf/scripts/vendor/cds-maker-sdk.cjs",
+        "purpose": "Vendored copy of the model-apps headless Dataverse SDK bundle, kept in sync by scripts/validate-plugin-copies.js.",
+        "reviewed": false,
+        "externalCommands": [
+          "az",
+          "pac"
+        ],
+        "networkAccess": true,
+        "secretAccess": true
+      }
+    ],
+    "secretsEmbedded": false,
+    "externalNetworkCalls": [
+      "Dataverse Web API (solution import, form binding, and verification)",
+      "npm registry during PCF project scaffolding and build"
+    ]
+  },
+  "mcp": {
+    "required": false,
+    "servers": [],
+    "versionsPinned": false,
+    "approvedAccessRequired": false,
+    "productionInteractionBlocked": false
+  },
+  "powerPlatformGovernance": {
+    "assumedZone": "red",
+    "intendedUsers": [
+      "professional-it-developer",
+      "not-assessed"
+    ],
+    "dataClassificationCeiling": "not-assessed",
+    "confidentialDataSupported": false,
+    "dependencies": [
+      {
+        "name": "Node.js and npm",
+        "category": "developer-prerequisite",
+        "description": "PCF projects are scaffolded and built with the pcf-scripts toolchain from npm.",
+        "blocking": true
+      },
+      {
+        "name": "PAC CLI and .NET SDK",
+        "category": "developer-prerequisite",
+        "description": "Solution packaging, deployment, and package smoke tests use PAC CLI and the .NET SDK.",
+        "blocking": true
+      },
+      {
+        "name": "Power Apps component framework for canvas apps",
+        "category": "environment-setting",
+        "description": "Canvas use requires an admin to enable the setting per environment in the Power Platform admin center.",
+        "blocking": false
+      },
+      {
+        "name": "Dataverse environment with customizer rights",
+        "category": "access-role",
+        "description": "Deploying and binding components writes solutions and form customizations into the target environment.",
+        "blocking": true
+      }
+    ],
+    "architectureContractRequired": true,
+    "ciRequired": true
+  },
+  "technologyRadar": {
+    "technologies": [
+      {
+        "name": "Power Apps component framework",
+        "radarState": "unknown",
+        "usedFor": "Code component runtime the plugin builds for.",
+        "source": "not checked"
+      },
+      {
+        "name": "TypeScript",
+        "radarState": "Adopt",
+        "usedFor": "Generated component source.",
+        "source": "equinor/techradar"
+      }
+    ],
+    "hasHoldTechnology": false,
+    "hasAssessTechnology": false,
+    "hasUnknownTechnology": true
+  },
+  "designSystem": {
+    "generatesFrontend": true,
+    "edsRequired": true,
+    "edsPackages": [],
+    "exceptions": [
+      "Not assessed. Generated PCF components render inside model-driven, canvas, and Power Pages hosts; EDS applicability per host has not been reviewed."
+    ]
+  },
+  "publication": {
+    "targetRepository": "equinor/powerplatform recommended, not confirmed",
+    "copilotManifest": true,
+    "claudeManifest": true,
+    "versionsSynchronized": true,
+    "variaCatalogRequired": true,
+    "techDocsRequired": true,
+    "architectureContractLinkRequired": true,
+    "installTested": false,
+    "rollbackDocumented": false
+  },
+  "blockers": [
+    "Internal owner and support channel are not assigned.",
+    "Skills, agents, hooks, and bundled scripts are not reviewed against Equinor guidance.",
+    "Upstream marks the plugin as Preview with no recipe runtime-certified.",
+    "Deploys solutions and binds components into Dataverse environments, so production-system interaction is possible by default.",
+    "Technology Radar status is unknown for the Power Apps component framework."
+  ],
+  "evidence": [
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/d7b0e96a..1a967074",
+      "summary": "Initial record after the plugin arrived in the fork through upstream sync 2026-10-15 (pcf v1.0.0). The upstream 1DS telemetry stack was excluded: scripts/lib/telemetry/, the skill-pretool and user-prompt telemetry hooks and their hooks.json registrations, and the /telemetry skill are not present in this fork."
+    },
+    {
+      "type": "command",
+      "reference": "cd plugins/pcf && node --test scripts/tests/*.test.js",
+      "summary": "All tests pass once the repository wiring (marketplace entry, root README entry, pcf-projects workflow) from the alignment change is present."
+    }
+  ],
+  "notes": "Initial tracked-tier record only. Publication is deferred until a detailed review exists. Upstream's pcf-matrix-drift scheduled workflow is not carried in this fork pending an owner decision."
+}
