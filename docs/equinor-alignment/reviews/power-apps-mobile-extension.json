@@ -7,7 +7,7 @@
     "owner": "not assigned",
     "supportChannel": "not assigned",
     "upstreamSource": "microsoft/power-platform-skills/plugins/power-apps-mobile-extension",
-    "upstreamVersion": "0.1.0"
+    "upstreamVersion": "0.2.0"
   },
   "scope": {
     "summary": "Designs and builds third-party native controls for wrapped Canvas apps, producing a prebuilt `.ppmplugin` bundle (Android DEX plus flat iOS framework and manifest) together with a matching dispatcher PCF control.",
@@ -138,6 +138,11 @@
       "type": "external-source",
       "reference": "https://github.com/microsoft/power-platform-skills/compare/d7b0e96a..1a967074",
       "summary": "Mechanical refresh for upstream sync 2026-10-15 (v0.1.0, version unchanged). Tree mirrored from upstream with declared transforms only; not re-reviewed. Publication status unchanged."
+    },
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/1a967074..42a94220",
+      "summary": "Mechanical refresh for upstream sync 2026-11-19 (v0.1.0 -> v0.2.0). Tree mirrored from upstream with declared transforms only; not re-reviewed. Publication status unchanged. Upstream added a skill-usage telemetry stack in this range (upstream PR #726); it is excluded under the declared `telemetry-exclusion` transform, so `hooks/`, `scripts/lib/telemetry/`, `scripts/telemetry-config.js`, its tests, and the `/telemetry` skill are not present in this fork, and the README, AGENTS.md, and shared instructions are neutralised."
     }
   ],
   "notes": "Initial review record only. Publication is deferred until detailed review evidence exists. The plugin performs no Power Platform writes itself, but the artefact it produces is a native binary loaded into a wrapped Canvas app, which is the part that needs an owner and security assessment."

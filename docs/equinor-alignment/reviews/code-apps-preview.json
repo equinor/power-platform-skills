@@ -1,16 +1,16 @@
 {
   "pluginName": "code-apps-preview",
-  "reviewDate": "2026-09-09",
+  "reviewDate": "2026-11-19",
   "reviewer": "GitHub Copilot",
   "publicationStatus": "controlled-pilot",
   "ownership": {
     "owner": "@equinor/dcs-power-platform-team",
     "supportChannel": "#powerplatform (Slack)",
     "upstreamSource": "microsoft/power-platform-skills/plugins/code-apps",
-    "upstreamVersion": "1.1.0"
+    "upstreamVersion": "1.3.0"
   },
   "scope": {
-    "summary": "Builds and deploys Power Apps code apps with React and Vite and adds Power Platform connectors such as Dataverse, SharePoint, Excel, OneDrive, Teams, Office 365 Outlook, Azure DevOps, and custom connectors.",
+    "summary": "Builds and deploys Power Apps code apps with React and Vite and adds Power Platform connectors such as Dataverse, SharePoint, Excel, OneDrive, Teams, Office 365 Outlook, Azure DevOps, and custom connectors. With Power Apps CLI 1.3.0+ (installed into each new project), connector skills can also create Power Platform connections in the target environment with the signed-in user's account.",
     "createsOrModifiesAssets": true,
     "deploysAssets": true,
     "deletesAssets": false,
@@ -24,7 +24,7 @@
     "bundledScripts": [],
     "secretsEmbedded": false,
     "externalNetworkCalls": [
-      "Power Apps code apps tooling (npx power-apps CLI)",
+      "Power Apps CLI (`@microsoft/power-apps-cli` ^1.3.0, installed per project as a dev dependency and run with `npx --no-install pa`): app init and push, data-source add, connector and connection listing, and on 1.3.0+ connection lookup and creation with the user's account",
       "Power Platform connectors (via sandbox proxy)",
       "npm registry (package installs)",
       "GitHub raw content (version check, degit template)",
@@ -49,7 +49,7 @@
       {
         "name": "Power Platform environment with connectors enabled",
         "category": "environment-setting",
-        "description": "Target environment must allow the connectors used by generated code apps (Dataverse, SharePoint, etc.). DLP policies are managed by environment owners.",
+        "description": "Target environment must allow the connectors used by generated code apps (Dataverse, SharePoint, etc.). DLP policies are managed by environment owners. DLP is enforced when the running app calls a connector (HTTP 442), not when the data source is added, so on Power Apps CLI 1.3.0+ a connector skill can create a user-owned connection in the environment before any DLP effect is visible. The plugin performs no DLP, zone, or data classification check before creating a connection.",
         "blocking": false
       },
       {
@@ -59,15 +59,15 @@
         "blocking": true
       },
       {
-        "name": "Power Apps code app tooling (npx power-apps)",
+        "name": "Power Apps CLI (`@microsoft/power-apps-cli` ^1.3.0) and the code apps platform feature",
         "category": "platform-feature",
-        "description": "Code apps feature must be available in the target environment.",
+        "description": "Code apps feature must be available in the target environment. The Vite template no longer includes the CLI, so /create-code-app installs it into each project as a dev dependency (`^1.3.0`) and skills run it with `npx --no-install pa`. Existing projects on an older CLI keep the explicit connection-ID flow. In a dev container `pa` cannot open its token cache; the Equinor dev-container route uses the PAC CLI for init and deploy.",
         "blocking": true
       },
       {
         "name": "Work IQ Copilot MCP connector (`shared_a365copilotchatmcp`)",
         "category": "dlp-policy",
-        "description": "Soft constraint affecting one skill, not the plugin. `/add-workiq` wires in a connector whose `CopilotChat` tool performs AI-grounded search across Microsoft 365 documents, emails, chats, sites, and files organization-wide. That reach can exceed this record's `equinor-internal` data classification ceiling, and the connector's DLP position is not confirmed. **`/add-workiq` is therefore outside the controlled pilot** until DLP placement and a classification ceiling for the connector are confirmed. Every other skill in the plugin is unaffected.",
+        "description": "Soft constraint affecting one skill, not the plugin. `/add-workiq` wires in a connector whose `CopilotChat` tool performs AI-grounded search across Microsoft 365 documents, emails, chats, sites, and files organization-wide. That reach can exceed this record's `equinor-internal` data classification ceiling, and the connector's DLP position is not confirmed. **`/add-workiq` is therefore outside the controlled pilot** until DLP placement and a classification ceiling for the connector are confirmed. Every other skill in the plugin is unaffected. Since the 2026-11-19 sync, on CLI 1.3.0+ the skill adds the connector without a connection ID; Work IQ supports single sign-on, so the CLI may create the connection with the user's account after a one-line notice instead of a browser consent step. The exclusion is recorded only here; no plugin file tells the agent or the user that the skill is outside the pilot.",
         "blocking": false
       }
     ],
@@ -105,9 +105,27 @@
         "radarState": "not-applicable",
         "usedFor": "add-mcscopilot skill present in plugin but excluded from controlled-pilot scope. Skill targets a different component type; not intended for this pilot.",
         "source": "owner confirmed out of scope 2026-05-23"
+      },
+      {
+        "name": "Power Platform code apps (Power Apps CLI `@microsoft/power-apps-cli`)",
+        "radarState": "Trial",
+        "usedFor": "Target platform for every generated app, and the CLI that scaffolds, adds data sources, creates connections (1.3.0+), and deploys. The 2026-11-19 sync makes the CLI an explicit per-project dev dependency (`^1.3.0`).",
+        "source": "equinor/techradar blip fetched 2026-11-19 (state: Trial, changeDate: 2026-06-03)"
+      },
+      {
+        "name": "OpenAI Codex (agent client)",
+        "radarState": "Hold",
+        "usedFor": "Optional client added by the 2026-11-19 sync. The README documents Codex installation, the repository publishes a Codex catalog (`.agents/plugins/marketplace.json`, Code Apps only), and report-issue can collect its version. The plugin does not depend on it.",
+        "source": "equinor/techradar AI-assisted software development blip fetched 2026-11-19 (state: Hold, changeDate: 2026-08-10); GitHub Copilot is Adopt and Claude Code is Trial"
+      },
+      {
+        "name": "Cursor (agent client)",
+        "radarState": "Hold",
+        "usedFor": "Optional client added by the 2026-11-19 sync. The README documents loading the plugin with `cursor-agent --plugin-dir`, and report-issue can collect its version. The plugin does not depend on it.",
+        "source": "equinor/techradar AI-assisted software development blip fetched 2026-11-19 (state: Hold, changeDate: 2026-08-10); GitHub Copilot is Adopt and Claude Code is Trial"
       }
     ],
-    "hasHoldTechnology": false,
+    "hasHoldTechnology": true,
     "hasAssessTechnology": false,
     "hasUnknownTechnology": false
   },
@@ -208,7 +226,47 @@
       "type": "manual-review",
       "reference": "https://github.com/equinor/power-platform-skills/issues/11",
       "summary": "Equinor addition: dev container support. create-code-app and deploy detect a dev container (REMOTE_CONTAINERS or CODESPACES) and use `pac code init` / `pac code push` because `pa` cannot open its token cache without a Linux keyring. The scaffold adds a dev-container-gated `server.host` to vite.config.ts for Local Play. troubleshooting.md documents the three causes and the issue's verified workarounds, including the `xdg-open` shim and IPv4-to-IPv6 loopback bridge for `pac auth create`. Preserve these sections on upstream syncs. Upstream asks (opt-in plaintext token cache in @microsoft/power-apps-cli, IPv4 loopback listener for pac sign-in, localhost URL from @microsoft/power-apps-vite) remain to be raised with Microsoft."
+    },
+    {
+      "type": "manual-review",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/1a967074..42a94220",
+      "summary": "Adopted-plugin re-review for upstream sync 2026-11-19 (code-apps-preview v1.3.0). Upstream commits in scope: 400ffced (CLI reference updates), 4076781a and 01d846cb (CLI attribution, stripped here), 2eb182a8 (Power Apps CLI 1.3.0+ finds or creates connections), 3ac90e9c (Agent Plugins 1.0.0 package: root plugin.json, native Copilot architect and hook copies, Codex catalog, document-relative links, client tool mapping), and 8021d27d (nested PowerShell hook quoting; affects only the now-empty hook files). Reviewed all 30 changed and 6 new files under plugins/code-apps. Equinor content preserved: EDS guidance in development-standards, shared-instructions, create-code-app and deploy; the dev-container PAC CLI route and troubleshooting; fork URLs in manifests, README, version check (now plugins/code-apps/plugin.json on the fork's main) and report-issue. No bundled scripts, no MCP servers, and all three hook maps are empty. Planning and client-tool-mapping changes state that an unavailable tool never counts as approval. The memory bank no longer records connection names or IDs. New risks recorded as blockers: inline connection creation with the user's account, and Codex and Cursor being Hold on the Tech Radar. The bundled report-issue workflow now differs from shared/skills/report-issue because upstream adapted the plugin copy for portable clients; it is declared under sharedSkillVariants in sync-policy.json, so check-sync-scope reports it as a variant instead of drift."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-11-19 owner decision: CLI attribution",
+      "summary": "Owner decision for this sync: upstream's CLI attribution (`PA_CLI_ORIGIN=plugin` and removal of an inherited `PA_PLUGIN_REPORT_AGENT`) is stripped. Verified that no file under plugins/code-apps sets or instructs setting an attribution variable: shared/cli-binary.md (Equinor-marked `No CLI attribution` section), shared/shared-instructions.md, AGENTS.md, README.md and hooks/README.md only prohibit it. plugins/code-apps/scripts/tests/cli-origin.test.js, hooks/set-cli-origin.js and the code-apps-script-tests workflow are intentionally not carried."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-11-19 owner decision: portable package and Codex catalog",
+      "summary": "Owner decision for this sync: the Agent Plugins 1.0.0 package files (root plugin.json, com.github.copilot/ agent and hooks copies, hooks/README.md) and the Codex catalog at .agents/plugins/marketplace.json (Code Apps only, local source ./plugins/code-apps) are carried. Verified that hooks.json, hooks/hooks.json and com.github.copilot/hooks/hooks.json all have empty hook maps, that the native Copilot architect equals the legacy architect except for relative paths, and that root plugin.json differs from upstream only by the fork-repointing transform. The radar position of the Codex and Cursor clients is a separate blocker."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-11-19 owner decision: Code Apps package validation",
+      "summary": "Owner decision for this sync: scripts/validate-code-apps.js and .github/workflows/code-apps-validation.yml are carried. The workflow runs on pull requests touching plugins/code-apps, the marketplace files or the validators, on Ubuntu and Windows, with SHA-pinned actions. The validator enforces the plugin name, all 15 skills and their frontmatter, architect parity, empty hook maps, a Code Apps-only Codex catalog, no plugin-root variables in Markdown, and resolvable relative links."
+    },
+    {
+      "type": "command",
+      "reference": "node scripts/validate-code-apps.js; node scripts/validate-legacy-compatibility.js; node --test scripts/tests/validate-legacy-compatibility.test.js; node --test scripts/tests/hook-command-quoting.test.cjs; node scripts/check-sync-scope.js --report-only",
+      "summary": "Run 2026-11-19 on the alignment working tree. validate-code-apps.js and validate-legacy-compatibility.js passed; legacy compatibility tests 7/7 and hook quoting tests 4/4 passed. check-sync-scope classified code-apps-preview as the only adopted plugin and reported one violation: the code-apps copy of the shared report-issue workflow is stale. Resolved by declaring that copy under sharedSkillVariants."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-11-19 owner decision: Codex and Cursor outside the pilot",
+      "summary": "Owner decision for this sync: the Codex catalog and the Codex and Cursor install sections stay, and an Equinor-marked note in plugins/code-apps/README.md tells Equinor users to install with GitHub Copilot (Adopt) or Claude Code (Trial) because Codex and Cursor are Hold on the Tech Radar and outside the pilot. This resolves the Hold-client blocker raised in this re-review without a deviation permit."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-11-19 owner decision: confirm before a connection may be created",
+      "summary": "Owner decision for this sync: Equinor guardrail added. shared/connector-reference.md step 1 of the inline flow now runs `pa connection list --search <connector-id> --json` and, when no connection exists, asks for explicit confirmation naming the connector and environment and asking the user to confirm the environment's data policy allows the connector and that it suits the app's data classification. shared/shared-instructions.md, every connector skill that uses the inline flow, create-code-app and the README follow it, the `--use-sso` / `pa connection create` question carries the same check, and the prerequisites allowedPrompts no longer pre-approve `pa connection create`. This resolves the inline-connection blocker raised in this re-review; the files now differ from upstream by design."
+    },
+    {
+      "type": "manual-review",
+      "reference": "2026-11-19 owner decision: Work IQ outside the pilot in plugin files",
+      "summary": "Owner decision for this sync: skills/add-workiq/SKILL.md carries an Equinor-marked notice that the skill is outside the Code Apps pilot and asks for explicit confirmation before adding the connector, and the README skill table marks it the same way. The duplicate /add-workiq README row left by the merge was removed."
     }
   ],
-  "notes": "Skills and agents reviewed 2026-05-22. Production interaction blocked (all deploys require confirmation — intentionally scoped to dev; test/prod promotion planned via a separate CI/CD skill or agent). EDS integrated into generation workflow. Re-reviewed 2026-05-23: owner assigned, zones clarified (Green/Yellow/Red, primarily Red), Copilot Studio excluded from scope, fork references updated. Upstream sync 2026-05-23: EDS-removing upstream changes deferred; Equinor guardrails preserved. Re-reviewed 2026-05-28: Vite now Adopt, all tech radar items resolved, status upgraded to controlled-pilot. Owner answers 2026-05-28: DLP deferred (schema restructure planned), Copilot CLI confirmed same mechanism as Claude CLI, plugin name stays code-apps-preview (mirrors upstream). Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content; Equinor EDS guardrails remain intentionally preserved. All blockers cleared. Next step toward ready-for-internal-pilot: successful end-to-end install test using correct plugin name, and rollback documentation. Upstream sync 2026-09-09 introduced the /add-workiq skill; it is explicitly scoped OUT of the controlled pilot until the Work IQ Copilot MCP connector's DLP placement and data classification ceiling are confirmed, recorded as a non-blocking dependency rather than a blocker because it constrains one skill and not the plugin."
+  "notes": "Skills and agents reviewed 2026-05-22. Production interaction blocked (all deploys require confirmation — intentionally scoped to dev; test/prod promotion planned via a separate CI/CD skill or agent). EDS integrated into generation workflow. Re-reviewed 2026-05-23: owner assigned, zones clarified (Green/Yellow/Red, primarily Red), Copilot Studio excluded from scope, fork references updated. Upstream sync 2026-05-23: EDS-removing upstream changes deferred; Equinor guardrails preserved. Re-reviewed 2026-05-28: Vite now Adopt, all tech radar items resolved, status upgraded to controlled-pilot. Owner answers 2026-05-28: DLP deferred (schema restructure planned), Copilot CLI confirmed same mechanism as Claude CLI, plugin name stays code-apps-preview (mirrors upstream). Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content; Equinor EDS guardrails remain intentionally preserved. All blockers cleared. Next step toward ready-for-internal-pilot: successful end-to-end install test using correct plugin name, and rollback documentation. Upstream sync 2026-09-09 introduced the /add-workiq skill; it is explicitly scoped OUT of the controlled pilot until the Work IQ Copilot MCP connector's DLP placement and data classification ceiling are confirmed, recorded as a non-blocking dependency rather than a blocker because it constrains one skill and not the plugin. Upstream sync 2026-11-19 (v1.3.0): CLI attribution stripped by owner decision; portable package files and the Code Apps-only Codex catalog carried with every hook map empty; the Power Apps CLI 1.3.0+ inline connection flow merged. Two blockers raised in the re-review were resolved in the same sync by owner decision: an Equinor confirmation step now precedes any add that may create a connection, and the README marks Codex and Cursor (Hold on the Tech Radar) as outside the pilot. /add-workiq is marked outside the pilot in the plugin files. Pilot conditions: pilot use stays in non-production environments, /add-workiq stays out of scope, and pilot users install with GitHub Copilot or Claude Code only."
 }

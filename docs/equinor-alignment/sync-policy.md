@@ -87,6 +87,8 @@ Tier scoping stops at the plugin boundary. Some content is consumed by adopted a
 
 Refreshing a tracked plugin's copy of a shared file is a legitimate change to a tracked tree. It falls under `fork-repointing` when the shared edit was a repointing, and it belongs in the alignment pull request, not the mirror one.
 
+When upstream itself adapts one plugin's copy of a shared skill without changing the shared source, list that pair under `sharedSkillVariants` in `sync-policy.json` with the reason. The check then reports the copy as a variant instead of failing on drift, and a shared edit has to be carried into it by hand. Today this covers only the `code-apps` copy of `report-issue`.
+
 ## Pull Request Shape
 
 Split an upstream sync into two sequential pull requests. One pull request, one review depth.

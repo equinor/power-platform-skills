@@ -135,6 +135,11 @@
       "type": "command",
       "reference": "cd plugins/process-intelligence && npm ci && npm test",
       "summary": "All tests pass once the repository wiring (marketplace entry, root README entry, issue template selectors, plugin workflow) from the alignment change is present."
+    },
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/1a967074..42a94220",
+      "summary": "Mechanical refresh for upstream sync 2026-11-19 (v0.7.0, version unchanged). Tree mirrored from upstream with declared transforms only; not re-reviewed. Publication status unchanged."
     }
   ],
   "notes": "Initial tracked-tier record only. Publication is deferred until a detailed review exists."

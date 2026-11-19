@@ -51,6 +51,13 @@
       "reason": "Authored in this fork and absent upstream. Never overwritten by a sync."
     }
   ],
+  "sharedSkillVariants": [
+    {
+      "skill": "report-issue",
+      "plugin": "code-apps",
+      "reason": "Upstream adapted this copy for portable agent clients (document-relative links, client-neutral wording) without changing the shared source. scripts/validate-code-apps.js rejects the shared source's ${PLUGIN_ROOT} links, so the copy cannot match it."
+    }
+  ],
   "transforms": [
     {
       "id": "fork-repointing",

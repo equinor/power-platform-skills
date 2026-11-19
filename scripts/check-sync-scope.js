@@ -312,10 +312,11 @@ function auditTrackedTrees(upstreamBase, head, plugins, policy) {
  * that go stale first are the ones in plugins nobody looks at. This is the side effect a
  * tracked plugin legitimately participates in, so it is checked across all tiers.
  */
-function checkSharedSkillFanout() {
+function checkSharedSkillFanout(policy = {}) {
   const drift = [];
   const unwired = [];
   if (!fs.existsSync(SHARED_SKILLS_DIR)) return { drift, unwired };
+  const variants = policy.sharedSkillVariants || [];
 
   const pluginDirs = fs
     .readdirSync(path.join(REPO_ROOT, "plugins"), { withFileTypes: true })
@@ -357,6 +358,11 @@ function checkSharedSkillFanout() {
           continue;
         }
         if (!fs.readFileSync(sharedFile).equals(fs.readFileSync(copyFile))) {
+          // Upstream sometimes adapts one plugin's copy without touching the shared source.
+          if (variants.some((v) => v.skill === skill.name && v.plugin === pluginDir)) {
+            unwired.push({ skill: skill.name, plugin: pluginDir, expected: relative });
+            continue;
+          }
           drift.push({ skill: skill.name, plugin: pluginDir, file: relative });
         }
       }
@@ -440,7 +446,7 @@ function collect(options) {
     plugins,
     policy,
   ).filter((entry) => entry.transform === null);
-  const fanout = checkSharedSkillFanout();
+  const fanout = checkSharedSkillFanout(policy);
 
   return { policy, plugins, refs, classified, violations, fanout };
 }

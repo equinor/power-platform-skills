@@ -7,7 +7,7 @@
     "owner": "not assigned",
     "supportChannel": "not assigned",
     "upstreamSource": "microsoft/power-platform-skills/plugins/power-automate",
-    "upstreamVersion": "3.2.1"
+    "upstreamVersion": "3.2.10"
   },
   "scope": {
     "summary": "Builds, edits, runs, and debugs Power Automate cloud flows through the bundled FlowAgent MCP server, including connection lifecycle management, surgical flow edits, copying flows across environments, run management, and expression validation.",
@@ -174,6 +174,11 @@
       "type": "external-source",
       "reference": "https://github.com/microsoft/power-platform-skills/compare/d7b0e96a..1a967074",
       "summary": "Mechanical refresh for upstream sync 2026-10-15 (v3.0.5 -> v3.2.1). Tree mirrored from upstream with declared transforms only; not re-reviewed. Publication status unchanged."
+    },
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/1a967074..42a94220",
+      "summary": "Mechanical refresh for upstream sync 2026-11-19 (v3.2.1 -> v3.2.10). Tree mirrored from upstream with declared transforms only; not re-reviewed. Publication status unchanged."
     }
   ],
   "notes": "Initial review record only. Publication is deferred until detailed review evidence exists. The pre-bundled MCP server is the dominant risk in this plugin: it is the only committed artefact in the fork whose upstream source is not reviewable here, and it holds delegated tokens for flow and connection management."

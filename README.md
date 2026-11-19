@@ -4,14 +4,244 @@
 
 Agent skills and plugins for Power Platform development, aligned for Equinor internal use.
 
-## Overview
+You describe what you want in your own words, such as "Create a Power Pages site with React for a job board" or "Why did the last run of my approval flow fail?".
+Your assistant asks follow-up questions, shows you what it plans to do, and asks before it runs commands or changes files.
+Then it does the work, from creating tables to publishing the result to your Power Platform environment.
 
 This repository is a **plugin marketplace** containing agent plugins for Power Platform services. Each plugin provides skills, agents, and commands to help developers build on the Power Platform.
 
 **Primary platform:** GitHub Copilot (VS Code) via the `.github/` convention.
 **Also supported:** Claude Code via the plugin marketplace system.
 
-The canonical Open Plugins marketplace manifest lives at `marketplace.json`. The root `.claude-plugin/marketplace.json` and each plugin's `.claude-plugin/plugin.json` remain as compatibility mirrors for existing marketplace subscriptions.
+This is Equinor's fork of Microsoft's [`power-platform-skills`][upstream_github].
+Every plugin is reviewed against Equinor governance, and the installer adds only the plugins that pass unless you ask for others by name.
+[Equinor Fork](#equinor-fork) explains why and shows where each plugin stands.
+
+## What can I build?
+
+| I want to... | Plugin | Try asking |
+| --- | --- | --- |
+| Build a website | [Power Pages](plugins/power-pages/README.md) | "Create a Power Pages site with React for a job board" |
+| Build a business app | [Model-driven apps](plugins/model-apps/README.md) | "Build an app for tracking service requests" |
+| Build or change a canvas app | [Canvas apps](plugins/canvas-apps/README.md) | "Edit my Canvas App to add a new screen for reports" |
+| Build a web app with code | [Code apps](plugins/code-apps/README.md) (preview) | "Create a code app for tracking customer requests" |
+| Build a phone app | [Mobile apps](plugins/mobile-apps/README.md) (private preview) | "Build me a small notes app" |
+| Add native phone features to a canvas app | [Power Apps Mobile extensions](plugins/power-apps-mobile-extension/README.md) (preview) | "Design a native barcode scanning feature for my wrapped canvas app" |
+| Automate work | [Power Automate](plugins/power-automate/README.md) | "Create a flow that emails me when a new item is added to my SharePoint list" |
+| Find where a process slows down | [Process Intelligence](plugins/process-intelligence/README.md) | "Which steps cause the most waiting in this process?" |
+| Build custom controls for forms and views | [PCF](plugins/pcf/README.md) (preview) | "Create a PCF star rating control for a model-driven form" |
+| Build tools and widgets for AI assistants | [MCP Apps](plugins/mcp-apps/README.md) | "Show account revenue as a bar chart" |
+
+## Before you start
+
+- **Choose an AI assistant.** Use GitHub Copilot in VS Code, [GitHub Copilot CLI][gh_copilot_cli_install], or [Claude Code][claude_code_setup].
+- **Get a Power Platform environment.** You'll need permission to create or change resources in it.
+  For learning and experiments, start with a free [developer environment][msdocs_developer_environment] rather than an environment with live apps or data.
+  At Equinor, also check the Power Platform zone guidance in the [alignment baseline](docs/equinor-alignment/baseline.md).
+- **Install [Node.js][nodejs_download].** The installer and most plugins need it to run.
+
+Check your chosen plugin's page for any additional tools, such as the Azure CLI or the .NET SDK.
+Requirements vary by plugin, so you don't need to install every tool up front.
+
+## Installation
+
+### GitHub Copilot (VS Code) — Project-Scoped
+
+For team use, install skills and agents into your project's `.github/` directory so all contributors benefit:
+
+```bash
+# Install a specific plugin (recommended)
+node scripts/install.js --scope project --plugin code-apps-preview
+
+# Install multiple plugins
+node scripts/install.js --scope project --plugin power-pages,code-apps-preview
+```
+
+This copies agent definitions into `.github/agents/`, instructions into `.github/instructions/`, and skills into `.github/skills/`, following the [GitHub Copilot customization convention][gh_copilot_customization]. Commit these files to share with your team.
+
+> [!NOTE]
+> There is no automatic update for project-scoped installs. To get the latest plugin content, re-run the installer and commit the updated files.
+
+Or run without cloning:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node - --scope project --plugin code-apps-preview
+```
+
+Available plugins: `power-pages`, `model-apps`, `pcf`, `mcp-apps`, `canvas-apps`, `code-apps-preview`, `mobile-app`, `power-apps-mobile-extension`, `power-automate`, `process-intelligence`
+
+> [!IMPORTANT]
+> **Deferred plugins are never installed implicitly.** Run without `--plugin` and the installer
+> installs only plugins reviewed to `controlled-pilot` or above, and prints which ones it skipped.
+> A `defer` plugin still has unresolved policy, security, or ownership blockers and may activate an
+> unreviewed MCP server, so installing one is an explicit choice: name it with `--plugin <name>`, or
+> pass `--include-deferred` to take the whole marketplace. Statuses come from
+> [docs/equinor-alignment/reviews](docs/equinor-alignment/reviews). If a review record cannot be read,
+> the plugin is treated as not adopted.
+
+### Claude Code — User-Scoped
+
+For Claude Code users, the installer registers the marketplace and installs plugins at user level:
+
+```bash
+node scripts/install.js
+```
+
+Or run directly without cloning:
+
+**Windows (PowerShell)**:
+
+```powershell
+iwr https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js -OutFile install.js; node install.js; del install.js
+```
+
+**macOS/Linux**:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node
+```
+
+The installer automatically:
+
+- Detects available tools (Claude Code, GitHub Copilot CLI)
+- Installs `pac` CLI if not already installed
+- Registers the plugin marketplace and installs the adopted plugins (see the note above)
+- Enables auto-update so plugins stay current without manual steps
+
+The Claude desktop app's Code tab and the Claude Code extension for VS Code use the plugins you install in Claude Code.
+
+### Manual Installation (Claude Code)
+
+Inside a Claude Code session:
+
+1. Add the marketplace
+
+    ```bash
+    /plugin marketplace add equinor/power-platform-skills
+    ```
+
+2. Install the plugins you want
+
+    ```bash
+    /plugin install power-pages@power-platform-skills
+    /plugin install model-apps@power-platform-skills
+    /plugin install pcf@power-platform-skills
+    /plugin install mcp-apps@power-platform-skills
+    /plugin install code-apps-preview@power-platform-skills
+    /plugin install mobile-app@power-platform-skills
+    /plugin install power-apps-mobile-extension@power-platform-skills
+    /plugin install canvas-apps@power-platform-skills
+    /plugin install power-automate@power-platform-skills
+    /plugin install process-intelligence@power-platform-skills
+    ```
+
+### Where Are Things Installed?
+
+| Scope | Platform | Location |
+| --- | --- | --- |
+| `project` | GitHub Copilot (VS Code) | `.github/agents/`, `.github/instructions/`, `.github/skills/` |
+| `user` (default) | Claude Code | `~/.claude/plugins/` |
+
+The marketplace registry (Claude Code) is stored at `~/.claude/plugins/known_marketplaces.json`.
+
+### Uninstall
+
+**GitHub Copilot (project-scoped):** Delete the installed files from `.github/agents/`, `.github/instructions/`, and `.github/skills/`.
+
+**Claude Code (user-scoped):**
+
+```bash
+# Inside a Claude Code session
+/plugin uninstall power-pages
+/plugin uninstall model-apps
+/plugin uninstall pcf
+/plugin uninstall mcp-apps
+/plugin uninstall code-apps-preview
+/plugin uninstall mobile-app
+/plugin uninstall power-apps-mobile-extension
+/plugin uninstall canvas-apps
+/plugin uninstall power-automate
+/plugin uninstall process-intelligence
+/plugin marketplace remove power-platform-skills
+```
+
+## Your first request
+
+1. Open a terminal, make an empty folder for your project, and go into it:
+
+    ```bash
+    mkdir my-first-app
+    cd my-first-app
+    ```
+
+2. Start your assistant.
+   For GitHub Copilot in VS Code, run the project-scoped installer from [Installation](#installation) in this folder, then open the folder in VS Code and start a Copilot chat in agent mode.
+   For Claude Code, type `claude`.
+3. Describe what you want, for example "Create a code app for tracking customer requests".
+4. Answer its questions.
+   It may ask you to sign in to Power Platform in your browser and to pick an environment.
+5. Read each permission request before you approve it.
+   When it finishes, it tells you what it created.
+
+## Questions
+
+### Do I need to know how to code?
+
+No.
+You describe what you want in your own words.
+You run a few commands to install things, and some plugins are aimed at developers.
+
+### What does it cost?
+
+The plugins are free and open source under the [MIT](LICENSE) license.
+You need your own AI assistant, such as GitHub Copilot or Claude, and a Power Platform environment, which can need Power Platform licenses.
+
+### Can it break something?
+
+Your assistant asks before it runs commands or changes files.
+Many plugins also show you a plan or confirm the environment before they publish.
+Try things in a [developer environment][msdocs_developer_environment] first.
+It's free and separate from your organization's live apps.
+
+### Why does my assistant keep asking for permission?
+
+Plugins edit files, run commands, and call MCP servers, and your assistant asks before each one by default.
+Read what it wants to do before you approve it.
+If you trust the work and want fewer prompts, see [Running Without Interruption](#running-without-interruption).
+
+### What data is collected?
+
+This fork removes the upstream usage telemetry, so plugins installed from it send no usage telemetry.
+The Microsoft command-line tools the plugins run, such as the Power Platform CLI (`pac`) and the
+Power Apps CLI (`pa`), have their own telemetry settings (`pac telemetry`, `pa telemetry`).
+See [Telemetry](#telemetry).
+
+### How do I update or remove a plugin?
+
+The Claude Code installer turns on automatic updates.
+Otherwise, run `claude plugin update <name>`.
+Project-scoped installs in `.github/` don't update on their own: re-run the installer and commit the updated files.
+To remove a plugin, see [Uninstall](#uninstall).
+
+### Where do I get help?
+
+Most plugins include a `report-issue` skill that drafts a bug report for you.
+You can also [open an issue][fork_issues] or read [SUPPORT.md](SUPPORT.md).
+Issues here are public, so leave out credentials, environment details, and business data.
+
+## Words you'll see
+
+| Word | What it means |
+| --- | --- |
+| AI assistant | An AI tool that can work on your computer, such as Claude Code or GitHub Copilot. |
+| Plugin | A package that teaches your assistant a set of jobs. |
+| Skill | Instructions for one job, such as creating a site. Your assistant picks one from your request, or you can type its name, such as `/create-site`. |
+| Marketplace | A list of plugins your assistant can install. This repository is one. |
+| Environment | A space in Power Platform that holds your apps, flows, and data. |
+| Dataverse | The database behind Power Apps and Power Automate. |
+| PAC CLI | The Power Platform command-line tool. Plugins use it to sign in and publish. |
+| Azure CLI | Microsoft's command-line tool for Azure. Some plugins use it to sign in. |
+| MCP server | A small program that gives your assistant extra tools, such as access to a service. |
 
 ## Equinor Fork
 
@@ -84,128 +314,6 @@ That still beats taking the plugin from the public repository: you get it repoin
 
 Regardless of review status, **AI agents are not a substitute for human judgement**. No review process can guarantee that a plugin's output will be correct, compliant, or appropriate for your context. Alignment with Equinor standards is the goal of the review process, and we believe it helps — but responsibility for how these plugins are used always rests with the people using them. Practice responsible AI use: understand what a plugin does before running it, verify generated artefacts before deploying them, and raise concerns through the support channels listed in each review record.
 
----
-
-## Installation
-
-### GitHub Copilot (VS Code) — Project-Scoped
-
-For team use, install skills and agents into your project's `.github/` directory so all contributors benefit:
-
-```bash
-# Install a specific plugin (recommended)
-node scripts/install.js --scope project --plugin code-apps-preview
-
-# Install multiple plugins
-node scripts/install.js --scope project --plugin power-pages,code-apps-preview
-```
-
-This copies agent definitions into `.github/agents/`, instructions into `.github/instructions/`, and skills into `.github/skills/`, following the [GitHub Copilot customization convention][gh_copilot_customization]. Commit these files to share with your team.
-
-> [!NOTE]
-> There is no automatic update for project-scoped installs. To get the latest plugin content, re-run the installer and commit the updated files.
-
-Or run without cloning:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node - --scope project --plugin code-apps-preview
-```
-
-Available plugins: `power-pages`, `model-apps`, `pcf`, `mcp-apps`, `canvas-apps`, `code-apps-preview`, `mobile-app`, `power-apps-mobile-extension`, `power-automate`, `process-intelligence`
-
-> [!IMPORTANT]
-> **Deferred plugins are never installed implicitly.** Run without `--plugin` and the installer
-> installs only plugins reviewed to `controlled-pilot` or above, and prints which ones it skipped.
-> A `defer` plugin still has unresolved policy, security, or ownership blockers and may activate an
-> unreviewed MCP server, so installing one is an explicit choice: name it with `--plugin <name>`, or
-> pass `--include-deferred` to take the whole marketplace. Statuses come from
-> [docs/equinor-alignment/reviews](docs/equinor-alignment/reviews). If a review record cannot be read,
-> the plugin is treated as not adopted.
-
-### Claude Code — User-Scoped
-
-For Claude Code users, the installer registers the marketplace and installs plugins at user level:
-
-```bash
-node scripts/install.js
-```
-
-Or run directly without cloning:
-
-**Windows (PowerShell)**:
-
-```powershell
-iwr https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js -OutFile install.js; node install.js; del install.js
-```
-
-**macOS/Linux**:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node
-```
-
-The installer automatically:
-
-- Detects available tools (Claude Code, GitHub Copilot CLI)
-- Installs `pac` CLI if not already installed
-- Registers the plugin marketplace and installs the adopted plugins (see the note above)
-- Enables auto-update so plugins stay current without manual steps
-
-### Manual Installation (Claude Code)
-
-Inside a Claude Code session:
-
-1. Add the marketplace
-
-    ```bash
-    /plugin marketplace add equinor/power-platform-skills
-    ```
-
-2. Install the desired plugin
-
-    ```bash
-    /plugin install power-pages@power-platform-skills
-    /plugin install model-apps@power-platform-skills
-    /plugin install pcf@power-platform-skills
-    /plugin install mcp-apps@power-platform-skills
-    /plugin install code-apps-preview@power-platform-skills
-    /plugin install mobile-app@power-platform-skills
-    /plugin install power-apps-mobile-extension@power-platform-skills
-    /plugin install canvas-apps@power-platform-skills
-    /plugin install power-automate@power-platform-skills
-    /plugin install process-intelligence@power-platform-skills
-    ```
-
-### Where Are Things Installed?
-
-| Scope | Platform | Location |
-| --- | --- | --- |
-| `project` | GitHub Copilot (VS Code) | `.github/agents/`, `.github/instructions/`, `.github/skills/` |
-| `user` (default) | Claude Code | `~/.claude/plugins/` |
-
-The marketplace registry (Claude Code) is stored at `~/.claude/plugins/known_marketplaces.json`.
-
-### Uninstall
-
-**GitHub Copilot (project-scoped):** Delete the installed files from `.github/agents/`, `.github/instructions/`, and `.github/skills/`.
-
-**Claude Code (user-scoped):**
-
-```bash
-# Inside a Claude Code session
-/plugin uninstall power-pages
-/plugin uninstall model-apps
-/plugin uninstall pcf
-/plugin uninstall mcp-apps
-/plugin uninstall code-apps-preview
-/plugin uninstall mobile-app
-/plugin uninstall power-apps-mobile-extension
-/plugin uninstall canvas-apps
-/plugin uninstall power-automate
-/plugin uninstall process-intelligence
-/plugin marketplace remove power-platform-skills
-```
-
 ## Available Plugins
 
 ### [Power Pages](plugins/power-pages/README.md) (`plugins/power-pages`)
@@ -218,11 +326,11 @@ Create and deploy Power Pages sites using modern development approaches.
 
 Build model-driven Power Apps end to end, and the generative pages that go in them.
 
-**Skills**: `/app-builder` (**Preview**) builds and edits a whole app — tables, relationships, forms,
+**Skills**: `/app-builder` builds and edits a whole app — tables, relationships, forms,
 views, charts, security roles, app + sitemap — from a natural-language intent; `/genpage` builds
 generative pages for an app that already exists. Use either independently — neither requires the other
 
-**Stack**: React + TypeScript + Fluent, deployed via PAC CLI and the headless `cds-maker-sdk`
+**Stack**: React + TypeScript + Fluent, deployed through the headless `cds-maker-sdk` (PAC CLI signs you in and chooses the environment)
 
 ### [PCF](plugins/pcf/README.md) (`plugins/pcf`)
 
@@ -290,7 +398,7 @@ cohorts, rework and object-centric executions through guided MCP workflows.
 `/setup` and `/report-issue` handle connection setup and support drafts.
 See the [skill catalog](plugins/process-intelligence/README.md#skills).
 
-**Stack**: Node.js 22 or 24 LTS, Azure CLI, self-contained MCP bundle
+**Stack**: Node.js 22+ (maintained LTS recommended), Azure CLI, self-contained MCP bundle
 
 GCC, GCC High, DoD and Mooncake are not supported yet.
 
@@ -298,26 +406,6 @@ GCC, GCC High, DoD and Mooncake are not supported yet.
 > Upstream also lists a `dataverse` plugin installed straight from `microsoft/Dataverse-skills`.
 > This fork does not list it: an external source would bypass the sync policy and its declared
 > transforms. See [reviews/dataverse.json](docs/equinor-alignment/reviews/dataverse.json).
-
-## Local Development
-
-To develop and test plugins locally, follow these steps:
-
-1. Clone this repository
-1. Launch Claude Code with plugin path:
-
-    ```bash
-    claude --plugin-dir /path/to/power-platform-skills/plugins/power-pages
-    claude --plugin-dir /path/to/power-platform-skills/plugins/model-apps
-    claude --plugin-dir /path/to/power-platform-skills/plugins/pcf
-    claude --plugin-dir /path/to/power-platform-skills/plugins/mcp-apps
-    claude --plugin-dir /path/to/power-platform-skills/plugins/code-apps
-    claude --plugin-dir /path/to/power-platform-skills/plugins/mobile-apps
-    claude --plugin-dir /path/to/power-platform-skills/plugins/power-apps-mobile-extension
-    claude --plugin-dir /path/to/power-platform-skills/plugins/canvas-apps
-    claude --plugin-dir /path/to/power-platform-skills/plugins/power-automate
-    claude --plugin-dir /path/to/power-platform-skills/plugins/process-intelligence
-    ```
 
 ## Running Without Interruption
 
@@ -381,90 +469,13 @@ copilot --allow-all-tools --deny-tool 'shell(rm)' --deny-tool 'shell(git push)'
 
 See the [Copilot CLI docs][gh_copilot_cli_docs] for the full reference.
 
-## Repository Structure
-
-```text
-power-platform-skills/
-├── marketplace.json          # Open Plugins marketplace manifest (lists all plugins)
-├── .claude-plugin/
-│   └── marketplace.json      # Legacy marketplace mirror for existing subscriptions
-├── .claude/
-│   └── settings.json         # Auto-allowed tools (pac, node, dotnet, etc.)
-├── plugins/
-│   ├── power-pages/          # Power Pages plugin
-│   │   ├── .plugin/
-│   │   │   └── plugin.json
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   ├── commands/
-│   │   ├── shared/
-│   │   └── skills/
-│   ├── model-apps/           # Model Apps plugin
-│   |   ├── .plugin/
-│   │   └── plugin.json
-│   |   ├── .claude-plugin/
-│   │   └── plugin.json
-│   |   ├── commands/
-│   |   ├── skills/
-│   |   ├── shared/           # Shared references + samples
-│   |   └── github/           # GitHub Copilot instructions
-│   ├── mcp-apps/             # MCP Apps widget generator plugin
-│   │   ├── .plugin/
-│   │   │   └── plugin.json
-│   │   ├── references/
-│   │   ├── samples/
-│   │   └── skills/
-│   ├── code-apps/            # Code Apps plugin
-│   │   ├── .plugin/
-│   │   │   └── plugin.json
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   ├── agents/
-│   │   ├── skills/
-│   │   └── shared/           # Shared instructions + references
-│   ├── mobile-apps/          # Mobile Apps plugin
-│   │   ├── .plugin/
-│   │   │   └── plugin.json
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   ├── agents/
-│   │   ├── skills/
-│   │   ├── shared/           # Shared instructions + references
-│   │   └── template/         # Bundled Expo app template
-│   ├── power-apps-mobile-extension/ # Native controls for wrapped Canvas apps
-│   │   ├── .plugin/
-│   │   │   └── plugin.json
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   ├── shared/
-│   │   └── skills/
-│   ├── power-automate/       # Power Automate cloud flows plugin
-│   │   ├── .plugin/
-│   │   │   └── plugin.json
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   ├── references/
-│   │   ├── server/           # Self-contained FlowAgent MCP bundle
-│   │   └── skills/
-│   └── canvas-apps/          # Canvas Apps plugin
-│       ├── .plugin/
-│       │   └── plugin.json
-│       ├── .claude-plugin/
-│       │   └── plugin.json
-│       ├── references/       # Technical + design guides
-│       └── skills/
-├── AGENTS.md                 # Development guidelines
-└── README.md
-```
-
-The `.claude-plugin` files are compatibility mirrors for users who subscribed before the Open Plugins migration. The shared marketplace keeps marketplace-level `owner` and `metadata`, while each plugin entry is intentionally just `name` plus repository-root-relative `source`.
-
 ## Documentation
 
 - [Equinor Alignment Baseline](docs/equinor-alignment/README.md)
 - [Power Pages Code Sites][msdocs_power_pages_code_sites]
 - [Power Pages REST API][msdocs_power_pages_api]
 - [Generative Pages with External Tools][msdocs_generative_pages]
+- [Build Model-Driven Apps with External Tools][msdocs_model_driven_external_tools]
 - [Power Apps Code Apps][msdocs_code_apps]
 - [PAC CLI Reference][msdocs_pac_cli]
 
@@ -477,7 +488,8 @@ transmits usage telemetry. See the `telemetry-exclusion` transform in
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guide.
+To work on the plugins, see [CONTRIBUTING.md](CONTRIBUTING.md) and the [developer guide](docs/development.md).
+The developer guide covers loading a plugin from a local checkout and how the repository fits together.
 
 ## License
 
@@ -495,13 +507,19 @@ Any use of third-party trademarks or logos are subject to those third-party's po
 [upstream_github]: https://github.com/microsoft/power-platform-skills
 [equinor_varia]: https://varia.equinor.com
 [fork_compare]: https://github.com/equinor/power-platform-skills/compare/microsoft:power-platform-skills:main...equinor:main
+[fork_issues]: https://github.com/equinor/power-platform-skills/issues
 [eds]: https://eds.equinor.com
 [gh_copilot_customization]: https://docs.github.com/en/copilot/customizing-copilot
+[gh_copilot_cli_install]: https://docs.github.com/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli
+[claude_code_setup]: https://code.claude.com/docs/en/setup
+[nodejs_download]: https://nodejs.org/en/download
 [claude_code_permissions]: https://code.claude.com/docs/en/permissions
 [gh_copilot_cli_docs]: https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-copilot-cli
+[msdocs_developer_environment]: https://learn.microsoft.com/power-platform/developer/create-developer-environment
 [msdocs_power_pages_code_sites]: https://learn.microsoft.com/en-us/power-pages/configure/create-code-sites
 [msdocs_power_pages_api]: https://learn.microsoft.com/en-us/rest/api/power-platform/powerpages/websites
 [msdocs_generative_pages]: https://learn.microsoft.com/en-us/power-apps/maker/model-driven-apps/generative-page-external-tools
+[msdocs_model_driven_external_tools]: https://learn.microsoft.com/en-us/power-apps/maker/model-driven-apps/model-driven-app-external-tools
 [msdocs_code_apps]: https://learn.microsoft.com/power-apps/developer/code-apps/
 [msdocs_pac_cli]: https://learn.microsoft.com/en-us/power-platform/developer/cli/reference
 [ms_trademark_guidelines]: https://www.microsoft.com/legal/intellectualproperty/trademarks/usage/general
