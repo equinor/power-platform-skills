@@ -7,7 +7,7 @@
     "owner": "not assigned",
     "supportChannel": "not assigned",
     "upstreamSource": "microsoft/power-platform-skills/plugins/pcf",
-    "upstreamVersion": "1.0.0"
+    "upstreamVersion": "1.0.1"
   },
   "scope": {
     "summary": "Preview plugin that builds, tests, diagnoses, upgrades, deploys, binds, verifies, and inventories Power Apps component framework (PCF) code components for model-driven apps, with guided setup for Power Pages standard field controls and canvas apps.",
@@ -140,6 +140,11 @@
       "type": "command",
       "reference": "cd plugins/pcf && node --test scripts/tests/*.test.js",
       "summary": "All tests pass once the repository wiring (marketplace entry, root README entry, pcf-projects workflow) from the alignment change is present."
+    },
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/1a967074..42a94220",
+      "summary": "Mechanical refresh for upstream sync 2026-11-19 (v1.0.0 -> v1.0.1). Tree mirrored from upstream with declared transforms only; not re-reviewed. Publication status unchanged."
     }
   ],
   "notes": "Initial tracked-tier record only. Publication is deferred until a detailed review exists. Upstream's pcf-matrix-drift scheduled workflow is not carried in this fork pending an owner decision."

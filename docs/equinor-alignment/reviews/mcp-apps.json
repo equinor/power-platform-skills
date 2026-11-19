@@ -167,6 +167,11 @@
       "type": "external-source",
       "reference": "https://github.com/microsoft/power-platform-skills/compare/d7b0e96a..1a967074",
       "summary": "Mechanical refresh for upstream sync 2026-10-15 (v1.0.0 -> v1.2.0). Tree mirrored from upstream with declared transforms only; not re-reviewed. Publication status unchanged."
+    },
+    {
+      "type": "external-source",
+      "reference": "https://github.com/microsoft/power-platform-skills/compare/1a967074..42a94220",
+      "summary": "Mechanical refresh for upstream sync 2026-11-19 (v1.2.0, version unchanged). Tree mirrored from upstream with declared transforms only; not re-reviewed. Publication status unchanged."
     }
   ],
   "notes": "Full review completed 2026-05-28. Skills, samples, and references are reviewed and contain no secrets, no production interaction, and include XSS/accessibility protections. Owner assigned 2026-05-28 (@equinor/dcs-power-platform-team, #powerplatform). EDS preferred — assessment needed for component equivalence vs Fluent UI Web Components. CDN dependency requires per-environment CSP updates. Copilot CLI and Claude CLI use the same manifest (copilotManifest set true). Upstream sync 2026-06-30 added Open Plugins metadata and bundled report-issue workflow content with no runtime behavior change. Remaining blockers: EDS assessment, Fluent UI radar status (may become moot), CDN/CSP planning, install test. Plugin eligible for controlled-pilot once EDS assessment is completed and install is tested."
