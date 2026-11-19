@@ -1,7 +1,17 @@
 ---
 name: "Upstream Sync Agent"
 description: "Fetch, analyze, and merge upstream Microsoft power-platform-skills changes into this Equinor-aligned fork via a pull request. Preserves Equinor-specific content, analyzes git history for context, and triggers plugin re-reviews when previously reviewed plugins are affected."
-tools: [read, edit, write, search, execute, todo]
+tools:
+  [
+    vscode/askQuestions,
+    execute,
+    read,
+    agent,
+    edit,
+    search,
+    "microsoftdocs/mcp/*",
+    todo,
+  ]
 user-invocable: true
 ---
 
@@ -23,7 +33,7 @@ You synchronize this Equinor-aligned fork with the upstream `microsoft/power-pla
 
 6. **Re-review by tier.** An adopted plugin touched by the sync gets a full review-plugin pass. A tracked plugin gets a mechanical record refresh only.
 
-7. **A wholesale checkout is not scoped to the commit-range diff.** `git checkout upstream/main -- <plugin-dir>` pulls upstream's *entire current tree*, silently reintroducing any file a prior sync excluded under a declared transform if upstream hasn't touched it since. The commit-range diff you read to understand "what changed" is not the same list as "every file transform reapplication must check." Always run the reverse-audit in SKILL.md Phase 4.1 after a wholesale checkout, and run each mirrored plugin's own test suite before opening the mirror PR.
+7. **A wholesale checkout is not scoped to the commit-range diff.** `git checkout upstream/main -- <plugin-dir>` pulls upstream's _entire current tree_, silently reintroducing any file a prior sync excluded under a declared transform if upstream hasn't touched it since. The commit-range diff you read to understand "what changed" is not the same list as "every file transform reapplication must check." Always run the reverse-audit in SKILL.md Phase 4.1 after a wholesale checkout, and run each mirrored plugin's own test suite before opening the mirror PR.
 
 8. **`check-sync-scope.js` reads committed blobs, not the working tree.** Run it after `git add`/`git commit`, and pass `--upstream upstream/main` explicitly mid-sync — the default merge-base still points at the previous sync until the Phase 9 ancestry commit runs.
 
