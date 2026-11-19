@@ -7,6 +7,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const zlib = require('node:zlib');
 const { parseArgs, validateFlags, emitResult } = require('./lib/dataverse-auth.js');
+const { booleanFlagError } = require('./lib/pcf-cli-flags.js');
 const { spawnResultSync } = require('./lib/process-runner.js');
 const { listTemplates, listRecipes, planScaffold, writeScaffold } = require('./lib/pcf-scaffold.js');
 const { loadMatrix, dependencySet } = require('./lib/pcf-matrix.js');
@@ -15,6 +16,7 @@ const { runNodeScript, runNpm } = require('./lib/node-tool.js');
 const { runPac } = require('./lib/pac-exec.js');
 const { validateControlName, validatePublisherPrefix } = require('./lib/pcf-names.js');
 const { parseXml, findAll, attr } = require('./lib/xml-lite.js');
+const { makeWritesBlocking } = require('./lib/output-redaction.js');
 
 const USAGE = `Usage:
   node scripts/pcf-ci-build.js [--all | --templates | --template <id> | --recipe <id>] [--latest] [--keep] [--package] [--npm-cli <path>]
@@ -38,6 +40,7 @@ const EXPECTED_GATE_IDS = ['manifest', 'code', 'lint', 'test', 'build'];
 const DIAGNOSTIC_LIMIT = 2000;
 
 function usageError(message) {
+  makeWritesBlocking(process.stdout, process.stderr);
   process.stderr.write(`${USAGE}\n${message}\n`);
   process.exit(1);
 }
@@ -640,9 +643,8 @@ function main(argv = process.argv.slice(2)) {
   const flags = parsed.flags;
   // parseArgs accepts `--flag=value` on any flag, so a boolean flag given a value would otherwise
   // read as true (`--templates=field-standard` would silently build every template).
-  for (const booleanFlag of BOOLEAN_FLAGS) {
-    if (flags[booleanFlag] !== undefined && flags[booleanFlag] !== true) usageError(`--${booleanFlag} does not take a value`);
-  }
+  const booleanError = booleanFlagError(flags, BOOLEAN_FLAGS);
+  if (booleanError) usageError(booleanError);
   const selectors = [Boolean(flags.all), Boolean(flags.templates), Boolean(flags.template), Boolean(flags.recipe), Boolean(flags.package)].filter(Boolean).length;
   if (selectors !== 1) usageError('Choose exactly one of --all, --templates, --template <id>, --recipe <id>, or --package.');
   const result = runCiBuild({

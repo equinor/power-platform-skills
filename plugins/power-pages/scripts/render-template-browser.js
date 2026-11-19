@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { renderTemplate, escapeHtml, escapeHtmlAttribute } = require('./lib/render-template');
 const { openInDefaultBrowser } = require('./lib/default-browser');
+const { effectivePreviewFields } = require('./lib/template-catalog');
 
 // Accepted argv shape:
 //   --templatesJsonPath /tmp/templates.json --outputPath /tmp/browser.html [--open]
@@ -32,16 +33,28 @@ function renderKeywordChips(keywords) {
 }
 
 function renderPreviewImages(template) {
-  const images = Array.isArray(template.previewImages) ? template.previewImages : [];
+  const previews = template.responsivePreviews ?? template.previews;
+  const images = Array.isArray(previews)
+    ? previews.flatMap((preview) => [
+        { url: preview.desktop, label: `${preview.displayName} - desktop` },
+        { url: preview.mobile, label: `${preview.displayName} - mobile` },
+      ]).filter((image) => image.url)
+    : (Array.isArray(template.previewImages)
+        ? template.previewImages.map((url, index) => ({ url, label: `Preview ${index + 1}` }))
+        : []);
   if (images.length === 0) {
     return '<div class="preview-empty">No preview image yet</div>';
   }
   return images.map((image, imageIndex) => `
     <figure class="preview-boundary">
-      <figcaption>Preview ${imageIndex + 1}</figcaption>
-      <img class="preview-image" src="${escapeHtmlAttribute(image)}" alt="Preview ${imageIndex + 1} of ${escapeHtmlAttribute(template.displayName)}" loading="lazy" />
+      <figcaption>${escapeHtml(image.label)}</figcaption>
+      <img class="preview-image" src="${escapeHtmlAttribute(image.url)}" alt="${escapeHtmlAttribute(image.label)} of ${escapeHtmlAttribute(template.displayName)}" loading="lazy" />
     </figure>
   `).join('');
+}
+
+function templateCategory(template) {
+  return template.kind === 'non-spa' ? 'Non-SPA' : 'SPA';
 }
 
 function frameworkLabel(framework) {
@@ -60,6 +73,7 @@ function normalizeVariants(template) {
 }
 
 function frameworkSummaryLabel(template) {
+  if (template.kind === 'non-spa') return 'Liquid + Web Template';
   const frameworks = normalizeVariants(template)
     .map((variant) => variant.framework)
     .filter(Boolean);
@@ -70,6 +84,7 @@ function frameworkSummaryLabel(template) {
 }
 
 function renderFrameworkVariants(template) {
+  if (template.kind === 'non-spa') return '';
   const variants = normalizeVariants(template);
   const frameworks = variants.length > 0 ? variants.map((variant) => variant.framework) : [template.framework].filter(Boolean);
   if (frameworks.length === 0) return '';
@@ -79,6 +94,22 @@ function renderFrameworkVariants(template) {
       <div class="chip-row">${frameworks.map((framework) => `<span class="chip chip-framework">${escapeHtml(frameworkLabel(framework))}</span>`).join('')}</div>
     </div>
   `;
+}
+
+function renderTemplatePreviews(template) {
+  const variants = template.kind === 'non-spa' ? [] : normalizeVariants(template);
+  if (variants.length === 0) return renderPreviewImages(template);
+  return variants.map((variant) => `
+    <div class="variant-previews">
+      <div class="field-label">${escapeHtml(frameworkLabel(variant.framework))}</div>
+      <div class="preview-stack">
+        ${renderPreviewImages({
+          displayName: template.displayName,
+          ...effectivePreviewFields(variant, template),
+        })}
+      </div>
+    </div>
+  `).join('');
 }
 
 function templateTabId(index) {
@@ -92,7 +123,7 @@ function renderTemplateTabsHtml(templates) {
   return templates.map((template, index) => `
     <button class="nav-btn${index === 0 ? ' active' : ''}" type="button" data-tab="${templateTabId(index)}">
       <span class="nav-icon">&#9673;</span>
-      ${escapeHtml(template.displayName)}
+      <span>${escapeHtml(template.displayName)} <span class="nav-category">${escapeHtml(templateCategory(template))}</span></span>
     </button>
   `).join('');
 }
@@ -104,7 +135,10 @@ function renderTemplateSectionsHtml(templates) {
   return templates.map((template, index) => `
     <section class="template-section${index === 0 ? ' active' : ''}" id="${templateTabId(index)}">
       <div class="template-hero">
-        <h2>${escapeHtml(template.displayName)}</h2>
+        <div>
+          <h2>${escapeHtml(template.displayName)}</h2>
+          <div class="template-category">${escapeHtml(templateCategory(template))}</div>
+        </div>
         <div class="template-framework">${escapeHtml(frameworkSummaryLabel(template))}</div>
       </div>
       ${renderFrameworkVariants(template)}
@@ -115,7 +149,7 @@ function renderTemplateSectionsHtml(templates) {
       <p class="template-desc">${escapeHtml(template.description)}</p>
       <div class="field-label previews-label">Previews</div>
       <div class="preview-stack">
-        ${renderPreviewImages(template)}
+        ${renderTemplatePreviews(template)}
       </div>
     </section>
   `).join('');
@@ -140,6 +174,9 @@ function validateRenderedTemplateBrowser({ templates, html }) {
     const displayName = escapeHtml(template.displayName);
     if (!displayName || !html.includes(displayName)) {
       errors.push(`Rendered template browser is missing template ${index + 1} displayName`);
+    }
+    if (!html.includes(templateCategory(template))) {
+      errors.push(`Rendered template browser is missing category ${templateCategory(template)} for ${template.displayName || `template ${index + 1}`}`);
     }
     for (const framework of expectedFrameworks(template)) {
       if (!html.includes(escapeHtml(framework))) {
@@ -205,4 +242,5 @@ module.exports = {
   renderTemplateTabsHtml,
   renderTemplateSectionsHtml,
   validateRenderedTemplateBrowser,
+  templateCategory,
 };

@@ -7,6 +7,13 @@ and package registries.
 The plugin produces a `.ppmplugin` bundle for the Power Apps Wrap runtime and a matching dispatcher
 PCF control for use in a Canvas app.
 
+## Usage telemetry
+
+This Equinor fork does **not** ship the upstream 1DS telemetry stack. The telemetry
+library, hooks, and `/telemetry` skill are excluded pending a separate governance and
+privacy review, so this plugin sends no usage telemetry and writes no local telemetry
+mirror. [`shared/telemetry.md`](shared/telemetry.md) describes the upstream behaviour.
+
 ---
 
 ## Install & run

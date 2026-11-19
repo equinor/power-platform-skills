@@ -3,6 +3,8 @@
 
 const path = require('node:path');
 const { parseArgs, validateFlags } = require('./lib/dataverse-auth.js');
+const { booleanFlagError } = require('./lib/pcf-cli-flags.js');
+const { makeWritesBlocking } = require('./lib/output-redaction.js');
 const {
   WHERE_USED_CAVEAT,
   makePcfSdk,
@@ -18,6 +20,7 @@ const KNOWN = ['env', 'control', 'include-managed', 'where-used', 'workspace'];
 const NEED_VALUE = ['env', 'control', 'workspace'];
 
 function usageError(message) {
+  makeWritesBlocking(process.stdout, process.stderr);
   process.stderr.write(`${USAGE}\n${message}\n`);
   process.exit(1);
 }
@@ -39,8 +42,10 @@ async function main(argv = process.argv.slice(2)) {
 
   const env = String(flags.env);
   const workspace = flags.workspace ? String(flags.workspace) : path.resolve('.maker-workspace', 'pcf-inventory');
-  const includeManaged = readBooleanFlag(flags, 'include-managed');
-  const withWhereUsed = readBooleanFlag(flags, 'where-used');
+  const booleanError = booleanFlagError(flags, ['include-managed', 'where-used']);
+  if (booleanError) usageError(booleanError);
+  const includeManaged = Boolean(flags['include-managed']);
+  const withWhereUsed = Boolean(flags['where-used']);
   const output = { ok: true, controls: [] };
   if (withWhereUsed) output.whereUsedCaveat = WHERE_USED_CAVEAT;
 
@@ -105,20 +110,15 @@ function isDefaultInventoryControl(control) {
   return control && !control.isManaged && !name.startsWith('MscrmControls.') && !name.startsWith('Microsoft.');
 }
 
-function readBooleanFlag(flags, name) {
-  const value = flags[name];
-  if (value === undefined) return false;
-  if (value === true) return true;
-  usageError(`--${name} does not take a value`);
-  return false;
-}
-
 function missingControlMessage(controlName) {
   const expected = controlName.includes('_') ? '<publisherPrefix>_<namespace>.<constructor>' : `<publisherPrefix>_${controlName}`;
   return `No PCF custom control named '${controlName}' was found. Registered controls use the prefixed form '${expected}' (for example, <publisherPrefix>_<namespace>.<constructor>), not just the manifest namespace and constructor.`;
 }
 
 function writeResult(ok, payload) {
+  // A listing of an org's controls can be megabytes, and the process exits right after printing it: blocking writes put the whole
+  // text in the pipe first (on Linux and macOS a pipe's writes are queued, and process.exit does not wait for them — lib/output-redaction.js).
+  makeWritesBlocking(process.stdout, process.stderr);
   if (ok) {
     process.stdout.write(JSON.stringify(payload) + '\n');
     process.exit(0);

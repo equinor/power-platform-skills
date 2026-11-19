@@ -12,6 +12,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const { parseArgs, runRouting, spawnTrial, DEFAULTS } = require('../run-routing.js');
+const { TRIAL_NOTE } = require('../lib/agents.js');
 
 const RUNNER = path.join(__dirname, '..', 'run-routing.js');
 const FAKE = path.join(__dirname, 'fake-agent.js');
@@ -151,6 +152,35 @@ test('CLI --dry-run prints the isolated invocation and launches nothing', () => 
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /# dry run — would launch \d+ case\(s\) × 3 trial\(s\)/);
   assert.match(r.stdout, /copilot .*--plugin-dir .*--available-tools skill view glob grep/);
+  assert.ok(r.stdout.includes(TRIAL_NOTE), 'the note every prompt follows is shown, so what the agent is sent can be reviewed');
+});
+
+// The note only works if the agent is actually sent it. This drives the real trial path (runRouting's default
+// trial function, the Copilot preflight, the transcript save) through an executable stand-in for the CLI, and
+// reads back what reached the agent's stdin: the fake echoes it as the transcript's user message.
+test('CLI trial: the agent receives the whole note, then the case prompt verbatim and last', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'routing-note-'));
+  try {
+    const shim = path.join(dir, process.platform === 'win32' ? 'agent.cmd' : 'agent.sh');
+    fs.writeFileSync(shim, process.platform === 'win32'
+      ? `@"${process.execPath}" "${FAKE}" %*\r\n`
+      : `#!/bin/sh\nexec "${process.execPath}" "${FAKE}" "$@"\n`, { mode: 0o755 });
+    const transcripts = path.join(dir, 'transcripts');
+    const evalCase = require('../evals.json').evals.find((c) => c.id === 28);
+    const r = spawnSync(process.execPath, [RUNNER, '--agent', 'copilot', '--agent-bin', shim, '--eval', String(evalCase.id), '--runs', '1', '--transcripts', transcripts], {
+      encoding: 'utf8', env: { ...process.env, FAKE_AGENT_MODE: 'copilot-answer' },
+    });
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const file = path.join(transcripts, `${evalCase.id}-1.copilot.jsonl`);
+    const sent = fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)).find((e) => e.type === 'user.message').data.content;
+    assert.equal(sent, `${TRIAL_NOTE}\n\n${evalCase.prompt}`, 'the note, a blank line, then the user\'s words untouched');
+    assert.ok(sent.endsWith(evalCase.prompt), 'the case prompt is last');
+    // Both directions: a fitting skill is called, and with none the agent finishes in one sentence.
+    assert.match(sent, /If one of the available skills fits the request, call it\./);
+    assert.match(sent, /If none of them does, reply in one short sentence naming what the request needs, and stop: do not try to build it\./);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+  }
 });
 
 // ---------- spawnTrial against a fake agent (real process plumbing) ----------
@@ -172,10 +202,22 @@ async function until(condition, what) {
 
 const hasExited = (child) => child.exitCode !== null || child.signalCode !== null;
 
-// A killed agent is torn down by the OS a moment AFTER the trial resolves, and until then it still holds
-// its working directory: removing it straight away failed with `EBUSY: resource busy or locked, rmdir
-// …routing-fake-…` on a loaded Windows machine (Node 22, one run in twenty). So a directory is removed
-// by retrying while it is reported in use, up to a bound — never by hoping a kill has finished.
+// A promise that must settle, raced against a bound: a run that never ends becomes a failure that says what
+// never ended, not a test that hangs until the CI job's own timeout.
+async function withinLimit(promise, what, ms = WAIT_LIMIT_MS) {
+  let timer;
+  const limit = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`${what} did not happen within ${ms}ms`)), ms); });
+  try {
+    return await Promise.race([promise, limit]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// spawnTrial resolves only once the agent it killed has closed (the tests below pin that), so the agent no
+// longer holds the trial's directory when this runs. The retry stays for a directory that some other process
+// on the machine has open for a moment — Windows reports that as `EBUSY` or `EPERM` — and it is bounded, so
+// a directory that stays in use fails the test instead of hanging it.
 async function removeWhenFree(dir) {
   const deadline = Date.now() + WAIT_LIMIT_MS;
   for (;;) {
@@ -209,11 +251,19 @@ function manualClock() {
   return clock;
 }
 
-function fakeTrial(mode, { prompt = 'build me a page', timeoutMs = 20000, agent = 'claude', env = {}, loadedSkills, loadError, clock, onStart } = {}) {
+// `atResolve(child)` runs the moment the trial's promise settles, before the folder is removed. The order
+// matters: removing the folder retries while it is in use, so on Windows it waits for the agent itself and
+// would hide whether the agent was still running when the trial resolved.
+function fakeTrial(mode, { prompt = 'build me a page', timeoutMs = 20000, agent = 'claude', env = {}, loadedSkills, loadError, clock, onStart, kill, closeWaitMs, atResolve } = {}) {
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'routing-fake-'));
+  let child;
   return spawnTrial({
     agent, bin: process.execPath, binArgs: [FAKE], args: [], env: { FAKE_AGENT_MODE: mode, ...env },
-    prompt, cwd, timeoutMs, plugin: PLUGIN, loadedSkills, loadError, clock, onStart,
+    prompt, cwd, timeoutMs, plugin: PLUGIN, loadedSkills, loadError, clock, kill, closeWaitMs,
+    onStart: (s) => { child = s.child; if (onStart) onStart(s); },
+  }).then((trial) => {
+    if (atResolve) atResolve(child);
+    return trial;
   }).finally(() => removeWhenFree(cwd));
 }
 
@@ -245,6 +295,87 @@ test('spawnTrial: prompt reaches the agent on stdin; a routed agent is killed at
   assert.equal(clock.armed, false, 'the decision disarmed the deadline instead of leaving it running');
   // `route-then-hang` never exits on its own, so it has gone only because the harness killed it.
   await until(() => hasExited(child), 'the routed agent being killed');
+});
+
+// spawnTrial used to resolve the moment it killed the agent. A kill takes effect a moment later, and until
+// then the agent still holds its working directory: a caller that removed the trial's folder as the trial
+// ended got `EBUSY: resource busy or locked, rmdir …` on Windows (14 of 40 trials in a measured run). So the
+// trial is over only when the agent has closed. None of the checks below needs a stopwatch: a process's exit
+// code is set when it has really ended, so it still reads null if the trial resolved before that.
+test('spawnTrial: the agent it killed at the decision has closed by the time the trial resolves', async () => {
+  let exited;
+  const t = await fakeTrial('route-then-hang', { prompt: 'make me an app', atResolve: (child) => { exited = hasExited(child); } });
+  assert.equal(t.routedTo, 'app-builder');
+  assert.equal(t.error, null);
+  assert.equal(exited, true, 'the routed agent was still running when the trial resolved');
+});
+
+test('spawnTrial: the agent it killed at the deadline has closed by the time the trial resolves', async () => {
+  const clock = manualClock();
+  let parser;
+  let exited;
+  const trial = fakeTrial('init-then-hang', { timeoutMs: 1500, clock, onStart: (s) => { parser = s.parser; }, atResolve: (child) => { exited = hasExited(child); } });
+  try {
+    await until(() => parser.eventCount >= 1, 'the parser reading the init event');
+    clock.fire();
+    const t = await trial;
+    assert.equal(t.timedOut, true);
+    assert.match(t.error, /timed out before routing/);
+    assert.equal(exited, true, 'the cut-off agent was still running when the trial resolved');
+  } finally {
+    if (clock.armed) clock.fire();
+    await trial.catch(() => {});
+  }
+});
+
+test('spawnTrial: a slow-dying agent is waited for — the trial ends when it has closed, not when it was told to die', async () => {
+  // The kill lands 300 ms after the decision, so the agent is certainly still running right after it: a trial
+  // that did not wait for the close would resolve with the agent alive.
+  const killLater = (child) => { setTimeout(() => child.kill(), 300); };
+  let exited;
+  const t = await fakeTrial('route-then-hang', { prompt: 'make me an app', kill: killLater, atResolve: (child) => { exited = hasExited(child); } });
+  assert.equal(t.routedTo, 'app-builder');
+  assert.equal(t.error, null);
+  assert.equal(exited, true, 'the trial resolved while the agent was still running');
+});
+
+test('spawnTrial: the wait for the agent to close is bounded — one that will not die cannot hold the run', async () => {
+  // A kill that does nothing leaves the agent running for good. The trial must still end, after the bound, with
+  // its routing decision intact. The agent is ended here, the moment the trial resolves, so that nothing is left
+  // running and the folder can be removed.
+  let child;
+  let exited;
+  const trial = fakeTrial('route-then-hang', {
+    prompt: 'make me an app', kill: () => {}, closeWaitMs: 300,
+    onStart: (s) => { child = s.child; },
+    atResolve: (c) => { exited = hasExited(c); c.kill(); },
+  });
+  try {
+    const t = await withinLimit(trial, 'a trial whose agent never closes resolving', 20000);
+    assert.equal(t.routedTo, 'app-builder', 'the decision survives the wait');
+    assert.equal(t.error, null);
+    assert.equal(exited, false, 'the agent was still running — the trial gave up waiting for it');
+  } finally {
+    if (child && !hasExited(child)) child.kill();
+    await until(() => hasExited(child), 'the stubborn agent being ended');
+  }
+});
+
+test('spawnTrial: a run that ends on its own, or never starts, is not held for the close wait', async () => {
+  // The wait is for an agent that was just killed. One that exited by itself, and one that never started, have
+  // closed (or are about to) already: with a close wait of ten minutes these still resolve at once, so the
+  // 30 s limit is only a hang detector.
+  const closeWaitMs = 10 * 60 * 1000;
+  const answered = await withinLimit(fakeTrial('answer', { closeWaitMs }), 'a self-ending run resolving', 30000);
+  assert.equal(answered.error, null);
+  assert.equal(answered.routedTo, null);
+  const crashed = await withinLimit(fakeTrial('crash', { closeWaitMs }), 'a crashing run resolving', 30000);
+  assert.match(crashed.error, /exited 3 before any routing decision/);
+  const missing = await withinLimit(spawnTrial({
+    agent: 'claude', bin: path.join(os.tmpdir(), 'definitely-not-an-agent.exe'), args: [], env: {},
+    prompt: 'x', cwd: os.tmpdir(), timeoutMs: 5000, plugin: PLUGIN, closeWaitMs,
+  }), 'a run that cannot start resolving', 30000);
+  assert.match(missing.error, /could not start|exited/);
 });
 
 test('spawnTrial: a text answer ends the run as a "none" decision', async () => {

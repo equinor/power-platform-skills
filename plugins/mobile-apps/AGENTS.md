@@ -2,13 +2,13 @@
 
 This file provides guidance to AI Agents when working with the **mobile-app** plugin.
 
-> **Status:** v0 — 24 skills + 5 agents authored. The latest Expo standalone template snapshot is bundled under `template/`. Read [README.md](./README.md) for the command list.
+> **Status:** Preview. The bundled `template/` remains a legacy test fixture, not a release selector or an app-version-independent native allowlist. Read [README.md](./README.md) for the command list and release gate.
 
 ## What This Plugin Is
 
 A plugin for building and deploying **Power Apps code apps that run as native mobile + web apps** using Expo + React Native + TypeScript. Connects to Power Platform via connectors using the standard `pa app add data-source` workflow.
 
-The Expo template snapshot is distributed with this plugin under `template/` and published from [`plugins/mobile-apps/template`](https://github.com/microsoft/power-platform-skills/tree/main/plugins/mobile-apps/template). `/create-mobile-app` runs in fresh-template working-directory mode: the user starts in an installed template folder, then the skill validates and prepares it.
+`/create-mobile-app` selects an exact published template package, acquires it only into a new/empty folder after approval, installs its lockfile after separate approval, then validates and prepares it. Existing fresh installed folders must match its package-owned host contract. See [mobile-release-lifecycle.md](shared/references/mobile-release-lifecycle.md); missing published compatibility metadata blocks native adoption.
 
 ## Local Development
 
@@ -32,7 +32,7 @@ hooks/                         ← Telemetry start hooks plus validators invoked
 
 ## Template source
 
-The Expo template snapshot ships bundled inside this plugin at `template/`. It is synced from `microsoft/power-platform-skills` `main`, `plugins/mobile-apps/template/`. `/create-mobile-app` does not silently copy the bundled template over a user's folder; it expects a fresh installed template working directory and applies these preparation edits there:
+The bundled `template/` is retained for existing preparation/source tests. Runtime selection comes from the published host's compatibility profile and the matching immutable template metadata/lock, not a plugin-owned release array, bundled snapshot or independently chosen npm `latest` dependencies. `/check-updates` keeps npm outdated discovery and delegates migration writes to the published target host. `/create-mobile-app` never copies the bundled snapshot over a user's folder. After immutable acquisition and package validation, preparation applies these bounded edits:
 
 | Edit | Purpose |
 |---|---|
@@ -42,15 +42,30 @@ The Expo template snapshot ships bundled inside this plugin at `template/`. It i
 | Remove legacy example hooks and query-client files | Preserve every artifact under `src/generated/` |
 | `app/_layout.tsx`: add `tamaguiConfig` + `defaultTheme` | Use host light/dark defaults until generated brand themes are explicitly wired |
 | `app.json` + `app/_layout.tsx`: `appConfig` | Pass the complete generated app configuration once so the host can resolve opt-in Application Insights settings inside fixed Dev Player |
-| `tsconfig.json`: verify the host base | Package shims and `@/` aliases remain centralized in the native host |
+| `tsconfig.json`: verify the host base | Preserve both host inheritance and any version-specific project-rooted aliases |
+
+Preparation preserves `app.json` compatibility metadata and customer extras byte-for-byte, together with scaffolded or customer-owned `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md`. Never synthesize runtime IDs from semver. Existing app instruction updates require a separately reviewed merge.
+
+Only finalized published host/template packages authorize creation or native
+upgrades. The former diagnostic artifact mode is retired; do not substitute a
+local archive, a bundled template or a Git checkout for a missing publication.
+Preserve normal approvals, telemetry checkpoints and app-owned offline profiles,
+imports, settings and data.
+The installed offline SDK must match the selected host's runtime family, peer
+requirements and offline-contract version. Obtain its expected metadata and
+complete declared native artifact inventory from the integrity-verified SDK
+archive selected by the immutable template lock, never from mutable installed
+hashes alone.
+Metadata checks do not certify offline synchronization or database migration.
+Never patch, fork or locally rewrite a first-party package to work around a defect.
 
 Do not add preparation rewrites for `scheme`, `package`, `bundleIdentifier`, `src/playerConfig.ts`, `fingerprint.config.js`, or `native-runtime.json` unless those files exist in the synced main template.
 
 ## Guiding Principles
 
 1. **Connector-first for data** — All Power Platform data access goes through connectors and generated services in `src/generated/`. No direct Graph / Azure REST calls.
-2. **Native code is allowlist-bounded; pure JavaScript is app-scoped.** Expo modules and packages that ship native source, a podspec, codegen configuration, an Expo module/config plugin, or platform projects must already exist in `template/package.json`. The rewrap binary is built from a pre-built base, so adding those packages to an app cannot add their native code. Do not classify a package from its name alone: a `react-native-*` package can still be pure JavaScript. For an explicit library request or an approved use case that benefits from an established pure-JavaScript package, the planner may select a compatible version, pin it in the app's `package.json`, and install it before builders use it; no Android/iOS rebuild is required. Do not bundle optional libraries such as `react-native-calendars` in the base template. Follow [`shared/references/javascript-dependency-planning.md`](shared/references/javascript-dependency-planning.md). `expo-haptics` is template-shipped: add haptic behavior through `/add-native haptics`, keep native calls in `src/native/haptics.ts`, and pair tactile feedback with visible UI. When a template/base maintainer adds or changes a native dependency version, the Android and iOS base binaries must be rebuilt before release; generated apps based on that rebuilt template do not install or link it again. The native boundary and reconciliation rule are in [`skills/add-native/SKILL.md`](skills/add-native/SKILL.md).
-3. **Fresh-template mode** — `/create-mobile-app` validates and prepares an existing fresh Expo standalone template working directory. Do not silently copy the bundled `template/` snapshot over the user's folder.
+2. **Native code is version-bounded; pure JavaScript is app-scoped.** Use `scripts/resolve-mobile-release.js` to resolve the app's reviewed native inventory, including installed versions and transitive native code. The newest plugin template's names are not an old app's baseline. Adding packages cannot add native code to a fixed player/base; native changes require a coordinated reviewed release. Pure-JS additions retain explicit planning/approval and installed-closure validation. Follow [JavaScript dependency planning](shared/references/javascript-dependency-planning.md) and [the native boundary](skills/add-native/SKILL.md). Verify haptics/controls support in the resolved release before generating wrappers. Native binary changes require matching rebuilt Android/iOS bases and available players before policy promotion.
+3. **Fresh-template mode** — acquire only an immutable verified package into a new/empty folder, or validate an existing fresh installed template. Never overwrite a customer project, use a mutable branch, or silently copy the bundled snapshot.
 4. **Safety guardrails** — Confirm before deploys, before global installs, before edits outside the project root.
 5. **Memory bank** — Persist `memory-bank.md` in the project root.
 6. **Plan mode** — Confirm requirements first. Gate 1 then presents native
@@ -82,7 +97,7 @@ Do not add preparation rewrites for `scheme`, `package`, `bundleIdentifier`, `sr
     - Special early-return signals (`INDUSTRY_CONFIRM_REQUESTED:`, `DESIGN_VIBE_REQUESTED:`) pre-date this protocol and remain in effect — they are special-cased "ask the user one question and re-spawn me" handoffs, not terminal returns.
     - The canonical orchestrator handler lives in [`skills/create-mobile-app/SKILL.md`](./skills/create-mobile-app/SKILL.md) Step 3.0. Future skills that spawn agents should reference it rather than duplicating the switch.
 13. **Every run documents itself in `docs/`** - [`scripts/app-docs.js`](scripts/app-docs.js) writes `<app>/docs/create-app-plan.html`, a living Fluent-format plan in the same visual language as the Power Pages `/create-site` artifacts (shared encoder ported to [`scripts/lib/render-template.js`](scripts/lib/render-template.js)). It records the environment, the confirmed brief, the Gate 1 architecture, the Gate 2 data model with a colour-coded ER diagram, the screen plan, and the design system, plus per-phase progress. Sections are written **when the decision is made**, so an aborted run still explains itself. The ER, column tables and new/reused/extended colouring are all derived from `dataModel.tables[]`, so populate those structurally rather than only shipping a Mermaid string. It is best-effort and must never gate, retry, or fail a build.
-14. **Metro lifecycle is project-local** — template `metro.config.js` delegates to `createPowerAppsMetroConfig`, whose host implementation writes sanitized `.powernative/metro-logs/` output during normal `npm run dev`; `/debug-app` locates and tails those files directly, with its cursor, health, and audit state under `.powernative/debug-app/`. Do not restore required `BashOutput`/terminal-ID behavior or host-specific project state directories. Host terminal APIs may be optional conveniences only. Never write unsanitized Metro output to disk, and never diagnose a log unless the logged PID/port still look live.
+14. **Metro lifecycle is project-local** — template `metro.config.js` delegates to `createPowerAppsMetroConfig`, whose host implementation writes sanitized `.powernative/metro-logs/` output during normal `npm run dev`; `/debug-app` locates and tails those files directly, with its cursor, health, and audit state under `.powernative/debug-app/`. Do not restore required `BashOutput`/terminal-ID behavior or host-specific project state directories. Host terminal APIs may be optional conveniences only. Never write unsanitized Metro output to disk. Runtime monitoring requires a live logged PID/port; bounded startup diagnosis may use correlated failed-launch output as historical evidence, never as a live runtime session.
 15. **First-party native package defects are reported, not patched in customer projects** — a `node_modules/@microsoft/power-apps-native-*` frame alone is not proof of package ownership; first rule out invalid app usage against the package's public contract. Once a defect is confirmed inside one of these packages, do not edit `node_modules/`, generate `patch-package` or postinstall rewrites, vendor or fork the package, replace it with a git/tarball/local dependency, or shadow it through resolver aliases. Capture sanitized reproduction evidence and route to `/report-issue`.
 16. **Custom events are Application Insights-specific and opt-in** — Each generated app targets one customer-owned, workspace-based Application Insights resource. `app.json` → `expo.extra.appInsightsConfig` defaults to disabled and stores its connection string, matching the Power Apps canvas-app model. Treat the value as sensitive project configuration: do not print it, write it to `memory-bank.md`, or include it in summaries. Keep `includeUserId` false unless explicitly approved.
 17. **Plugin update notification** — Immediately after the frontmatter of every `user-invocable: true` skill except `/check-updates`, run `node "${PLUGIN_ROOT}/scripts/check-version.js"` and show any output before proceeding. The check is best-effort and must never block the requested workflow. `/check-updates` owns its explicit plugin-version check in Step 1 and must not run a duplicate startup check.
@@ -144,6 +159,18 @@ Do not add preparation rewrites for `scheme`, `package`, `bundleIdentifier`, `sr
     consequential actions keep their target/scope checks and mutation approvals.
     Never fabricate approval context or substitute ad-hoc mutations for an
     unavailable domain workflow.
+26. **Startup diagnosis precedes runtime monitoring when necessary** —
+    `/debug-app startup` can inspect a failed install, pre-start command, or QR
+    opening without a loaded app. `scripts/inspect-startup.js` is local/read-only
+    and never authorizes repair or verifies startup. Clean metadata is not an
+    exhaustive diagnosis; unexplained symptoms require scoped investigation of
+    the original failure, not a guessed reinstall. The bounded workflow in
+    [`skills/debug-app/references/startup-diagnostics.md`](skills/debug-app/references/startup-diagnostics.md)
+    owns explicit same-lock restoration/restart approval and original-symptom
+    verification. Upgrades remain with the separate dependency-update workflow;
+    no lock deletion, automatic dependency updates, or host/MSAL patches.
+    Creation reuses this workflow on an observed startup failure instead of
+    launching another repair loop. Runtime monitoring still requires live logs.
 
 ## Telemetry
 
@@ -164,7 +191,7 @@ Mobile Apps bundles the canonical stdlib-only telemetry helpers from the repo-ro
 
 ## Decisions made
 
-- ✅ Markdown plan with Mermaid (no HTML rendering)
+- ✅ Markdown plan with Mermaid as the durable source, plus a living HTML plan and edit-progress page for user-visible status
 - ✅ **Architecture-first approval gates** in the planner (data platform + native APIs + connectors → conditional Dataverse model → screen plan)
 - ✅ `/edit-app` skill for post-generation app iteration: updates the approved plan delta, applies Dataverse/native/design/screen mutations, verifies, and refreshes preview output. `--plan-only` is the explicit docs-only escape hatch.
 - ✅ Single `/deploy` skill — `npm run build` + `pa app push`; no local native compile, no OTA in v0
@@ -173,7 +200,7 @@ Mobile Apps bundles the canonical stdlib-only telemetry helpers from the repo-ro
 - ✅ `/add-native` v0 scope: camera, location, push, biometrics, secure-store (already in template)
 - ✅ Build documentation: every run writes `docs/create-app-plan.html` - environment, requirements, architecture, a colour-coded Dataverse ER diagram, screen plan, design system, and live phase progress - in the Power Pages plan format. The page also carries a phone frame that advances from a building state to the generated screens to the device QR code. The folder survives the run so the app carries its own design record.
 - ✅ Cross-host Metro diagnostics: user-owned `npm run dev`, port-probe liveness and stale-PID protection, sanitized project-local logs, a durable debug cursor, and read-only `status` plus foreground-loop `stop` commands
-- ✅ Template is supplied as a fresh `microsoft/power-platform-skills/plugins/mobile-apps/template#main` folder before `/create-mobile-app` runs; users materialize it with `degit`, run `npm install`, then invoke the skill from that folder. The skill validates/prepares the folder and runs `pa app init`.
+- ✅ Template acquisition uses a verified exact package and lockfile; no default release is promoted until publication and both platforms' bases/players are verified.
 - ✅ `brand/` directory convention: `/design-system` (Step 6.75) writes `brand/design-system.md` (spec), `brand/tokens.ts` (importable Tamagui tokens), and `brand/design-system.html` (visual gallery). Screen-builders MUST read `brand/design-system.md` if present; `## Negatives` = HARD RULES. `/create-mobile-app` Step 9b imports `brand/tokens.ts` via `skills/design-system/references/tamagui-integration.md`. Projects without `brand/` fall back to `## Design Direction` only — no breakage.
 - ✅ Offline profile creation is **configuration-only in v0.1** —
   `/setup-offline-profile` and `/enable-tables-offline` POST

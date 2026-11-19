@@ -7,6 +7,11 @@ const path = require('node:path');
 const ownership = require('../lib/page-ownership-records.js');
 const snapshots = require('../lib/apply-snapshot-store.js');
 const { loadCli } = require('./helpers/cli-harness.js');
+const { fakeGenpage } = require('./helpers/fake-genpage.js');
+const { withPageType } = require('./helpers/page-component-type.js');
+const { isFormScan, noFormRows } = require('./helpers/form-scan.js');
+const { withAppBuildLease, buildLockName } = require('../lib/app-operation-lease.js');
+const { appUniqueName } = require('../lib/app-unique-name.js');
 
 const ENV = 'https://contoso.crm.dynamics.com';
 const OTHER_ENV = 'https://fabrikam.crm.dynamics.com';
@@ -21,7 +26,7 @@ function workspace(t) {
   return dir;
 }
 
-async function runClear(dir, { sdk, spec, realEngine = false } = {}) {
+async function runClear(dir, { sdk, spec, realEngine = false, store } = {}) {
   const emissions = [];
   const cli = loadCli(path.resolve(__dirname, '..', 'teardown-model-app.js'), {
     argv: ['--env', ENV, '--spec', '@contoso-app-spec.json', '--workspace', dir, '--apply', '--allow-destructive', '--clear-workspace'],
@@ -31,13 +36,14 @@ async function runClear(dir, { sdk, spec, realEngine = false } = {}) {
         './lib/app-spec.js': { migrateAppSpec: (s) => s, validateAppSpec: () => ({ ok: true }) },
         './lib/sdk-teardown.js': { runTeardown: async () => ({ ok: true, dryRun: false, deleted: {} }) },
       } : {}),
+      ...(store ? { './lib/apply-snapshot-store.js': store } : {}),
       './lib/dataverse-auth.js': {
         ...require('../lib/dataverse-auth.js'),
         readJsonArg: () => spec || ({ app: { name: 'Contoso Pages', uniqueName: APP }, solution: { uniqueName: 'ContosoPages', publisherPrefix: 'contoso' } }),
         emitResult: (ok, result) => { emissions.push({ ok, result }); },
       },
       './lib/sdk-http-client.js': { createAzHttpClient: () => ({}) },
-      './vendor/cds-maker-sdk.cjs': {
+      './lib/maker-sdk.js': {
         createNodeWorkspaceStorage: () => ({}),
         createMakerSdk: () => sdk || ({ initWorkspace: async () => {} }),
       },
@@ -80,6 +86,43 @@ test('clear-workspace still clears a genuine disposable workspace without owners
   assert.match(log, /cleared workspace/);
 });
 
+// #807: the clear runs while the teardown still holds the app's build lease (the real lease and the real store here), so a build of the app
+// that starts between the deletes and the clear is refused instead of having its workspace, lock and all, moved and deleted under it.
+test('clear-workspace runs under the app build lease: a build of the app started at the clear is refused', async (t) => {
+  const dir = workspace(t);
+  const spec = { app: { name: 'Contoso Pages', uniqueName: APP }, solution: { uniqueName: 'ContosoPages', publisherPrefix: 'contoso' } };
+  const lockPath = path.join(dir, buildLockName(appUniqueName(spec)));
+  let atClear = null;
+  const store = {
+    ...snapshots,
+    clearWorkspace: (target, deps) => {
+      // The lock is looked for first: the concurrent build's lease, tried synchronously next, would make one of its own if it were free.
+      const lockHeld = fs.existsSync(lockPath);
+      const build = withAppBuildLease({ workspaceDir: dir, appUniqueName: appUniqueName(spec), warn: () => {} }, async () => 'a build ran');
+      build.catch(() => {});
+      atClear = { lockHeld, build };
+      return snapshots.clearWorkspace(target, deps);
+    },
+  };
+  const log = await runClear(dir, { spec, store });
+  assert.match(log, /cleared workspace/);
+  assert.equal(fs.existsSync(dir), false);
+  assert.ok(atClear, 'the clear ran');
+  assert.equal(atClear.lockHeld, true, 'the teardown still holds the build lock when the clear starts');
+  await assert.rejects(atClear.build, (e) => e.code === 'build-locked');
+});
+
+// A teardown from a folder that never had a workspace makes one for its lease and removes it again once the lease is let go; the clear
+// then finds nothing to clear, as before the clear moved under the lease.
+test('clear-workspace from a folder that never had a workspace leaves none behind', async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'contoso-receipt-clear-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const dir = path.join(root, 'app', '.maker-workspace');
+  const log = await runClear(dir);
+  assert.deepEqual(fs.readdirSync(root), [], 'the folders the teardown made are gone');
+  assert.match(log, /skipped --clear-workspace: nothing to clear/);
+});
+
 for (const outcome of ['deleted', 'confirmed absent']) {
   test(`build creates, teardown retires ${outcome} page records, and clear-workspace succeeds`, async (t) => {
     const dir = workspace(t);
@@ -104,8 +147,16 @@ for (const outcome of ['deleted', 'confirmed absent']) {
         if (entity === 'appmodulecomponent') return [{ objectid: sitemapId, componenttype: 62 }];
         if (entity === 'sitemap') return state.app ? [{ sitemapxml: '<SiteMap />' }] : [];
         if (entity === 'webresource') return state.manifest ? [{ webresourceid: 'manifest-id', content: state.manifest }] : [];
-        if (entity === 'uxagentproject') return state.page ? [{ uxagentprojectid: ID, name: 'Overview' }] : [];
         return [];
+      },
+      // The pages in their saved layer, which is where teardown looks for them; the navigation's saved layer is not modelled here, so reading it fails as it does without a client.
+      // The page table's component type is answered in front: the build's pages join the spec's solution (lib/page-solution.js).
+      dataverse: {
+        get: withPageType(async (url) => {
+          if (isFormScan(url)) return noFormRows();
+          if (!url.startsWith('/uxagentprojects/Microsoft.Dynamics.CRM.RetrieveUnpublishedMultiple()')) throw new Error(`not modelled: ${url}`);
+          return { status: 200, body: { value: state.page ? [{ uxagentprojectid: ID, name: 'Overview', componentstate: 0 }] : [] } };
+        }),
       },
       createWebResource: async (o) => { state.manifest = Buffer.from(o.content, 'utf8').toString('base64'); return { id: 'manifest-id' }; },
       updateWebResource: async (id, o) => { state.manifest = Buffer.from(o.content, 'utf8').toString('base64'); },
@@ -117,8 +168,8 @@ for (const outcome of ['deleted', 'confirmed absent']) {
         return [];
       },
       deleteAppCascade: async () => { state.app = false; return { success: true, deleted: [], failures: [] }; },
-      deleteRecord: async (entity, id) => {
-        assert.equal(entity, 'uxagentproject');
+      deleteRemoteArtifact: async (kind, id) => {
+        assert.equal(kind, 'genPage');
         assert.equal(id, ID);
         state.page = false;
         state.deletes++;
@@ -127,20 +178,20 @@ for (const outcome of ['deleted', 'confirmed absent']) {
       deleteSolution: async () => { state.solution = false; },
       deleteTable: async (logical) => { assert.equal(logical, 'contoso_item'); },
     };
+    const genpage = fakeGenpage({
+      newId: () => ID,
+      onCreate: () => {
+        state.page = true;
+        state.creates++;
+      },
+    });
     await require('../lib/sdk-build.js').runSdkBuild(spec, {
       sdk, apply: true, env: ENV, appDir, workspaceDir: dir, phases: ['pages'],
       changedOnly: { resolvedAppId: appId, skipSitemapFinalize: true },
-      genpageCli: {
-        enumerateEnv: async () => ({ ok: true, ids: [], pages: [] }),
-        upload: async (o) => {
-          assert.equal(o.pageId, undefined, 'this is an acknowledged CREATE, not a reused id');
-          state.page = true;
-          state.creates++;
-          return { pageId: ID };
-        },
-      },
+      genpage,
     });
     assert.equal(state.creates, 1);
+    assert.equal(genpage.of('update').length, 0, 'this is an acknowledged CREATE, not a reused id');
     assert.equal(ownership.readPageOwnership(dir, APP, ENV).created.length, 1);
     assert.equal(ownership.checkPageOwnershipClearable(dir).ok, false);
     if (outcome === 'confirmed absent') state.page = false;
