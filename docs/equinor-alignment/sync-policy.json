@@ -51,6 +51,13 @@
       "reason": "Authored in this fork and absent upstream. Never overwritten by a sync."
     }
   ],
+  "sharedSkillVariants": [
+    {
+      "skill": "report-issue",
+      "plugin": "code-apps",
+      "reason": "Upstream adapted this copy for portable agent clients (document-relative links, client-neutral wording) without changing the shared source. scripts/validate-code-apps.js rejects the shared source's ${PLUGIN_ROOT} links, so the copy cannot match it."
+    }
+  ],
   "transforms": [
     {
       "id": "fork-repointing",
@@ -62,7 +69,10 @@
         "plugins/*/.claude-plugin/plugin.json",
         "plugins/*/README.md",
         "plugins/*/template/README.md",
+        "plugins/*/template/AGENTS.md",
         "plugins/*/skills/report-issue/**",
+        "plugins/mobile-apps/scripts/tests/mobile-release-surfaces.test.js",
+        "plugins/mobile-apps/scripts/tests/template-agent-guidance.test.js",
         "plugins/power-automate/skills/setup/SKILL.md",
         "plugins/process-intelligence/tests/packaging.test.mjs",
         "shared/skills/report-issue/**"
@@ -81,6 +91,7 @@
         "plugins/*/skills/telemetry/**",
         "plugins/*/shared/shared-instructions.md",
         "plugins/*/scripts/emit-telemetry-checkpoint.js",
+        "plugins/*/scripts/telemetry-config.js",
         "plugins/*/scripts/lib/*telemetry*",
         "plugins/*/scripts/lib/telemetry/**",
         "plugins/*/scripts/tests/*telemetry*",
@@ -96,11 +107,20 @@
         "plugins/mobile-apps/scripts/tests/mobileapp-hook-utils.test.js",
         "plugins/mobile-apps/scripts/tests/resolve-environment.test.js",
         "plugins/model-apps/scripts/tests/run-tests.test.js",
+        "plugins/model-apps/scripts/tests/exit-writes-inventory.test.js",
+        "plugins/model-apps/scripts/tests/output-token-writers.test.js",
+        "plugins/model-apps/scripts/tests/pac-allowlist.test.js",
+        "plugins/model-apps/scripts/tests/skill-completed.test.js",
+        "plugins/pcf/scripts/tests/pcf-exit-writes-inventory.test.js",
+        "plugins/pcf/scripts/tests/pcf-printers-whole-before-exit.test.js",
+        "plugins/pcf/scripts/tests/pcf-push-token.test.js",
         "evals/model-apps/routing/evals.json",
         "plugins/power-automate/package.json",
         "plugins/power-automate/scripts/release-contract.test.cjs",
         "plugins/power-automate/server/emit-dispatcher.mjs",
         "plugins/power-pages/scripts/tests/validate-audit.test.js",
+        "plugins/power-pages/scripts/tests/hook-commands.test.js",
+        "plugins/power-pages/scripts/tests/non-spa-customization-workflows.test.js",
         "plugins/power-pages/scripts/tests/validate-i18n-package.test.js",
         "plugins/process-intelligence/tests/identity.test.mjs"
       ]

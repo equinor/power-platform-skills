@@ -108,20 +108,22 @@ function findPath(dir, target) {
  *
  * A project root is marked by EITHER:
  *   - `powerpages.config.json` — code/SPA sites (`pac pages download-code-site`), OR
- *   - a `.powerpages-site/` directory — declarative design-studio sites
- *     (`pac pages download`; standard or enhanced data model). These have NO
- *     `powerpages.config.json`.
+ *   - a `.powerpages-site/` directory — a project-managed PAC metadata tree, OR
+ *   - `.portalconfig/` plus `website.yml` — a directly opened PAC download.
  *
- * Code sites have both markers; declarative sites have only
- * `.powerpages-site/`. Checking for either makes root discovery work for both site types.
+ * A nested `.powerpages-site/` can itself contain the direct-PAC markers. It is
+ * still metadata owned by its parent project, so an upward search must walk past
+ * that reserved directory instead of losing manifests stored alongside it.
  *
  * @returns {string|null} Project root path, or null
  */
 function findProjectRoot(dir) {
   let current = path.resolve(dir);
   while (true) {
+    const isManagedSiteDirectory = path.basename(current) === '.powerpages-site';
     if (fs.existsSync(path.join(current, 'powerpages.config.json')) ||
-        fs.existsSync(path.join(current, '.powerpages-site'))) {
+        fs.existsSync(path.join(current, '.powerpages-site')) ||
+        (isNonSpaSiteRoot(current) && !isManagedSiteDirectory)) {
       return current;
     }
 
@@ -136,7 +138,61 @@ function findProjectRoot(dir) {
   const fallbackConfigPath = findPath(dir, 'powerpages.config.json');
   if (fallbackConfigPath) return path.dirname(fallbackConfigPath);
   const fallbackSiteDir = findPath(dir, '.powerpages-site');
-  return fallbackSiteDir ? path.dirname(fallbackSiteDir) : null;
+  if (fallbackSiteDir) return path.dirname(fallbackSiteDir);
+  const fallbackPortalConfig = findPath(dir, '.portalconfig');
+  if (fallbackPortalConfig) {
+    const candidate = path.dirname(fallbackPortalConfig);
+    if (isNonSpaSiteRoot(candidate)) {
+      return path.basename(candidate) === '.powerpages-site'
+        ? path.dirname(candidate)
+        : candidate;
+    }
+  }
+  return null;
+}
+
+function isNonSpaSiteRoot(dir) {
+  return fs.existsSync(path.join(dir, '.portalconfig')) &&
+    fs.existsSync(path.join(dir, 'website.yml'));
+}
+
+function resolvePowerPagesSiteRoot(projectRoot) {
+  if (!projectRoot) return null;
+  const resolvedProjectRoot = path.resolve(projectRoot);
+  const nested = path.join(resolvedProjectRoot, '.powerpages-site');
+  const nestedHasSiteMarkers = fs.existsSync(path.join(nested, '.portalconfig')) ||
+    fs.existsSync(path.join(nested, 'website.yml'));
+  if (nestedHasSiteMarkers || (
+    fs.existsSync(path.join(resolvedProjectRoot, 'powerpages.config.json')) &&
+    fs.existsSync(nested)
+  )) {
+    return nested;
+  }
+  if (isNonSpaSiteRoot(resolvedProjectRoot)) return resolvedProjectRoot;
+  if (fs.existsSync(nested)) return nested;
+  return null;
+}
+
+function requirePowerPagesSiteRoot(projectRoot) {
+  if (typeof projectRoot !== 'string' || !projectRoot.trim()) {
+    throw new Error('A downloaded Power Pages site path containing website.yml is required.');
+  }
+  const root = path.resolve(projectRoot);
+  // The permissive resolver also supports projects whose metadata is not
+  // downloaded yet. Migration scans require the actual website.yml file.
+  const candidates = new Set([resolvePowerPagesSiteRoot(root), root]);
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const marker = path.join(candidate, 'website.yml');
+    try {
+      if (fs.statSync(marker).isFile()) return candidate;
+    } catch (error) {
+      if (error.code !== 'ENOENT' && error.code !== 'ENOTDIR') {
+        throw new Error(`Could not inspect Power Pages site marker ${marker}: ${error.message}`);
+      }
+    }
+  }
+  throw new Error(`Expected a downloaded Power Pages site containing website.yml at ${root} or its .powerpages-site folder. Select the site root explicitly.`);
 }
 
 /**
@@ -560,6 +616,9 @@ module.exports = {
   readDeferralMarker,
   findPath,
   findProjectRoot,
+  isNonSpaSiteRoot,
+  resolvePowerPagesSiteRoot,
+  requirePowerPagesSiteRoot,
   findPowerPagesSiteDir,
   UUID_REGEX,
   validateDataverseEnvironmentUrl,

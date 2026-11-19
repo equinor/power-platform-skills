@@ -36,8 +36,9 @@ in `docs/equinor-alignment/reviews/` and says nothing about what may be committe
 - **Pointers to files that are not in the repo** — a citation nobody can resolve is noise at best.
 
 **Fine to commit:** ADO / `AB#` work-item ids (opaque, and `AB#` is the standard Azure Boards ↔
-GitHub link syntax), and the location of a first-party source repo a maintainer needs in order to
-rebuild a vendored bundle. Both carry real "why" context and disclose no content.
+GitHub link syntax): they carry real "why" context and disclose no content. A vendored bundle built
+from an internal repository is cited by its source commit (`SDK commit <sha>`), with a placeholder
+such as `<sdk-repo>` for the repository — never by the internal repository's name or a path in it.
 
 **When you must record internal context**, put it in the PR conversation or an internal doc — not in
 a committed file. When editing an existing doc, keep this rule in mind for the lines around your
@@ -65,6 +66,8 @@ power-platform-skills/
 ├── marketplace.json          # Open Plugins marketplace manifest (lists all available plugins)
 ├── .claude-plugin/           # Legacy manifest mirrors for existing subscriptions
 │   └── marketplace.json
+├── .agents/plugins/
+│   └── marketplace.json      # Codex catalog for the adapted Code Apps package only
 ├── plugins/                  # Directory containing individual plugins
 │   └── <plugin-name>/        # Individual plugin (e.g., power-pages)
 │       ├── .plugin/
@@ -79,9 +82,19 @@ power-platform-skills/
 ├── shared/                   # Cross-plugin shared resources
 │   └── skills/               # Shared skill definitions
 │       └── <skill-name>/     # SKILL.template.md + workflow .md files
+├── docs/                     # Developer docs moved out of the README (repository layout, installer notes)
 ├── AGENTS.md                 # Generic development guidelines (this file)
-└── README.md                 # Repository overview
+└── README.md                 # Repository overview, written for makers as well as developers
 ```
+
+The README is for people who use the plugins, and its first half is for people who are not
+developers: plain words, outcomes before technology, and install steps before internals. Material
+for people who work on the plugins (local loading, repository layout) goes in
+`docs/development.md`, which the README links from Contributing. The README's Telemetry section is
+the short user-facing summary: this fork ships no usage telemetry (see `## Shared Telemetry`).
+
+**Keep large binaries off `main`.** Every marketplace install clones `main`, and every update
+downloads each new version of a file again.
 
 ## Local Development
 
@@ -96,7 +109,11 @@ No root-level build, lint, or test commands exist. Build/test tooling lives insi
 ## CI
 
 **Only two workflows run on every PR** — `validate-keyword-case` and `validate-repository-metadata`.
-Both are repo-wide and enforce metadata/marketplace rules, not behavior.
+Both are repo-wide and enforce metadata/marketplace rules. `validate-repository-metadata` also
+runs the hook-command quoting test on Linux and Windows.
+
+`code-apps-validation` checks the portable Code Apps package on Windows and Ubuntu.
+Its path filter covers Code Apps, its Codex catalog, and the compatibility validators.
 
 **Every test workflow is path-filtered** — to a single plugin (`power-pages` → `plugins/power-pages/**`;
 `model-apps` → `plugins/model-apps/**` + `evals/model-apps/**` + the `shared/` sources it bundles;
@@ -128,7 +145,7 @@ Each plugin follows this structure:
 - `.claude-plugin/plugin.json` — legacy mirror of `.plugin/plugin.json` kept for existing subscriptions
 - `.mcp.json` — MCP server configuration (optional)
 - `plugin.json` and `mcp.json` — optional additive Agent Plugins 1.0.0 files at the
-  individual plugin root (currently `process-intelligence`); retain the legacy files above
+  individual plugin root (currently `process-intelligence` and `code-apps` use `plugin.json`); retain the legacy files above
 - `agents/` — Agent definitions (`.md` files with YAML frontmatter)
 - `skills/` — Skill definitions, each in its own subdirectory with a `SKILL.md`
 - `scripts/` — Shared utility scripts referenced by skills and agents
@@ -191,7 +208,7 @@ jobs:
 
 This opt-out suppresses **transmission only** (the local diagnostic mirror is still written), so it is safe and has no effect on what the job actually tests. Tests that need to assert that emission *happens* clear the var in their own spawned-process env and route the event to a local `POWER_PLATFORM_SKILLS_FAKE_HTTPS` probe instead of the real collector — so the job-level opt-out never breaks them. Existing reference: `.github/workflows/power-pages-script-tests.yml`. When you add a new such workflow (or a new emitting step to an existing one), add this env var in the same change; treat a CI job that runs the tests without it as a production-telemetry leak.
 
-Current adopters: `power-pages`, `mobile-apps`, `model-apps`, and `pcf` (all transmitting; `pcf` shares model-apps' tenant). Others adopt on demand. The library's own tests (`shared/telemetry/tests`) run in `.github/workflows/shared-telemetry-tests.yml` on a change to the source or to any bundled copy, and its `bundled-copies.test.js` fails when any adopter's `plugins/<plugin>/scripts/lib/telemetry/lib` differs from `shared/telemetry/lib`. The workflow sets every adopter's opt-out — add a new adopter's variable there too. power-pages and model-apps also keep a `scripts/tests/telemetry-lib-copy.test.js` that runs the same comparison in their own suites (model-apps also checks its shared skill copies, and lists `shared/telemetry/**` in its workflow's path filter so a source edit runs it too).
+Current adopters: `power-pages`, `mobile-apps`, `model-apps`, `pcf`, `power-automate`, and `power-apps-mobile-extension` (all transmitting; `pcf` shares model-apps' tenant). Others adopt on demand. The library's own tests (`shared/telemetry/tests`) run in `.github/workflows/shared-telemetry-tests.yml` on a change to the source or to any bundled copy, and its `bundled-copies.test.js` fails when any adopter's `plugins/<plugin>/scripts/lib/telemetry/lib` differs from `shared/telemetry/lib`. The workflow sets every adopter's opt-out — add a new adopter's variable there too. power-pages and model-apps also keep a `scripts/tests/telemetry-lib-copy.test.js` that runs the same comparison in their own suites (model-apps also checks its shared skill copies, and lists `shared/telemetry/**` in its workflow's path filter so a source edit runs it too).
 
 ## Legacy Marketplace Compatibility
 

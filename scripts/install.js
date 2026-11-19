@@ -11,11 +11,12 @@
  *   curl -fsSL https://raw.githubusercontent.com/equinor/power-platform-skills/main/scripts/install.js | node
  */
 
-const { execSync } = require("child_process");
+const { execFileSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const https = require("https");
+const { URL } = require("url");
 
 // ── Config ────────────────────────────────────────────────────
 const REPO = "equinor/power-platform-skills";
@@ -124,24 +125,84 @@ const header = (msg) => console.log(`\n${bold(msg)}`);
 const info = (msg) => console.log(`  ${msg}`);
 
 // ── Helpers ───────────────────────────────────────────────────
-function hasCommand(cmd) {
-  try {
-    const which = process.platform === "win32" ? "where" : "which";
-    execSync(`${which} ${cmd}`, { stdio: "pipe" });
-    return true;
-  } catch {
-    return false;
-  }
+function envValue(name) {
+  if (process.platform !== "win32") return process.env[name];
+  // Match Node's case-insensitive environment lookup, including duplicate PATH spellings.
+  const key = Object.keys(process.env).filter((k) => k.toUpperCase() === name.toUpperCase()).sort()[0];
+  return key === undefined ? undefined : process.env[key];
 }
 
-function run(cmd, opts = {}) {
+function isFullyQualifiedPath(file) {
+  // Windows considers \tools absolute, but it still depends on the current drive.
+  // A longer root identifies a drive-qualified or UNC path instead.
+  return path.isAbsolute(file) && (process.platform !== "win32" || path.parse(file).root.length > 1);
+}
+
+function resolveCommand(cmd) {
+  if (typeof cmd !== "string" || /^[a-z0-9-]+$/.exec(cmd)?.[0] !== cmd) {
+    throw new Error("Invalid command name");
+  }
+  const win = process.platform === "win32";
+  const paths = String(envValue("PATH") || "").split(win ? ";" : ":");
+  const extensions = win
+    ? String(envValue("PATHEXT") || ".COM;.EXE;.BAT;.CMD").split(";")
+      .map((ext) => ext.trim().toLowerCase()).filter((ext) => /^\.(?:com|exe|bat|cmd)$/.test(ext))
+    : [""];
+  for (const entry of paths) {
+    // On POSIX, whitespace and quotes are literal directory-name characters.
+    const dir = win ? entry.trim().replace(/^"(.*)"$/, "$1") : entry;
+    // Skip implicit working-directory lookup and relative PATH entries.
+    if (!isFullyQualifiedPath(dir)) continue;
+    for (const ext of extensions) {
+      const file = path.join(dir, cmd + ext);
+      try {
+        if (!fs.statSync(file).isFile()) continue;
+        if (!win) fs.accessSync(file, fs.constants.X_OK);
+        return file;
+      } catch (err) {
+        if (!["ENOENT", "ENOTDIR", "EACCES", "EPERM"].includes(err.code)) throw err;
+      }
+    }
+  }
+  return null;
+}
+
+function hasCommand(cmd) {
+  return resolveCommand(cmd) !== null;
+}
+
+function run(cmd, args = [], opts = {}) {
   try {
-    const output = execSync(cmd, {
+    let file = resolveCommand(cmd);
+    if (!file) throw new Error(`${cmd} was not found on PATH`);
+    let argv = args;
+    const options = {
       stdio: "pipe",
       timeout: 120_000,
       cwd: opts.cwd,
-      shell: true,
-    });
+      shell: false,
+      windowsHide: true,
+    };
+    if (process.platform === "win32" && /\.(?:cmd|bat)$/i.test(file)) {
+      // Node cannot execute Windows batch shims directly. cmd.exe parses the /c line
+      // and the shim's %* again, so only inert argument tokens may cross this boundary.
+      // The installer is also downloaded/piped alone: it cannot require a repo-local runner.
+      // See: https://nodejs.org/api/child_process.html#spawning-bat-and-cmd-files-on-windows
+      if (/["%!\u0000-\u001f\u007f]/.test(file)
+        || !args.every((arg) => typeof arg === "string" && /^[A-Za-z0-9_./:@=-]+$/.exec(arg)?.[0] === arg)) {
+        throw new Error(`Cannot safely pass the executable path or arguments to ${cmd}'s Windows batch launcher`);
+      }
+      const comspec = envValue("ComSpec");
+      const systemRoot = envValue("SystemRoot") || "C:\\Windows";
+      const shell = comspec && isFullyQualifiedPath(comspec) && path.basename(comspec).toLowerCase() === "cmd.exe"
+        ? comspec : path.join(systemRoot, "System32", "cmd.exe");
+      if (!isFullyQualifiedPath(shell)) throw new Error("Windows command interpreter path must be fully qualified");
+      argv = ["/d", "/s", "/v:off", "/c", `""${file}" ${args.join(" ")}"`];
+      file = shell;
+      options.windowsVerbatimArguments = true;
+      options.env = { ...process.env, NoDefaultCurrentDirectoryInExePath: "1" };
+    }
+    const output = execFileSync(file, argv, options);
     return { ok: true, output: output.toString().trim() };
   } catch (err) {
     const stderr = err.stderr ? err.stderr.toString().trim() : err.message;
@@ -149,41 +210,89 @@ function run(cmd, opts = {}) {
   }
 }
 
+const MAX_REDIRECTS = 3;
+
 function httpsGet(url) {
   return new Promise((resolve, reject) => {
-    const request = (target) => {
+    let initialUrl;
+    try {
+      initialUrl = new URL(url);
+    } catch {
+      reject(new Error("Invalid HTTPS URL"));
+      return;
+    }
+    if (initialUrl.protocol !== "https:") {
+      reject(new Error("Only HTTPS URLs are allowed"));
+      return;
+    }
+
+    // Keep fetched manifests and metadata on their configured origin; bounded
+    // redirects also prevent an origin from trapping the installer in a loop.
+    const expectedOrigin = initialUrl.origin;
+    const request = (target, redirectCount = 0) => {
       https
-        .get(
-          target,
-          { headers: { "User-Agent": "power-platform-skills-installer" } },
-          (res) => {
-            if (
-              res.statusCode >= 300 &&
-              res.statusCode < 400 &&
-              res.headers.location
-            ) {
-              return request(res.headers.location);
+        .get(target.href, { headers: { "User-Agent": "power-platform-skills-installer" } }, (res) => {
+          if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+            let nextUrl;
+            try {
+              nextUrl = new URL(res.headers.location, target);
+            } catch {
+              res.resume();
+              reject(new Error("Invalid redirect URL"));
+              return;
             }
-            if (res.statusCode !== 200) {
-              return reject(new Error(`HTTP ${res.statusCode} from ${target}`));
+            if (redirectCount >= MAX_REDIRECTS) {
+              res.resume();
+              reject(new Error(`Too many redirects from ${expectedOrigin}`));
+              return;
             }
-            let data = "";
-            res.on("data", (chunk) => (data += chunk));
-            res.on("end", () => resolve(data));
-          },
-        )
+            if (nextUrl.protocol !== "https:" || nextUrl.origin !== expectedOrigin
+              || nextUrl.username || nextUrl.password) {
+              res.resume();
+              reject(new Error(`Refusing redirect to ${nextUrl.origin}`));
+              return;
+            }
+            res.resume();
+            return request(nextUrl, redirectCount + 1);
+          }
+          if (res.statusCode !== 200) {
+            res.resume();
+            return reject(new Error(`HTTP ${res.statusCode} from ${target.href}`));
+          }
+          let data = "";
+          res.on("data", (chunk) => (data += chunk));
+          res.on("end", () => resolve(data));
+        })
         .on("error", reject);
     };
-    request(url);
+    request(initialUrl);
   });
+}
+
+function isValidPluginName(name) {
+  // Use the Open Plugins grammar shared with the repository validator. Compare the
+  // whole match because JavaScript's $ anchor also accepts a trailing newline.
+  const match = typeof name === "string" && /^[a-z0-9](?:[a-z0-9.-]{0,62}[a-z0-9])?$/.exec(name);
+  return Boolean(match && match[0] === name && !name.includes("--") && !name.includes(".."));
 }
 
 function parseMarketplaceManifest(raw) {
   const manifest = JSON.parse(raw);
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
+    throw new Error("marketplace manifest must be an object");
+  }
   if (manifest.name !== MARKETPLACE_NAME) {
     throw new Error(
       `manifest name is '${manifest.name || "(missing)"}', expected '${MARKETPLACE_NAME}'`,
     );
+  }
+  if (!Array.isArray(manifest.plugins)) {
+    throw new Error("marketplace plugins must be an array");
+  }
+  for (const [index, plugin] of manifest.plugins.entries()) {
+    if (!plugin || typeof plugin !== "object" || Array.isArray(plugin) || !isValidPluginName(plugin.name)) {
+      throw new Error(`plugins[${index}].name does not follow Open Plugins name constraints`);
+    }
   }
   return manifest;
 }
@@ -245,6 +354,7 @@ async function loadMarketplace() {
           };
         } catch (err) {
           errors.push(`${filePath}: ${err.message}`);
+          warn(`Ignoring invalid marketplace manifest: ${filePath}: ${err.message}`);
         }
       }
     }
@@ -317,7 +427,7 @@ function installClaude(plugins) {
 
   // 1. Register marketplace via CLI (CLI clones the repo automatically)
   info("Registering marketplace...");
-  const addResult = run(`claude plugin marketplace add "${REPO}"`);
+  const addResult = run("claude", ["plugin", "marketplace", "add", REPO]);
   if (addResult.ok) {
     ok("Marketplace registered");
   } else if (addResult.output.includes("already")) {
@@ -329,9 +439,7 @@ function installClaude(plugins) {
 
   // 2. Update marketplace
   info("Updating marketplace...");
-  const updateResult = run(
-    `claude plugin marketplace update "${MARKETPLACE_NAME}"`,
-  );
+  const updateResult = run("claude", ["plugin", "marketplace", "update", MARKETPLACE_NAME]);
   if (updateResult.ok) {
     ok("Marketplace updated");
   } else {
@@ -350,9 +458,7 @@ function installClaude(plugins) {
   // 4. Install each plugin via CLI
   for (const plugin of plugins) {
     info(`Installing ${plugin}...`);
-    const installResult = run(
-      `claude plugin install "${plugin}@${MARKETPLACE_NAME}" --scope ${SCOPE}`,
-    );
+    const installResult = run("claude", ["plugin", "install", `${plugin}@${MARKETPLACE_NAME}`, "--scope", SCOPE]);
     if (installResult.ok) {
       ok(`${plugin} installed`);
     } else if (installResult.output.includes("already installed")) {
@@ -364,7 +470,7 @@ function installClaude(plugins) {
 
   // 5. Verify installation
   info("Verifying installation...");
-  const listResult = run("claude plugin list");
+  const listResult = run("claude", ["plugin", "list"]);
   if (listResult.ok) {
     const installed = plugins.filter((p) => listResult.output.includes(p));
     if (installed.length > 0) {
@@ -578,7 +684,7 @@ async function main() {
   const tools = [];
 
   if (hasCommand("claude")) {
-    const ver = run("claude --version");
+    const ver = run("claude", ["--version"]);
     tools.push("claude");
     ok(`Claude Code ${ver.ok ? ver.output : "(version unknown)"}`);
   }
@@ -606,7 +712,7 @@ async function main() {
   header("Power Platform CLI (pac)");
 
   if (hasCommand("pac")) {
-    const ver = run("pac help");
+    const ver = run("pac", ["help"]);
     const versionMatch = ver.ok && ver.output.match(/Version:\s*(.+)/i);
     ok(`PAC CLI ${versionMatch ? versionMatch[1].trim() : "(installed)"}`);
 
@@ -633,9 +739,7 @@ async function main() {
           `Newer version available: ${latestVersion} (installed: ${localVersion || "unknown"})`,
         );
         info("Updating PAC CLI...");
-        const updateResult = run(
-          "dotnet tool update --global Microsoft.PowerApps.CLI.Tool",
-        );
+        const updateResult = run("dotnet", ["tool", "update", "--global", "Microsoft.PowerApps.CLI.Tool"]);
         if (updateResult.ok) {
           ok(`Updated to ${latestVersion}`);
         } else {
@@ -648,9 +752,7 @@ async function main() {
 
     if (hasCommand("dotnet")) {
       info("Installing PAC CLI via dotnet tool...");
-      const installResult = run(
-        "dotnet tool install --global Microsoft.PowerApps.CLI.Tool",
-      );
+      const installResult = run("dotnet", ["tool", "install", "--global", "Microsoft.PowerApps.CLI.Tool"]);
       if (installResult.ok) {
         ok("PAC CLI installed");
         info(
@@ -682,7 +784,7 @@ async function main() {
   header("Azure CLI (az)");
 
   if (hasCommand("az")) {
-    const ver = run("az version -o tsv");
+    const ver = run("az", ["version", "-o", "tsv"]);
     const versionLine = ver.ok && ver.output.split("\n")[0];
     const azVersion = versionLine ? versionLine.split("\t")[0] : null;
     ok(`Azure CLI ${azVersion || "(installed)"}`);
@@ -692,9 +794,8 @@ async function main() {
     let installed = false;
     if (process.platform === "win32" && hasCommand("winget")) {
       info("Installing Azure CLI via winget...");
-      const installResult = run(
-        "winget install -e --id Microsoft.AzureCLI --accept-source-agreements --accept-package-agreements",
-      );
+      const installResult = run("winget", ["install", "-e", "--id", "Microsoft.AzureCLI",
+        "--accept-source-agreements", "--accept-package-agreements"]);
       if (installResult.ok) {
         ok("Azure CLI installed");
         info(
@@ -706,7 +807,7 @@ async function main() {
       }
     } else if (process.platform === "darwin" && hasCommand("brew")) {
       info("Installing Azure CLI via Homebrew...");
-      const installResult = run("brew install azure-cli");
+      const installResult = run("brew", ["install", "azure-cli"]);
       if (installResult.ok) {
         ok("Azure CLI installed");
         installed = true;
@@ -873,9 +974,18 @@ async function main() {
   console.log("");
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    fail(`Installation failed: ${err.message}`);
-    process.exit(1);
-  });
+// Piped input (`curl ... | node`) has no require.main, so match the stdin module id too;
+// importing the module (e.g. from tests) must not start an install.
+if (require.main === module || module.id === "[stdin]") {
+  main()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      fail(`Installation failed: ${err.message}`);
+      process.exit(1);
+    });
+}
+
+module.exports = {
+  isValidPluginName, parseMarketplaceManifest, loadMarketplace, resolveCommand, run,
+  installClaude, main,
+};

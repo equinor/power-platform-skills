@@ -97,8 +97,10 @@ caller context first; creation can already have a plan without being finished.
   entry point with its standalone prerequisites and approval gates. Do not
   silently widen it to full app creation.
 - **Existing or customized app** — use the existing-app routing below. A missing
-  plan does not make the app fresh; ask to restore the plan or approve bounded
-  implementation-only work rather than re-scaffolding it.
+  plan does not make the app fresh. After full-integration consent, invoke
+  `edit-app`; its read-only inspection infers the current-state baseline before its
+  impact and mutation approval gates. Keep implementation-only work bounded to its
+  leaf workflow.
 - **Unclear state or intent** — ask before choosing creation or editing. Do not
   infer a fresh starter solely from missing generated markers.
 
@@ -196,12 +198,12 @@ give the user these commands to run inside a Claude Code or GitHub Copilot CLI
 session, not in Bash, PowerShell, or an npm terminal:
 
 ```text
-/plugin marketplace add microsoft/power-platform-skills
+/plugin marketplace add equinor/power-platform-skills
 /plugin install mobile-app@power-platform-skills
 ```
 
 These are the mobile-app-only commands from the
-[marketplace README](https://github.com/microsoft/power-platform-skills#manual-installation).
+[marketplace README](https://github.com/equinor/power-platform-skills#installation).
 Do not run the all-plugin installer or change global tooling without separate
 approval. After installation, reload the host if needed and recheck advertised
 skills; do not assume success. Installation consent authorizes only installation,
@@ -267,7 +269,7 @@ automatically. Ask before opening a link or publishing anything externally.
 
 If that skill is unavailable, follow the opt-in installation flow above or
 prepare the same sanitized draft for user review with the
-[mobile-app issue link](https://github.com/microsoft/power-platform-skills/issues/new?labels=plugin%3Amobile-app).
+[mobile-app issue link](https://github.com/equinor/power-platform-skills/issues/new?labels=plugin%3Amobile-app).
 Do not claim the issue was filed, and do not resume patching vendor code.
 
 ## Validate the actual change
